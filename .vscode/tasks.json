@@ -4,7 +4,7 @@
 		{
 			"label": "Run VariancePro App",
 			"type": "shell",
-			"command": "python app_fixed_2tabs.py",
+			"command": "streamlit run app.py",
 			"group": "build",
 			"isBackground": true,
 			"problemMatcher": [],

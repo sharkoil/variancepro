@@ -1,57 +1,497 @@
-#!/usr/bin/env python3
-"""
-VariancePro Financial Analysis App - FIXED VERSION WITH ONLY 2 TABS
-"""
-
 import gradio as gr
 import pandas as pd
 import numpy as np
-import io
-import json
 import requests
-from datetime import datetime
-from typing import List, Dict, Optional
+import json
+import io
+import base64
+import traceback
+from datetime import datetime, timedelta
+from typing import Optional, List, Tuple, Dict
+from pathlib import Path
+from utils.chat_handler import ChatHandler
 
-class SimpleFinancialChat:
-    """Simplified financial data analysis chat"""
+# Import the narrative generator (optional)
+try:
+    from utils.narrative_generator import add_narrative_to_app
+    NARRATIVE_AVAILABLE = True
+except ImportError:
+    NARRATIVE_AVAILABLE = False
+
+# LlamaIndex integration (optional)
+try:
+    from llamaindex_integration import (
+        LlamaIndexFinancialProcessor, 
+        create_llamaindex_enhanced_analysis,
+        extract_financial_data_from_text
+    )
+    LLAMAINDEX_AVAILABLE = True
+except ImportError:
+    LLAMAINDEX_AVAILABLE = False
+    print("LlamaIndex not available. Install with: pip install llama-index")
+
+class AriaFinancialChat:
+    """Financial data analysis chat powered by Aria Sterling via Ollama"""
     
     def __init__(self):
+        self.model_name = "deepseek-coder:6.7b" # Use locally available deepseek-coder model
+        self.ollama_url = "http://localhost:11434"
         self.current_data = None
-        self.chat_history = []
+        self.chat_history = []  # Initialize chat history
+        
+        # Initialize chat handler for DeepSeek integration
+        self.chat_handler = ChatHandler()
         
         # Initialize timescale analyzer
         self.timescale_analyzer = TimescaleAnalyzer()
+        
+        # Add narrative generation if available
+        if NARRATIVE_AVAILABLE:
+            try:
+                from utils.narrative_generator import add_narrative_to_app
+                add_narrative_to_app(self)
+                print("[SUCCESS] Narrative generation enabled with Aria Sterling persona")
+            except Exception as e:
+                print(f"[WARNING] Narrative generation initialization failed: {e}")
+        
+        # Initialize LlamaIndex processor (optional)
+        self.llamaindex_processor = None
+        if LLAMAINDEX_AVAILABLE:
+            try:
+                self.llamaindex_processor = LlamaIndexFinancialProcessor()
+                print("[SUCCESS] LlamaIndex processor initialized")
+            except Exception as e:
+                print(f"[WARNING] LlamaIndex initialization failed: {e}")
+                self.llamaindex_processor = None
+        else:
+            print("LlamaIndex not installed. Run: pip install llama-index")
     
-    def get_default_suggested_questions(self):
-        """Get default suggested questions when no data is loaded"""
-        return """### 💡 Suggested Questions
+    def check_ollama_connection(self) -> bool:
+        """Check if Ollama is running and the model is available"""
+        try:
+            # First check if Ollama is running
+            response = requests.get(f"{self.ollama_url}/api/tags", timeout=10)
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                available_models = [model["name"] for model in models]
+                
+                # Check if our model is available
+                if self.model_name in available_models:
+                    print(f"[SUCCESS] Using model: {self.model_name}")
+                    return True
+                
+                # Look specifically for deepseek-coder:6.7b
+                if "deepseek-coder:6.7b" in available_models:
+                    self.model_name = "deepseek-coder:6.7b"
+                    print(f"[SUCCESS] Using model: {self.model_name}")
+                    return True
+                
+                # Also check for any model containing deepseek, phi, llama, or mistral as fallbacks
+                for model_name in available_models:
+                    if any(name in model_name for name in ["deepseek", "phi", "llama", "mistral"]):
+                        self.model_name = model_name
+                        print(f"[WARNING] Using fallback model: {self.model_name}")
+                        return True
+                
+                print("[ERROR] No suitable LLM models found in Ollama")
+                return False
+            return False
+        except requests.exceptions.Timeout:
+            return False
+        except requests.exceptions.ConnectionError:
+            return False
+        except Exception:
+            return False
+    
+    def query_ollama(self, prompt: str) -> str:
+        """Query LLM model via Ollama using Aria Sterling persona"""
+        try:
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.3,
+                    "top_k": 40,
+                    "top_p": 0.9,
+                    "num_predict": 2048,
+                    "num_ctx": 8192  # Increased context window for DeepSeek Coder
+                }
+            }
+            
+            response = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json=payload,
+                timeout=180  # Extended timeout for large Phi4 model (3 minutes)
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("response", "").strip()
+            else:
+                return f"Error: Phi4 returned status {response.status_code}"
+                
+        except requests.exceptions.Timeout:
+            return "[WARNING] Phi4 is processing your complex financial query. Large models need more time for detailed analysis. The response will appear shortly, or try breaking your question into smaller parts."
+        except requests.exceptions.ConnectionError:
+            return "[ERROR] Cannot connect to Ollama. Please ensure Ollama is running with: `ollama serve`"
+        except Exception as e:
+            return f"Error communicating with Phi4: {str(e)}"
+    
+    def create_financial_prompt(self, user_query: str, data_summary: str) -> str:
+        """Create optimized prompt for Aria Sterling financial analysis"""
+        
+        prompt = f"""You are an expert financial analyst with deep expertise in data analysis and Python programming. Analyze the provided financial dataset and respond to the user's question with detailed insights.
 
-**Getting Started:**
-- "How can I analyze financial variances?"
-- "What metrics can I track for financial performance?"
-- "How to identify trends in financial data?"
+DATASET INFORMATION:
+{data_summary}
 
-**Code Assistance:**
-- "Generate dashboard code for financial data"
-- "Help me build a forecasting model"
+USER QUESTION: {user_query}
 
-📁 Upload your CSV file to get personalized suggestions based on your data columns!"""
+Please provide a comprehensive analysis that includes:
 
-    def get_default_system_prompt(self):
-        """Get the default system prompt for the chat"""
-        prompt = """I am VariancePro, your financial analysis assistant. 
+## Financial Analysis
+- Direct answer to the question with specific insights
+- Key metrics and performance indicators
+- Trend analysis and variance explanations
 
-I can help you analyze your financial data, identify trends, calculate metrics, and provide insights. 
+## Data Patterns & Insights  
+- Notable patterns, trends, or anomalies
+- Statistical relationships between variables
+- Risk factors or opportunities identified
 
-Upload your financial data (CSV file) and I'll assist you with:
-- Variance analysis and trend identification
-- Period-over-period comparisons
-- Statistical analysis and financial metrics
-- Python code for detailed analysis
+## Business Impact
+- Strategic implications of the findings
+- Impact on business performance and decisions
+- Areas requiring immediate attention
 
-How can I help with your financial data today?"""
+## Python Code (if relevant)
+- Practical code snippets for deeper analysis
+- Statistical analysis methods
+
+## Recommendations
+- Specific actionable steps
+- Areas for further investigation
+- Risk mitigation strategies
+
+Provide clear, concise responses using professional financial terminology. Make recommendations data-driven and actionable."""
+        
         return prompt
     
+    def analyze_data(self, file_data, user_question: str) -> Tuple[str, str]:
+        """Analyze uploaded data and answer user questions using ChatHandler"""
+        
+        # Process uploaded file
+        if file_data is None:
+            return "Please upload a CSV file to analyze.", "[INFO] No data uploaded"
+        
+        try:
+            # Read CSV file
+            if isinstance(file_data, str):
+                # If file_data is a file path
+                df = pd.read_csv(file_data)
+            else:
+                # If file_data is file content
+                df = pd.read_csv(io.StringIO(file_data.decode('utf-8')))
+            
+            # Store current data for later use
+            self.current_data = df
+            
+            # Use ChatHandler to generate response
+            response = self.chat_handler.generate_response(user_question, df)
+            
+            if self.chat_handler.use_llm:
+                status = f"[SUCCESS] Using DeepSeek LLM"
+            else:
+                status = "[WARNING] LLM not available - using built-in analysis"
+            
+            # Add to chat history
+            self.chat_history.append({
+                "user": user_question,
+                "assistant": response,
+                "timestamp": datetime.now()
+            })
+            
+            return response, status
+            
+        except Exception as e:
+            return f"Error processing data: {str(e)}", "[ERROR] Processing Error"
+    
+    def create_data_summary(self, df: pd.DataFrame) -> str:
+        """Create comprehensive data summary for Aria Sterling analysis"""
+        
+        summary = f"""
+DATASET OVERVIEW:
+- Rows: {len(df)}
+- Columns: {len(df.columns)}
+- Date Range: {self.get_date_range(df)}
+
+COLUMN STRUCTURE:
+{self.get_column_info(df)}
+
+SAMPLE DATA:
+{df.head(3).to_string()}
+
+STATISTICAL SUMMARY:
+{df.describe().round(2).to_string() if len(df.select_dtypes(include=[np.number]).columns) > 0 else "No numeric columns"}
+"""
+        return summary
+    
+    def get_date_range(self, df: pd.DataFrame) -> str:
+        """Extract date range from dataframe"""
+        date_cols = df.select_dtypes(include=['datetime64']).columns
+        if len(date_cols) == 0:
+            # Try to find date-like columns
+            for col in df.columns:
+                if 'date' in col.lower() or 'time' in col.lower():
+                    try:
+                        date_series = pd.to_datetime(df[col])
+                        return f"{date_series.min()} to {date_series.max()}"
+                    except:
+                        continue
+            return "No date columns detected"
+        else:
+            date_col = date_cols[0]
+            return f"{df[date_col].min()} to {df[date_col].max()}"
+    
+    def get_column_info(self, df: pd.DataFrame) -> str:
+        """Get detailed column information"""
+        info = []
+        
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        text_cols = df.select_dtypes(include=['object']).columns
+        date_cols = df.select_dtypes(include=['datetime64']).columns
+        
+        if len(numeric_cols) > 0:
+            info.append(f"Numeric ({len(numeric_cols)}): {', '.join(numeric_cols[:5])}{'...' if len(numeric_cols) > 5 else ''}")
+        
+        if len(text_cols) > 0:
+            info.append(f"Text ({len(text_cols)}): {', '.join(text_cols[:5])}{'...' if len(text_cols) > 5 else ''}")
+            
+        if len(date_cols) > 0:
+            info.append(f"Date ({len(date_cols)}): {', '.join(date_cols)}")
+        
+        return "\n".join(info)
+    
+    def fallback_analysis(self, user_query: str) -> str:
+        """Fallback analysis when Ollama is not available"""
+        
+        if self.current_data is None:
+            return """[BOT] **Aria Sterling Analysis** (Ollama offline):
+
+Please upload a CSV file to begin analysis.
+
+I'm Aria Sterling, your financial analysis assistant. I can help you analyze financial data, identify trends, calculate metrics, and provide actionable insights.
+
+[INFO] **To enable Ollama**:
+1. Ensure Ollama is running: `ollama serve`
+2. Verify deepseek-coder is installed: `ollama list`
+3. If missing, install: `ollama pull deepseek-coder:6.7b`"""
+        
+        df = self.current_data
+        
+        response = f"""[BOT] **Aria Sterling Analysis** (Ollama offline):
+
+**Your Question**: {user_query}
+
+**Dataset Overview**:
+- {len(df)} rows, {len(df.columns)} columns
+- Numeric columns: {len(df.select_dtypes(include=[np.number]).columns)}
+
+**Quick Insights**:
+- Data spans from {df.index[0]} to {df.index[-1]}
+- Key columns: {', '.join(df.columns[:5])}
+
+As Aria Sterling, your financial analyst, I can provide more insightful analysis when connected to the Ollama language model. Please ensure Ollama is running and reload the application for full functionality.
+
+[INFO] **For enhanced financial analysis with Aria Sterling, ensure Ollama is running with a compatible model.**"""
+        
+        return response
+
+    def generate_suggested_questions(self, df: pd.DataFrame) -> str:
+        """Generate suggested questions based on actual data columns"""
+        if df is None or df.empty:
+            return self.get_default_suggested_questions()
+        
+        columns = df.columns.tolist()
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        text_cols = df.select_dtypes(include=['object']).columns.tolist()
+        
+        # Detect column types and patterns
+        date_cols = []
+        for col in columns:
+            if any(keyword in col.lower() for keyword in ['date', 'time', 'period']):
+                date_cols.append(col)
+        
+        budget_cols = [col for col in columns if 'budget' in col.lower()]
+        actual_cols = [col for col in columns if 'actual' in col.lower()]
+        variance_cols = [col for col in columns if 'variance' in col.lower()]
+        sales_cols = [col for col in columns if 'sales' in col.lower() or 'revenue' in col.lower()]
+        profit_cols = [col for col in columns if 'profit' in col.lower() or 'margin' in col.lower()]
+        cost_cols = [col for col in columns if 'cost' in col.lower() or 'expense' in col.lower()]
+        
+        # Geographic columns
+        geo_cols = [col for col in columns if any(geo in col.lower() for geo in ['region', 'country', 'state', 'city', 'territory'])]
+        
+        # Product/category columns  
+        product_cols = [col for col in columns if any(prod in col.lower() for prod in ['product', 'line', 'category', 'segment'])]
+        
+        suggestions = []
+        
+        # Basic Analysis Questions
+        suggestions.append("**Basic Analysis:**")
+        suggestions.append(f'- "Summarize this dataset with {len(df)} rows and {len(columns)} columns"')
+        suggestions.append('- "What are the key trends in this data?"')
+        suggestions.append('- "Find any anomalies or outliers"')
+        
+        # Budget vs Actual Analysis (if both exist)
+        if budget_cols and actual_cols:
+            suggestions.append("\n**Budget vs Actual Analysis:**")
+            if any('sales' in col.lower() for col in budget_cols):
+                suggestions.append('- "Analyze budget vs actual sales variance"')
+            if any('volume' in col.lower() for col in budget_cols):
+                suggestions.append('- "Compare budget vs actual volume performance"')
+            suggestions.append('- "Which periods/regions had the biggest budget variances?"')
+            suggestions.append('- "Calculate variance percentages for all budget vs actual metrics"')
+        
+        # Regional/Geographic Analysis
+        if geo_cols:
+            geo_col = geo_cols[0]
+            suggestions.append(f"\n**Geographic Analysis:**")
+            suggestions.append(f'- "Compare performance by {geo_col}"')
+            suggestions.append(f'- "Which {geo_col} has the highest sales/revenue?"')
+            suggestions.append(f'- "Show variance analysis by {geo_col}"')
+            if sales_cols:
+                suggestions.append(f'- "Rank {geo_col} by {sales_cols[0] if sales_cols else "sales"} performance"')
+        
+        # Product/Category Analysis
+        if product_cols:
+            prod_col = product_cols[0]
+            suggestions.append(f"\n**Product Analysis:**")
+            suggestions.append(f'- "Analyze performance by {prod_col}"')
+            suggestions.append(f'- "Which {prod_col} is most profitable?"')
+            if sales_cols:
+                suggestions.append(f'- "Compare {sales_cols[0]} across different {prod_col}"')
+        
+        # Time Series Analysis
+        if date_cols:
+            date_col = date_cols[0]
+            suggestions.append(f"\n**Time Series Analysis:**")
+            suggestions.append(f'- "Show trends over time using {date_col}"')
+            suggestions.append(f'- "Identify seasonal patterns in the data"')
+            suggestions.append(f'- "Which time periods had the best performance?"')
+        
+        # Financial Metrics Analysis
+        if sales_cols or profit_cols:
+            suggestions.append(f"\n**Financial Analysis:**")
+            if sales_cols:
+                suggestions.append(f'- "Analyze {sales_cols[0]} performance and drivers"')
+            if profit_cols:
+                suggestions.append(f'- "Calculate profit margins and identify trends"')
+            if cost_cols:
+                suggestions.append(f'- "Analyze cost structure and efficiency"')
+        
+        # Advanced Analysis
+        suggestions.append(f"\n**Advanced Analysis:**")
+        if len(numeric_cols) >= 2:
+            suggestions.append(f'- "Show correlation analysis between {numeric_cols[0]} and {numeric_cols[1]}"')
+        suggestions.append('- "Generate Python code for statistical analysis"')
+        suggestions.append('- "Build a forecasting model for future predictions"')
+        
+        # Specific Column Questions
+        if len(columns) > 0:
+            suggestions.append(f"\n**Column-Specific Questions:**")
+            suggestions.append(f'- "Explain the relationship between {", ".join(columns[:3])}"')
+            if numeric_cols:
+                suggestions.append(f'- "What drives the variations in {numeric_cols[0]}?"')
+        
+        return "\n".join(suggestions)
+    
+    def get_default_suggested_questions(self) -> str:
+        """Default questions when no data is loaded"""
+        return """### [TIPS] Sample Questions:
+
+**Basic Analysis:**
+- "Summarize this dataset"
+- "What are the key trends?"
+- "Find any anomalies or outliers"
+
+**Advanced Analysis:**
+- "Analyze budget vs actual variance"
+- "Compare performance by region"
+- "Show Python code for correlation analysis"
+
+**Code Assistance:**
+- "Generate dashboard code for this data"
+- "Help me build a forecasting model"
+
+[UPLOAD] Upload your CSV file to get personalized suggestions based on your data columns!"""
+
+    def enhanced_analysis_with_llamaindex(self, file_data, user_question: str, context_docs: List[str] = None) -> Tuple[str, str]:
+        """Enhanced analysis using both Aria Sterling and LlamaIndex for superior insights"""
+        
+        # First get standard Aria Sterling analysis
+        standard_response, status = self.analyze_data(file_data, user_question)
+        
+        # Add LlamaIndex enhancement if available
+        if self.llamaindex_processor and self.llamaindex_processor.check_availability():
+            try:
+                # Load the data for LlamaIndex analysis
+                if isinstance(file_data, str):
+                    df = pd.read_csv(file_data)
+                elif hasattr(file_data, 'name'):
+                    df = pd.read_csv(file_data.name)
+                else:
+                    df = pd.read_csv(io.StringIO(file_data.decode('utf-8')))
+                
+                # Get enhanced analysis using LlamaIndex
+                enhanced_response, enhanced_status = create_llamaindex_enhanced_analysis(
+                    df, user_question, context_docs
+                )
+                
+                # Combine both analyses
+                combined_response = f"""## [BOT] Aria Sterling Financial Analysis:
+{standard_response}
+
+---
+
+## [AI] LlamaIndex Enhanced Analysis:
+{enhanced_response}
+
+---
+
+### [INSIGHTS] **Synthesis:**
+This analysis combines Aria Sterling's financial expertise with LlamaIndex's structured data extraction and knowledge base features for comprehensive financial insights."""
+                
+                combined_status = f"{status} + {enhanced_status}"
+                return combined_response, combined_status
+                
+            except Exception as e:
+                # If LlamaIndex fails, return standard analysis with error note
+                fallback_response = f"""{standard_response}
+
+---
+
+[WARNING] **LlamaIndex Enhancement Failed**: {str(e)}
+*Falling back to standard Aria Sterling analysis. Ensure LlamaIndex is properly installed and configured.*"""
+                
+                return fallback_response, f"{status} (LlamaIndex failed)"
+        
+        # If LlamaIndex not available, return standard analysis with note
+        enhanced_note = f"""{standard_response}
+
+---
+
+[INFO] **Enhanced Analysis Available**: Install LlamaIndex for advanced features:
+- Structured data extraction from documents
+- Multi-document knowledge base queries  
+- Cross-temporal financial analysis
+- Schema-validated metric extraction
+
+Install with: `pip install llama-index llama-index-llms-ollama`"""
+        
+        return enhanced_note, f"{status} (Standard mode)"
+
     def generate_automatic_timescale_analysis(self, df: pd.DataFrame) -> str:
         """Generate automatic timescale analysis when data is loaded"""
         if df is None or df.empty:
@@ -68,28 +508,119 @@ How can I help with your financial data today?"""
 *This analysis was automatically generated based on the time patterns in your data. For more specific insights, ask detailed questions about trends, variances, or period-over-period comparisons.*"""
             return analysis_text + footer
         except Exception as e:
-            import traceback
             error_msg = f"Error generating automatic timescale analysis: {str(e)}"
             print(f"Debug: {error_msg}")
             traceback.print_exc()
-            return f"""# ⚠️ Automatic Analysis Error
+            return f"""# [WARNING] Automatic Analysis Error
 
 We encountered an issue while analyzing your time series data: {str(e)}
 
 Please try:
 1. Ensuring your data contains at least one date/time column
 2. Having sufficient data points for meaningful period-over-period analysis
-3. Checking that your date format is consistent and can be parsed
+3. Checking that numeric columns contain valid values
 
-If issues persist, you can still explore your data manually or ask specific questions."""
+You can still ask specific questions about your data using the chat interface."""
+
+    def create_aria_sterling_prompt(self, user_query: str, data_summary: str, auto_analysis: str = None) -> str:
+        """Create optimized prompt using the Aria Sterling persona for financial analysis"""
+        
+        # Aria Sterling system prompt
+        aria_system_prompt = """**[SYSTEM] System Prompt: Financial Analyst Persona**
+
+You are **Aria Sterling**, a world-class financial analyst and strategist. You possess exceptional quantitative reasoning, market intuition, and business acumen. You analyze financial data with precision, distill market signals into actionable insights, and communicate with clarity, confidence, and charisma.
+
+### [CORE] Core Attributes
+- **Brilliant and Analytical**: Expert in time series analysis, financial forecasting, valuation, corporate finance, and macroeconomic interpretation.
+- **Data-Driven**: Extracts insights from raw data using rigorous statistical and financial techniques. You speak in ratios, deltas, time horizons, and benchmarks.
+- **Fluent in Market Language**: Speaks in sharp, well-structured financial commentary—think investor calls, analyst briefings, earnings breakdowns, pitch decks.
+- **Human-Centric Communicator**: Makes complex concepts accessible to both CFOs and startup founders. Adjusts tone and vocabulary based on audience's financial fluency.
+- **Forward-Looking**: Scans for inflection points, tailwinds/headwinds, and market signals that influence KPIs and company valuations.
+
+### [KNOWLEDGE] Knowledge Domains
+- Financial statements, KPIs, profitability analysis
+- Forecasting, TTM, YoY, QoQ analysis
+- Time series analysis and growth metrics (CAGR, MoM, rolling averages)
+- Corporate strategy, M&A basics, capital structure
+- Industry benchmarking and competitive analysis
+- Equities, credit markets, macroeconomic indicators
+
+### [STYLE] Communication Style
+- Sharp, credible, and confident—yet approachable.
+- Speaks in terms like "overdelivered by 14.2%," "driven by margin expansion," or "growth decelerating at a 3-month rolling rate."
+- Capable of switching tones: quick elevator pitch, deep-dive analysis, or executive summary."""
+        
+        # Add automatic analysis to the prompt if available
+        auto_analysis_section = ""
+        if auto_analysis:
+            auto_analysis_section = f"""
+AUTOMATIC TIMESCALE ANALYSIS:
+{auto_analysis}
+"""
+        
+        # Construct the full prompt with user query, data summary and auto analysis
+        prompt = f"""{aria_system_prompt}
+
+DATASET INFORMATION:
+{data_summary}
+{auto_analysis_section}
+
+USER QUESTION: {user_query if user_query else "Provide a comprehensive analysis of this financial data including key insights, trends, and recommendations."}
+
+As Aria Sterling, analyze this financial data with your characteristic precision and charisma. Identify key trends, calculate relevant metrics, and provide actionable insights. Structure your response with clear sections:
+
+1. **Executive Summary**: Concise overview of the key findings (2-3 bullet points)
+2. **Detailed Analysis**: In-depth examination of trends, variances, and metrics
+3. **Strategic Implications**: Business impact and forward-looking insights
+4. **Actionable Recommendations**: Specific, data-driven next steps
+
+Remember to use precise financial terminology, quantify insights with exact figures, and maintain your confident yet accessible communication style.
+"""
+        
+        return prompt
+        
+    def generate_automatic_analysis_with_aria(self, df: pd.DataFrame) -> str:
+        """Generate an automatic analysis using Aria Sterling persona when data is first loaded"""
+        if df is None or df.empty:
+            return "Please upload financial data for analysis."
+        
+        try:
+            # Generate automatic timescale analysis
+            auto_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
+            
+            # Create data summary
+            data_summary = self.create_data_summary(df)
+            
+            # Create prompt with Aria Sterling persona
+            prompt = self.create_aria_sterling_prompt(
+                user_query="Provide an initial overview analysis of this financial dataset, highlighting key metrics, trends, and potential areas for further investigation.",
+                data_summary=data_summary,
+                auto_analysis=auto_analysis
+            )
+            
+            # Query Ollama
+            response = self.query_ollama(prompt)
+            
+            return response
+        except Exception as e:
+            import traceback
+            error_msg = f"Error generating automatic analysis: {str(e)}"
+            print(f"Debug: {error_msg}")
+            traceback.print_exc()
+            return f"Error generating initial analysis: {str(e)}"
     
     def process_query(self, file, question, history):
-        """Process a user query about financial data"""
+        """Process a user query about financial data with proper DataFrame handling"""
         try:
-            # Load data if provided
-            if file and not self.current_data:
+            # Load data if provided - fix the DataFrame boolean issue
+            if file and (self.current_data is None):
                 try:
-                    df = pd.read_csv(file)
+                    if hasattr(file, 'name'):
+                        df = pd.read_csv(file.name)
+                    elif isinstance(file, str):
+                        df = pd.read_csv(file)
+                    else:
+                        df = pd.read_csv(io.StringIO(file.decode('utf-8')))
                     self.current_data = df
                 except Exception as e:
                     new_history = (history or []) + [
@@ -98,8 +629,11 @@ If issues persist, you can still explore your data manually or ask specific ques
                     ]
                     return new_history, [], "Error loading file", None
             
-            # Simple response for testing
-            response = f"You asked: {question}\n\nThis is a simplified test response. In the real app, we would analyze your data and provide insights."
+            # Generate response using ChatHandler
+            if self.current_data is not None:
+                response = self.chat_handler.generate_response(question, self.current_data)
+            else:
+                response = "Please upload a CSV file to analyze your financial data."
             
             # Update history
             new_history = (history or []) + [
@@ -107,243 +641,15 @@ If issues persist, you can still explore your data manually or ask specific ques
                 {"role": "assistant", "content": response}
             ]
             
-            return new_history, new_history, "Data processed successfully", self.current_data
+            return new_history, [], "[SUCCESS] Analysis complete", self.current_data
             
         except Exception as e:
-            import traceback
-            error_msg = f"Error: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"Error processing query: {str(e)}"
             new_history = (history or []) + [
                 {"role": "user", "content": question},
-                {"role": "assistant", "content": f"Error: {str(e)}"}
+                {"role": "assistant", "content": error_msg}
             ]
-            return new_history, [], error_msg, None
-
-def load_data_for_grid(file_path):
-    """Load data for the data grid view"""
-    if file_path is None:
-        return None
-    
-    try:
-        df = pd.read_csv(file_path)
-        return df
-    except Exception as e:
-        print(f"Error loading file: {str(e)}")
-        return None
-
-def check_system_status():
-    """Check system status"""
-    return "✅ System is ready. You can upload financial data and start asking questions."
-
-def create_interface():
-    """Create the Gradio interface"""
-    
-    # Initialize chat system
-    global chat_system
-    chat_system = SimpleFinancialChat()
-    
-    def process_query(file, question, chat_state):
-        """Process a query using the chat system"""
-        history = chat_state if chat_state else []
-        new_history, new_chat_state, status, current_data = chat_system.process_query(file, question, history)
-        return new_history, new_chat_state, status, current_data
-    
-    with gr.Blocks(
-        title="VariancePro - Financial Chat",
-        theme=gr.themes.Soft(),
-        css="""
-        .container { max-width: 1200px; margin: auto; }
-        .status-box { background: #f0f8ff; padding: 10px; border-radius: 5px; margin: 10px 0; }
-        .chat-container { height: 400px; overflow-y: auto; }
-        .data-grid { max-height: 500px; overflow: auto; }
-        """
-    ) as interface:
-        
-        gr.Markdown("# 🚀 VariancePro - Financial Data Analysis")
-        gr.Markdown("### FIXED VERSION WITH ONLY 2 TABS")
-        
-        # Create tabs for different views - ONLY 2 TABS
-        with gr.Tabs():
-            # Chat Analysis Tab
-            with gr.TabItem("💬 Chat Analysis"):
-                with gr.Row():
-                    with gr.Column(scale=2):
-                        # File upload
-                        file_input = gr.File(
-                            label="📁 Upload Financial Data (CSV)",
-                            file_types=[".csv"],
-                            type="filepath",
-                            file_count="single"
-                        )
-                        
-                        # Chat interface
-                        chatbot = gr.Chatbot(
-                            label="💬 Financial Analysis Chat",
-                            height=400,
-                            show_label=True,
-                            type="messages"
-                        )
-                        
-                        # User input
-                        user_input = gr.Textbox(
-                            label="Ask about your financial data:",
-                            placeholder="e.g., 'Analyze sales variance by region'",
-                            lines=2
-                        )
-                        
-                        # Buttons
-                        with gr.Row():
-                            submit_btn = gr.Button("🔍 Analyze", variant="primary")
-                            clear_btn = gr.Button("🗑️ Clear Chat")
-                    
-                    with gr.Column(scale=1):
-                        # Status panel
-                        status_display = gr.Textbox(
-                            label="🤖 System Status",
-                            value=check_system_status(),
-                            interactive=False,
-                            lines=2
-                        )
-                        
-                        # Suggested questions
-                        suggested_questions = gr.Markdown(
-                            value=chat_system.get_default_suggested_questions(),
-                            label="💡 Suggested Questions"
-                        )
-            
-            # Data Grid Tab
-            with gr.TabItem("📊 Data View"):
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        # Data info panel
-                        data_info = gr.Textbox(
-                            label="📋 Dataset Information",
-                            value="No data loaded yet. Please upload a CSV file in the Chat Analysis tab.",
-                            interactive=False,
-                            lines=3
-                        )
-                        
-                        # Data grid
-                        data_grid = gr.DataFrame(
-                            label="📈 Data Grid",
-                            interactive=False,
-                            wrap=True,
-                            elem_classes=["data-grid"]
-                        )
-                    
-                    with gr.Column(scale=1):
-                        # Automatic timescale analysis
-                        gr.Markdown("### 🚀 Automatic Timescale Analysis")
-                        gr.Markdown("*Comprehensive period-over-period analysis generated automatically*")
-                        
-                        auto_analysis_display = gr.Markdown(
-                            label="📈 Automatic Analysis",
-                            value="Please upload data to see automatic analysis.",
-                            elem_classes=["analysis-display"]
-                        )
-        
-        # State for chat history and data
-        chat_state = gr.State([])
-        
-        # Event handlers
-        def submit_query(file, question, history, chat_state):
-            new_history, new_chat_state, status, current_data = process_query(file, question, chat_state)
-            
-            # Update data info and grid
-            if current_data is not None:
-                info_text = f"""📊 Dataset Loaded: {len(current_data)} rows × {len(current_data.columns)} columns
-                
-🔢 Numeric Columns: {len(current_data.select_dtypes(include=[np.number]).columns)}
-📝 Text Columns: {len(current_data.select_dtypes(include=['object']).columns)}
-📅 Date Columns: {len(current_data.select_dtypes(include=['datetime64']).columns)}"""
-                return new_history, "", new_chat_state, status, info_text, current_data
-            else:
-                return new_history, "", new_chat_state, status, data_info.value, None
-        
-        def update_data_view(file):
-            """Update data view when file is uploaded - includes automatic timescale analysis"""
-            if file is None:
-                return "No data loaded yet. Please upload a CSV file.", None, "Please upload data to see automatic analysis."
-            
-            df = load_data_for_grid(file)
-            if df is not None:
-                # Basic data info
-                info_text = f"""📊 Dataset Loaded: {len(df)} rows × {len(df.columns)} columns
-                
-🔢 Numeric Columns: {len(df.select_dtypes(include=[np.number]).columns)}
-📝 Text Columns: {len(df.select_dtypes(include=['object']).columns)}
-📅 Date Columns: {len(df.select_dtypes(include=['datetime64']).columns)}
-
-💾 Memory Usage: {df.memory_usage(deep=True).sum() / 1024:.1f} KB
-
-📋 Column Names: {', '.join(df.columns.tolist())}"""
-                
-                # Generate automatic timescale analysis
-                print("🚀 Generating automatic timescale analysis...")
-                auto_analysis = chat_system.generate_automatic_timescale_analysis(df)
-                
-                return info_text, df, auto_analysis
-            else:
-                return "Error loading data. Please check the file format.", None, "Unable to generate analysis due to data loading error."
-                return "Error loading data. Please check the file format.", None
-        
-        def clear_chat_history():
-            """Clear chat history"""
-            return [], []
-        
-        def initialize_chat_with_system_message(file):
-            """Initialize the chat with a system message when a file is uploaded"""
-            if file is None:
-                return [], []
-                
-            try:
-                df = load_data_for_grid(file)
-                if df is None:
-                    return [], []
-                    
-                # Generate initial system message
-                system_message = chat_system.generate_initial_system_message(df)
-                
-                # Return the chat history with just the system message
-                initial_chat = [system_message]
-                
-                return initial_chat, initial_chat
-            except Exception as e:
-                print(f"Error initializing chat: {str(e)}")
-                return [], []
-        
-        # Connect event handlers
-        submit_btn.click(
-            submit_query,
-            inputs=[file_input, user_input, chatbot, chat_state],
-            outputs=[chatbot, user_input, chat_state, status_display, data_info, data_grid]
-        )
-        
-        clear_btn.click(
-            clear_chat_history,
-            inputs=[],
-            outputs=[chatbot, chat_state]
-        )
-        
-        file_input.change(
-            update_data_view,
-            inputs=[file_input],
-            outputs=[data_info, data_grid, auto_analysis_display]
-        )
-        
-        # Add event to initialize chat with system message
-        file_input.change(
-            initialize_chat_with_system_message,
-            inputs=[file_input],
-            outputs=[chatbot, chat_state]
-        )
-        
-        file_input.upload(
-            initialize_chat_with_system_message,
-            inputs=[file_input],
-            outputs=[chatbot, chat_state]
-        )
-    
-    return interface
+            return new_history, [], "[ERROR] Processing Error", None
 
 class TimescaleAnalyzer:
     """Automatic timescale analysis for financial data - mimics junior analyst work"""
@@ -487,7 +793,7 @@ class TimescaleAnalyzer:
         insights = []
         
         # Add header
-        insights.append("# 📊 Automatic Timescale Analysis")
+        insights.append("# [ANALYSIS] Automatic Timescale Analysis")
         insights.append("*Analysis generated based on time series patterns in your data*\n")
         
         # Process each time scale
@@ -497,10 +803,10 @@ class TimescaleAnalyzer:
                 
             # Add section header
             header_map = {
-                "yearly": "## 📅 Year-over-Year (YoY) Analysis",
-                "quarterly": "## 📊 Quarter-over-Quarter (QoQ) Analysis",
-                "monthly": "## 📆 Month-over-Month (MoM) Analysis",
-                "weekly": "## 📈 Week-over-Week (WoW) Analysis"
+                "yearly": "## [YEARLY] Year-over-Year (YoY) Analysis",
+                "quarterly": "## [QUARTERLY] Quarter-over-Quarter (QoQ) Analysis",
+                "monthly": "## [MONTHLY] Month-over-Month (MoM) Analysis",
+                "weekly": "## [WEEKLY] Week-over-Week (WoW) Analysis"
             }
             insights.append(header_map[time_scale])
             
@@ -553,7 +859,7 @@ class TimescaleAnalyzer:
                 insights.append("")
         
         # Executive summary
-        insights.append("## 📋 Executive Summary")
+        insights.append("## [SUMMARY] Executive Summary")
         insights.append("*Key takeaways from the automatic time series analysis:*\n")
         
         # Extract key metrics from different time scales for the executive summary
@@ -625,7 +931,17 @@ class TimescaleAnalyzer:
         return insights
 
     def find_date_column(self, df: pd.DataFrame) -> Optional[str]:
-        """Find a date column in the dataframe with enhanced detection logic"""
+        """Find a date column in the dataframe with enhanced detection logic
+        
+        This method tries multiple approaches to find a date column:
+        1. Create a case-insensitive mapping of column names
+        2. Look for columns that are already datetime type
+        3. Look for columns with date-related names (date, time, period, etc.)
+        4. Try to convert object/string columns that might contain dates
+        
+        Returns:
+            str or None: The name of the date column if found, None otherwise
+        """
         # Create a case-insensitive mapping of column names
         col_lower_map = {col.lower(): col for col in df.columns}
         
@@ -683,69 +999,391 @@ class TimescaleAnalyzer:
         # No date column found
         return None
 
-    def generate_initial_system_message(self, df=None):
-        """Generate the initial system message to start the chat"""
-        if df is None or df.empty:
-            # No data yet, provide general welcome message
-            return {"role": "assistant", "content": self.get_default_system_prompt()}
+# Initialize the chat system
+chat_system = AriaFinancialChat()
+
+def process_query(file, question, history):
+    """Process user query and return response"""
+    
+    if not question.strip():
+        return history, history, "Please enter a question about your financial data.", None
+    
+    # Analyze data and get response
+    response, status = chat_system.analyze_data(file, question)
+    
+    # Update chat history
+    history.append({"role": "user", "content": question})
+    history.append({"role": "assistant", "content": response})
+    
+    # Return current data for grid display
+    current_data = chat_system.current_data if chat_system.current_data is not None else None
+    
+    return history, history, status, current_data
+
+def process_query_enhanced(file, question, history, use_llamaindex=False):
+    """Enhanced process query with optional LlamaIndex integration"""
+    
+    if not question.strip():
+        return history, history, "Please enter a question about your financial data.", None
+    
+    # Choose analysis method based on user preference
+    if use_llamaindex and LLAMAINDEX_AVAILABLE:
+        # Use enhanced analysis with LlamaIndex
+        response, status = chat_system.enhanced_analysis_with_llamaindex(file, question)
+    else:
+        # Use standard Aria Sterling analysis
+        response, status = chat_system.analyze_data(file, question)
+    
+    # Update chat history
+    history.append({"role": "user", "content": question})
+    history.append({"role": "assistant", "content": response})
+    
+    # Return current data for grid display
+    current_data = chat_system.current_data if chat_system.current_data is not None else None
+    
+    return history, history, status, current_data
+
+def load_data_for_grid(file):
+    """Load data specifically for grid display"""
+    print(f"[DEBUG] load_data_for_grid called with file: {file}")
+    print(f"[DEBUG] File type: {type(file)}")
+    
+    if file is None:
+        print("[DEBUG] load_data_for_grid received None file")
+        return None
+    
+    try:
+        if hasattr(file, 'name'):
+            print(f"[DEBUG] Loading from file path: {file.name}")
+            df = pd.read_csv(file.name)
+        elif isinstance(file, str):
+            print(f"[DEBUG] Loading from string path: {file}")
+            df = pd.read_csv(file)
+        else:
+            print(f"[DEBUG] Loading from file content (decoded)")
+            df = pd.read_csv(io.StringIO(file.decode('utf-8')))
         
-        # If we have data, create an automatic analysis
-        try:
-            # Count rows and columns
-            row_count = len(df)
-            col_count = len(df.columns)
+        print(f"[SUCCESS] Successfully loaded DataFrame - Shape: {df.shape}, Columns: {list(df.columns)}")
+        
+        # Store in chat system for analysis
+        chat_system.current_data = df
+        return df
+    except Exception as e:
+        print(f"[ERROR] Error loading data: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def check_system_status():
+    """Check system status including LlamaIndex availability"""
+    ollama_available = chat_system.check_ollama_connection()
+    llamaindex_available = (
+        LLAMAINDEX_AVAILABLE and 
+        chat_system.llamaindex_processor and 
+        chat_system.llamaindex_processor.check_availability()
+    )
+    
+    status_parts = []
+    
+    # Ollama status
+    if ollama_available:
+        status_parts.append("[SUCCESS] **DeepSeek Coder** Active")
+    else:
+        status_parts.append("[WARNING] **DeepSeek Coder** Offline (Run: `ollama serve`)")
+    
+    # LlamaIndex status
+    if llamaindex_available:
+        status_parts.append("[SUCCESS] **LlamaIndex** Ready")
+    elif LLAMAINDEX_AVAILABLE:
+        status_parts.append("[WARNING] **LlamaIndex** Available but not connected")
+    else:
+        status_parts.append("[INFO] **LlamaIndex** Not installed (`pip install llama-index`)")
+    
+    # Enhancement note
+    if ollama_available and llamaindex_available:
+        enhancement = "\n\n[ENHANCED] **Full Enhancement Mode**: Both DeepSeek Coder conversational AI and LlamaIndex structured extraction available for maximum analytical power!"
+    elif ollama_available:
+        enhancement = "\n\n[BOT] **Standard Mode**: DeepSeek Coder conversational analysis active. Install LlamaIndex for enhanced document processing."
+    else:
+        enhancement = "\n\n[BASIC] **Basic Mode**: Using built-in analysis. Enable DeepSeek Coder and LlamaIndex for full AI capabilities."
+    
+    return " | ".join(status_parts) + enhancement
+
+# Create Gradio interface
+def create_interface():
+    """Create the Gradio interface"""
+    
+    with gr.Blocks(
+        title="VariancePro - DeepSeek Financial Chat",
+        theme=gr.themes.Soft(),
+        css="""
+        .container { max-width: 1200px; margin: auto; }
+        .status-box { background: #f0f8ff; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .chat-container { height: 400px; overflow-y: auto; }
+        .data-grid { max-height: 500px; overflow: auto; }
+        """
+    ) as interface:
+        
+        gr.Markdown("# VariancePro - Financial Data Analysis Chat")
+        gr.Markdown("### Powered by DeepSeek Coder via Ollama")
+        
+        # Create tabs for different views - ONLY 2 TABS
+        with gr.Tabs():
+            # Chat Analysis Tab
+            with gr.TabItem("[CHAT] Chat Analysis"):
+                with gr.Row():
+                    with gr.Column(scale=2):
+                        # File upload
+                        file_input = gr.File(
+                            label="[UPLOAD] Upload Financial Data (CSV)",
+                            file_types=[".csv"],
+                            type="filepath",
+                            file_count="single"
+                        )
+                        
+                        # Chat interface
+                        chatbot = gr.Chatbot(
+                            label="[CHAT] Financial Analysis Chat",
+                            height=400,
+                            show_label=True,
+                            type="messages"
+                        )
+                        
+                        # User input
+                        user_input = gr.Textbox(
+                            label="Ask about your financial data:",
+                            placeholder="e.g., 'Analyze sales variance by region and suggest Python code'",
+                            lines=2
+                        )
+                        
+                        # Buttons
+                        with gr.Row():
+                            submit_btn = gr.Button("[SEARCH] Analyze", variant="primary")
+                            clear_btn = gr.Button("[CLEAR] Clear Chat")
+                    
+                    with gr.Column(scale=1):
+                        # Status panel
+                        status_display = gr.Textbox(
+                            label="[STATUS] System Status",
+                            value=check_system_status(),
+                            interactive=False,
+                            lines=2
+                        )
+                        
+                        # Dynamic sample questions based on data
+                        suggested_questions = gr.Markdown(
+                            value=chat_system.get_default_suggested_questions(),
+                            label="[TIPS] Suggested Questions"
+                        )
+                        
+                        # Refresh status button
+                        refresh_btn = gr.Button("[REFRESH] Refresh Status")
             
-            # Get column types
-            numeric_cols = len(df.select_dtypes(include=[np.number]).columns)
-            text_cols = len(df.select_dtypes(include=['object']).columns)
-            date_cols = len(df.select_dtypes(include=['datetime64']).columns)
+            # Data Grid Tab
+            with gr.TabItem("[DATA] Data View"):
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        # File upload for data view (shared with chat)
+                        gr.Markdown("### [INFO] Data Overview")
+                        gr.Markdown("Upload a CSV file in the Chat Analysis tab to view the data here.")
+                        
+                        # Data info panel
+                        data_info = gr.Textbox(
+                            label="[INFO] Dataset Information",
+                            value="No data loaded yet. Please upload a CSV file in the Chat Analysis tab.",
+                            interactive=False,
+                            lines=3
+                        )
+                        
+                        # Data grid
+                        data_grid = gr.DataFrame(
+                            label="[GRID] Data Grid",
+                            interactive=False,
+                            wrap=True,
+                            elem_classes=["data-grid"]
+                        )
+                    
+                    with gr.Column(scale=1):
+                        # Automatic timescale analysis
+                        gr.Markdown("### Automatic Timescale Analysis")
+                        gr.Markdown("*Comprehensive period-over-period analysis generated automatically*")
+                        
+                        auto_analysis_display = gr.Markdown(
+                            label="[AUTO] Automatic Analysis",
+                            value="Please upload data to see automatic analysis.",
+                            elem_classes=["analysis-display"]
+                        )
+        
+        # State for chat history and data
+        chat_state = gr.State([])
+        
+        # Event handlers
+        def submit_query(file, question, history, chat_state):
+            new_history, new_chat_state, status, current_data = process_query(file, question, chat_state)
             
-            # Get column names (limited to first 5)
-            col_names = df.columns.tolist()[:5]
-            col_sample = ", ".join(col_names)
+            # Update data info and grid
+            if current_data is not None:
+                info_text = f"""[DATA] Dataset Loaded: {len(current_data)} rows × {len(current_data.columns)} columns
+
+[NUMERIC] Numeric Columns: {len(current_data.select_dtypes(include=[np.number]).columns)}
+[TEXT] Text Columns: {len(current_data.select_dtypes(include=['object']).columns)}
+[DATE] Date Columns: {len(current_data.select_dtypes(include=['datetime64']).columns)}
+
+[MEMORY] Memory Usage: {current_data.memory_usage(deep=True).sum() / 1024:.1f} KB"""
+                return new_history, "", new_chat_state, status, info_text, current_data
+            else:
+                return new_history, "", new_chat_state, status, "No data loaded", None
+        
+        def update_data_view(file):
+            """Update data view when file is uploaded - includes automatic timescale analysis"""
+            if file is None:
+                return "No data loaded yet. Please upload a CSV file.", None, "Please upload data to see automatic analysis."
             
-            # Create initial message
-            message = f"""# 👋 Welcome to VariancePro Financial Analysis
+            df = load_data_for_grid(file)
+            if df is not None:
+                # Basic data info
+                info_text = f"""[DATA] Dataset Loaded: {len(df)} rows × {len(df.columns)} columns
+                
+[NUMERIC] Numeric Columns: {len(df.select_dtypes(include=[np.number]).columns)}
+[TEXT] Text Columns: {len(df.select_dtypes(include=['object']).columns)}
+[DATE] Date Columns: {len(df.select_dtypes(include=['datetime64']).columns)}
 
-I've detected your uploaded data with **{row_count:,} rows** and **{col_count} columns**.
+[MEMORY] Memory Usage: {df.memory_usage(deep=True).sum() / 1024:.1f} KB
 
-**Dataset Overview:**
-- 🔢 {numeric_cols} numeric columns
-- 📝 {text_cols} text columns
-- 📅 {date_cols} datetime columns
-
-**Sample columns:** {col_sample}{", ..." if len(df.columns) > 5 else ""}
-
-## 🚀 What would you like to know?
-
-Try asking questions like:
-- "Analyze the trends in this data"
-- "Compare performance across regions"
-- "Calculate month-over-month growth"
-- "Show me Python code to analyze this dataset"
-
-I'm ready to help with your financial analysis!"""
+[COLUMNS] Column Names: {', '.join(df.columns.tolist())}"""
+                
+                # Generate automatic timescale analysis
+                print("Generating automatic timescale analysis...")
+                auto_analysis = chat_system.generate_automatic_timescale_analysis(df)
+                
+                return info_text, df, auto_analysis
+            else:
+                return "Error loading data. Please check your CSV file.", None, "Unable to generate analysis due to data loading error."
+        
+        def clear_chat():
+            chat_system.chat_history = []
+            return [], []
+        
+        def update_suggested_questions(file):
+            """Update suggested questions based on uploaded data"""
+            if file is None:
+                return chat_system.get_default_suggested_questions()
             
-            return {"role": "assistant", "content": message}
-        except Exception as e:
-            # Fallback to default prompt if there's an error
-            print(f"Error generating initial system message: {str(e)}")
-            return {"role": "assistant", "content": self.get_default_system_prompt()}
+            df = load_data_for_grid(file)
+            if df is not None:
+                return chat_system.generate_suggested_questions(df)
+            else:
+                return chat_system.get_default_suggested_questions()
+        
+        def initialize_chat_with_system_message(file):
+            """Initialize the chat with immediate LLM analysis when a file is uploaded"""
+            if file is None:
+                return [], []
+                
+            try:
+                # Read the CSV file as raw text and pass directly to LLM
+                if hasattr(file, 'name'):
+                    with open(file.name, 'r', encoding='utf-8') as f:
+                        csv_content = f.read()
+                elif isinstance(file, str):
+                    with open(file, 'r', encoding='utf-8') as f:
+                        csv_content = f.read()
+                else:
+                    csv_content = file.decode('utf-8')
+                
+                # Create system prompt for immediate preliminary analysis
+                system_prompt = """You are **Aria Sterling**, a world-class financial analyst. A CSV file has just been uploaded. Please provide immediate preliminary analysis of this financial data.
 
-# Global variable for chat system
-chat_system = None
+UPLOADED CSV DATA:
+""" + csv_content + """
+
+Please provide:
+1. **Quick Overview**: What type of financial data is this?
+2. **Key Columns**: Identify the main financial metrics
+3. **Data Quality**: Any obvious issues or patterns?
+4. **Initial Insights**: 3-4 immediate observations
+5. **Suggested Questions**: What should we analyze next?
+
+Respond as Aria Sterling with your characteristic financial expertise and confidence."""
+                
+                # Get immediate LLM response
+                if chat_system.chat_handler.use_llm:
+                    aria_analysis = chat_system.query_ollama(system_prompt)
+                else:
+                    aria_analysis = "[UPLOAD] **File Uploaded Successfully!**\n\nI've received your CSV file and I'm ready to analyze it. Since the LLM is not available, please ask specific questions about your data and I'll provide built-in analysis.\n\n[TIP] **Tip**: Try asking 'Summarize this dataset' or upload the file and ask specific questions about trends, variances, or metrics."
+                
+                # Return the chat history with the immediate analysis
+                initial_chat = [{"role": "assistant", "content": aria_analysis}]
+                
+                return initial_chat, initial_chat
+            except Exception as e:
+                error_msg = f"Error analyzing uploaded file: {str(e)}"
+                print(f"Error initializing chat: {error_msg}")
+                initial_chat = [{"role": "assistant", "content": error_msg}]
+                return initial_chat, initial_chat
+        
+        # Connect events
+        submit_btn.click(
+            submit_query,
+            inputs=[file_input, user_input, chatbot, chat_state],
+            outputs=[chatbot, user_input, chat_state, status_display, data_info, data_grid]
+        )
+        
+        user_input.submit(
+            submit_query,
+            inputs=[file_input, user_input, chatbot, chat_state],
+            outputs=[chatbot, user_input, chat_state, status_display, data_info, data_grid]
+        )
+        
+        def update_all_data_views(file):
+            """Update all data-related views when file is uploaded"""
+            data_info, data_grid, auto_analysis = update_data_view(file)
+            questions = update_suggested_questions(file)
+            return data_info, data_grid, questions, auto_analysis
+        
+        # Update data view and suggested questions when file is uploaded
+        file_input.upload(
+            update_all_data_views,
+            inputs=[file_input],
+            outputs=[data_info, data_grid, suggested_questions, auto_analysis_display]
+        )
+        
+        # Initialize chat with system message on file upload
+        file_input.upload(
+            initialize_chat_with_system_message,
+            inputs=[file_input],
+            outputs=[chatbot, chat_state]
+        )
+        
+        clear_btn.click(
+            clear_chat,
+            outputs=[chatbot, chat_state]
+        )
+        
+        refresh_btn.click(
+            check_system_status,
+            outputs=[status_display]
+        )
+        
+        # Initial status check
+        interface.load(
+            check_system_status,
+            outputs=[status_display]
+        )
+    
+    return interface
 
 if __name__ == "__main__":
     # Create and launch the interface
     demo = create_interface()
     
-    print("🚀 Starting VariancePro Financial Chat FIXED VERSION...")
-    print("📊 Upload your CSV data and start asking questions!")
-    print("⚠️ This is the fixed version with ONLY 2 TABS (no visualization)")
+    print("Starting VariancePro Financial Chat with DeepSeek Coder...")
+    print("Upload your CSV data and start asking questions!")
     
     demo.launch(
         server_name="127.0.0.1",
-        server_port=7866,
+        server_port=7864,
         share=False,
         debug=False,
         show_error=True
