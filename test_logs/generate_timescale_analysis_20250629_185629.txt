@@ -1,0 +1,137 @@
+===== VariancePro Test Results: generate_timescale_analysis =====
+Started: 2025-06-29 18:56:29
+System: nt
+============================================================
+
+Testing complete timescale analysis pipeline
+
+
+----- Daily Data Analysis -----
+
+Daily Data Sample (Shape: (5, 7)):
+        date      revenue       costs   customers      profit region    product
+0 2023-01-01  1028.100981  664.188659  442.623131  363.912322   West  Product B
+1 2023-01-02  1123.044049  587.306259  507.833691  535.737790   East  Product C
+2 2023-01-03   992.365289  768.510500  505.053813  223.854789   East  Product C
+3 2023-01-04  1108.498105  649.671046  488.304446  458.827058  South  Product C
+4 2023-01-05  1025.400482  598.521811  480.544057  426.878671   West  Product A
+
+Numeric Statistics:
+           revenue       costs   customers      profit
+count     5.000000    5.000000    5.000000    5.000000
+mean   1055.481781  653.639655  484.871828  401.842126
+std      57.038748   72.042415   26.220338  117.175426
+min     992.365289  587.306259  442.623131  223.854789
+25%    1025.400482  598.521811  480.544057  363.912322
+50%    1028.100981  649.671046  488.304446  426.878671
+75%    1108.498105  664.188659  505.053813  458.827058
+max    1123.044049  768.510500  507.833691  535.737790
+Analysis Output:
+# 📊 Automatic Timescale Analysis
+*Analysis generated based on time series patterns in your data*
+
+## 📅 Year-over-Year (YoY) Analysis
+*Insufficient yearly data for revenue analysis*
+
+*Insufficient yearly data for costs analysis*
+
+*Insufficient yearly data for customers analysis*
+
+*Insufficient yearly data for profit analysis*
+
+## 📊 Quarter-over-Quarter (QoQ) Analysis
+### Revenue
+- **Latest quarterly (2023Q4)**: increased by 20.61%
+- **Overall trend**: mostly increasing over 4 periods
+- **Largest increase**: 20.61% in 2023Q4
+- **Average change**: 9.20% per quarter
+
+### Costs
+- **Latest quarterly (2023Q4)**: decreased by 0.58%
+- **Overall trend**: fluctuating over 4 periods
+- **Largest increase**: 3.71% in 2023Q3
+- **Largest decrease**: -0.58% in 2023Q4
+- **Average change**: 1.84% per quarter
+
+### Customers
+- **Latest quarterly (2023Q4)**: decreased by 0.26%
+- **Overall trend**: mostly decreasing over 4 periods
+- **Largest increase**: 0.86% in 2023Q3
+- **Largest decrease**: -0.26% in 2023Q4
+- **Average change**: 0.13% per quarter
+
+### Profit
+- **Latest quarterly (2023Q4)**: increased by 64.56%
+- **Overall trend**: mostly increasing over 4 periods
+- **Largest increase**: 64.56% in 2023Q4
+- **Average change**: 24.50% per quarter
+
+## 📆 Month-over-Month (MoM) Analysis
+### Revenue
+- **Latest monthly (2023-12)**: increased by 4.21%
+- **Overall trend**: fluctuating over 12 periods
+- **Largest increase**: 22.05% in 2023-10
+- **Largest decrease**: -9.49% in 2023-02
+- **Average change**: 2.47% per month
+
+### Costs
+- **Latest monthly (2023-12)**: increased by 6.39%
+- **Overall trend**: fluctuating over 12 periods
+- **Largest increase**: 12.46% in 2023-03
+- **Largest decrease**: -8.98% in 2023-02
+- **Average change**: 0.64% per month
+
+### Customers
+- **Latest monthly (2023-12)**: decreased by 1.48%
+- **Overall trend**: fluctuating over 12 periods
+- **Largest increase**: 14.04% in 2023-03
+- **Largest decrease**: -7.98% in 2023-04
+- **Average change**: 0.10% per month
+
+### Profit
+- **Latest monthly (2023-12)**: increased by 1.61%
+- **Overall trend**: mostly increasing over 12 periods
+- **Largest increase**: 61.94% in 2023-10
+- **Largest decrease**: -10.54% in 2023-02
+- **Average change**: 6.29% per month
+
+## 📈 Week-over-Week (WoW) Analysis
+### Revenue
+- **Latest weekly (2023-12-25/2023-12-31)**: increased by 9.07%
+- **Overall trend**: fluctuating over 53 periods
+- **Largest increase**: 590.07% in 2023-01-02/2023-01-08
+- **Largest decrease**: -13.49% in 2023-04-03/2023-04-09
+- **Average change**: 12.14% per week
+
+### Costs
+- **Latest weekly (2023-12-25/2023-12-31)**: decreased by 2.61%
+- **Overall trend**: fluctuating over 53 periods
+- **Largest increase**: 608.87% in 2023-01-02/2023-01-08
+- **Largest decrease**: -8.27% in 2023-03-13/2023-03-19
+- **Average change**: 11.90% per week
+
+### Customers
+- **Latest weekly (2023-12-25/2023-12-31)**: increased by 1.83%
+- **Overall trend**: fluctuating over 53 periods
+- **Largest increase**: 699.92% in 2023-01-02/2023-01-08
+- **Largest decrease**: -8.22% in 2023-04-17/2023-04-23
+- **Average change**: 13.45% per week
+
+### Profit
+- **Latest weekly (2023-12-25/2023-12-31)**: increased by 25.36%
+- **Overall trend**: fluctuating over 53 periods
+- **Largest increase**: 555.75% in 2023-01-02/2023-01-08
+- **Largest decrease**: -42.04% in 2023-04-03/2023-04-09
+- **Average change**: 14.00% per week
+
+## 📋 Executive Summary
+*Key takeaways from the automatic time series analysis:*
+
+**Accelerating growth**: Revenue shows increasing QoQ growth rates
+**Accelerating growth**: Profit shows increasing QoQ growth rates
+
+TEST: Daily Analysis - PASSED
+Details: Analysis completed successfully
+
+
+----- No Date Column Test -----

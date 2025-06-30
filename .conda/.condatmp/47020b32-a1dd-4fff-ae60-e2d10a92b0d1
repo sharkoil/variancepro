@@ -1,0 +1,13 @@
+prefix=//sharkinator3000/Projects/VARIANCEPRO/.conda/Library
+exec_prefix=//sharkinator3000/Projects/VARIANCEPRO/.conda/Library
+libdir=//sharkinator3000/Projects/VARIANCEPRO/.conda/Library/lib
+sharedlibdir=//sharkinator3000/Projects/VARIANCEPRO/.conda/Library/lib
+includedir=//sharkinator3000/Projects/VARIANCEPRO/.conda/Library/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.13
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

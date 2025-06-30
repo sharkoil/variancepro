@@ -1,0 +1,43 @@
+===== VariancePro Test Results: detect_time_granularity =====
+Started: 2025-06-29 16:53:07
+System: nt
+============================================================
+
+Testing time granularity detection for different time series
+
+Daily data detection:
+Expected: daily
+Actual  : daily
+
+Weekly data detection:
+Expected: weekly
+Actual  : weekly
+
+Monthly data detection:
+Expected: monthly
+Actual  : monthly
+
+Quarterly data detection:
+Expected: quarterly
+Actual  : quarterly
+
+Yearly data detection:
+Expected: yearly
+Actual  : yearly
+
+Invalid column detection:
+Expected: unknown
+Actual  : unknown
+
+Single row data detection:
+Expected: daily
+Actual  : daily
+
+No date column detection:
+Expected: unknown
+Actual  : unknown
+
+
+===== Test detect_time_granularity SUCCESSFUL =====
+Completed: 2025-06-29 16:53:07
+============================================================
