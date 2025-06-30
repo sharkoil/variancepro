@@ -8,7 +8,7 @@ import numpy as np
 class LLMHandler:
     """Handles integration with various LLM models via multiple backends"""
     
-    def __init__(self, backend="ollama", model_name="starcoder2"):
+    def __init__(self, backend="ollama", model_name="deepseek-coder:6.7b"):
         self.backend = backend
         self.model_name = model_name
         self.base_url = "http://localhost:11434"  # Default Ollama port
@@ -16,20 +16,6 @@ class LLMHandler:
         
         # Model-specific configurations
         self.model_configs = {
-            "starcoder2": {
-                "temperature": 0.2,
-                "top_k": 40,
-                "top_p": 0.95,
-                "num_predict": 800,
-                "system_prompt": "You are an expert financial data analyst and programmer."
-            },
-            "starcoder": {
-                "temperature": 0.1,
-                "top_k": 50,
-                "top_p": 0.9,
-                "num_predict": 600,
-                "system_prompt": "You are a senior financial analyst with expertise in data analysis and Python programming."
-            },
             "phi3": {
                 "temperature": 0.3,
                 "top_k": 40,
@@ -74,12 +60,12 @@ class LLMHandler:
             print(f"LLM Error: {e}")
             return self._fallback_response(user_query, data_context, data_summary)
     def _create_financial_prompt(self, user_query: str, data_context: str, data_summary: Dict[str, Any]) -> str:
-        """Create a comprehensive prompt optimized for StarCoder's capabilities"""
+        """Create a comprehensive prompt optimized for financial analysis"""
         
-        config = self.model_configs.get(self.model_name, self.model_configs["starcoder2"])
+        config = self.model_configs.get(self.model_name, self.model_configs["deepseek-coder:6.7b"])
         system_prompt = config["system_prompt"]
         
-        # Enhanced prompt for StarCoder with code-focused analysis
+        # Enhanced prompt for LLM with code-focused analysis
         prompt = f"""{system_prompt}
 
 You are analyzing financial data and can provide both analytical insights and code suggestions for deeper analysis.
@@ -111,7 +97,7 @@ ANALYSIS:"""
     def _query_ollama(self, prompt: str) -> str:
         """Query Ollama API with model-specific configurations"""
         try:
-            config = self.model_configs.get(self.model_name, self.model_configs["starcoder2"])
+            config = self.model_configs.get(self.model_name, self.model_configs["deepseek-coder:6.7b"])
             
             payload = {
                 "model": self.model_name,
@@ -128,7 +114,7 @@ ANALYSIS:"""
             response = self.session.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
-                timeout=45  # Longer timeout for StarCoder
+                timeout=45  # Longer timeout for complex financial analysis
             )
             
             if response.status_code == 200:
@@ -155,7 +141,7 @@ ANALYSIS:"""
 💡 **Note**: For AI-powered analysis with code suggestions, ensure Ollama is running with the appropriate model.
 To enable: Run `ollama pull deepseek-coder:6.7b` in terminal, then restart the app.
 
-🔧 **Available Models**: deepseek-coder:6.7b (recommended), starcoder2, starcoder, phi3"""
+🔧 **Available Models**: deepseek-coder:6.7b (recommended), phi3"""
 
     def get_model_status(self) -> Dict[str, Any]:
         """Get current model status and available models"""

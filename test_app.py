@@ -9,7 +9,7 @@ def test_app_components():
     print("=" * 50)
     
     success_count = 0
-    total_tests = 7  # Updated test count
+    total_tests = 6  # Updated test count (removed StarCoder test)
     
     # Test 1: Import testing
     try:
@@ -41,58 +41,42 @@ def test_app_components():
     except:
         print("❌ Test 3: Ollama not available (run setup_new.py)")
     
-    # Test 4: StarCoder2 availability
-    try:
-        response = requests.get("http://localhost:11434/api/tags", timeout=3)
-        if response.status_code == 200:
-            models = response.json().get('models', [])
-            starcoder_available = any('starcoder2' in model.get('name', '') for model in models)
-            if starcoder_available:
-                print("✅ Test 4: StarCoder2 model available")
-                success_count += 1
-            else:
-                print("❌ Test 4: StarCoder2 model not found")
-        else:
-            print("❌ Test 4: Cannot check StarCoder2 (Ollama issue)")
-    except:
-        print("❌ Test 4: Cannot check StarCoder2 (Ollama not running)")
-    
-    # Test 5: App class initialization
+    # Test 4: App class initialization
     try:
         from app_new import FinancialChatApp
         app = FinancialChatApp()
-        print("✅ Test 5: App class initialized successfully")
+        print("✅ Test 4: App class initialized successfully")
         success_count += 1
     except Exception as e:
-        print(f"❌ Test 5: App initialization failed - {e}")
+        print(f"❌ Test 4: App initialization failed - {e}")
     
-    # Test 6: Data processing test
+    # Test 5: Data processing test
     try:
         import pandas as pd
         df = pd.read_csv('sample_financial_data.csv')
         summary = f"""Dataset Summary:
 - Shape: {df.shape[0]} rows, {df.shape[1]} columns
 - Columns: {', '.join(df.columns.tolist())}"""
-        print("✅ Test 6: Data processing works")
+        print("✅ Test 5: Data processing works")
         success_count += 1
     except Exception as e:
-        print(f"❌ Test 6: Data processing failed - {e}")
+        print(f"❌ Test 5: Data processing failed - {e}")
     
-    # Test 7: DeepSeek LLM integration
+    # Test 6: DeepSeek LLM integration
     try:
         response = requests.get("http://localhost:11434/api/tags", timeout=3)
         if response.status_code == 200:
             models = response.json().get('models', [])
             deepseek_available = any('deepseek' in model.get('name', '').lower() for model in models)
             if deepseek_available:
-                print("✅ Test 7: DeepSeek model available")
+                print("✅ Test 6: DeepSeek model available")
                 success_count += 1
             else:
-                print("❌ Test 7: DeepSeek model not found")
+                print("❌ Test 6: DeepSeek model not found")
         else:
-            print("❌ Test 7: Cannot check DeepSeek (Ollama issue)")
+            print("❌ Test 6: Cannot check DeepSeek (Ollama issue)")
     except:
-        print("❌ Test 7: Cannot check DeepSeek (Ollama not running)")
+        print("❌ Test 6: Cannot check DeepSeek (Ollama not running)")
     
     # Summary
     print("\n" + "=" * 50)
