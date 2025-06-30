@@ -36,6 +36,13 @@ class LLMHandler:
                 "top_p": 0.9,
                 "num_predict": 500,
                 "system_prompt": "You are a professional financial data analyst assistant."
+            },
+            "deepseek-coder:6.7b": {
+                "temperature": 0.1,
+                "top_k": 40,
+                "top_p": 0.9,
+                "num_predict": 1024,
+                "system_prompt": "You are an expert financial data analyst with deep knowledge of financial metrics and market analysis."
             }
         }
         
@@ -134,7 +141,7 @@ ANALYSIS:"""
             return f"Error communicating with {self.model_name}: {str(e)}"
     def _fallback_response(self, user_query: str, data_context: str, data_summary: Dict[str, Any]) -> str:
         """Fallback response when LLM is not available"""
-        return f"""🤖 **Enhanced Analysis** (StarCoder offline - using built-in intelligence):
+        return f"""🤖 **Enhanced Analysis** (LLM offline - using built-in intelligence):
 
 **Your Question**: {user_query}
 
@@ -145,10 +152,10 @@ ANALYSIS:"""
 **Quick Insights**:
 {data_context[:300]}...
 
-💡 **Note**: For AI-powered analysis with code suggestions, ensure StarCoder model is running via Ollama.
-To enable: Run `ollama pull starcoder2` in terminal, then restart the app.
+💡 **Note**: For AI-powered analysis with code suggestions, ensure Ollama is running with the appropriate model.
+To enable: Run `ollama pull deepseek-coder:6.7b` in terminal, then restart the app.
 
-🔧 **Available Models**: starcoder2 (recommended), starcoder, phi3"""
+🔧 **Available Models**: deepseek-coder:6.7b (recommended), starcoder2, starcoder, phi3"""
 
     def get_model_status(self) -> Dict[str, Any]:
         """Get current model status and available models"""
@@ -156,7 +163,7 @@ To enable: Run `ollama pull starcoder2` in terminal, then restart the app.
             return {
                 "status": "offline",
                 "backend": self.backend,
-                "message": "LLM backend not available. Install Ollama and pull phi3/phi4 model."
+                "message": "LLM backend not available. Install Ollama and pull deepseek-coder:6.7b model."
             }
         
         try:

@@ -14,7 +14,7 @@ class ChatHandler:
           # Try to initialize LLM handler
         try:
             from .llm_handler import LLMHandler, DataContextBuilder
-            self.llm_handler = LLMHandler(backend="ollama", model_name="starcoder2")
+            self.llm_handler = LLMHandler(backend="ollama", model_name="deepseek-coder:6.7b")
             self.data_context_builder = DataContextBuilder()
             self.use_llm = self.llm_handler.is_available()
         except ImportError:
