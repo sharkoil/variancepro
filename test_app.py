@@ -9,7 +9,7 @@ def test_app_components():
     print("=" * 50)
     
     success_count = 0
-    total_tests = 6
+    total_tests = 7  # Updated test count
     
     # Test 1: Import testing
     try:
@@ -78,11 +78,27 @@ def test_app_components():
     except Exception as e:
         print(f"❌ Test 6: Data processing failed - {e}")
     
+    # Test 7: DeepSeek LLM integration
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=3)
+        if response.status_code == 200:
+            models = response.json().get('models', [])
+            deepseek_available = any('deepseek' in model.get('name', '').lower() for model in models)
+            if deepseek_available:
+                print("✅ Test 7: DeepSeek model available")
+                success_count += 1
+            else:
+                print("❌ Test 7: DeepSeek model not found")
+        else:
+            print("❌ Test 7: Cannot check DeepSeek (Ollama issue)")
+    except:
+        print("❌ Test 7: Cannot check DeepSeek (Ollama not running)")
+    
     # Summary
     print("\n" + "=" * 50)
     print(f"Test Results: {success_count}/{total_tests} passed")
     
-    if success_count >= 4:
+    if success_count >= 5:  # Updated threshold
         print("🎉 App is ready to use!")
         print("\n🚀 To start the app:")
         print("   python app_new.py")
@@ -90,10 +106,10 @@ def test_app_components():
         print("   double-click start_app.bat")
     else:
         print("⚠️ Some issues found. Please check the errors above.")
-        if success_count < 2:
+        if success_count < 3:  # Updated threshold
             print("💡 Try running: python setup_new.py")
     
-    return success_count >= 4
+    return success_count >= 5  # Updated threshold
 
 if __name__ == "__main__":
     test_app_components()
