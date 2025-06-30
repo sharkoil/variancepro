@@ -1,5 +1,5 @@
 """
-Fresh Financial Chat App - Gradio + Ollama + StarCoder2
+Fresh Financial Chat App - Gradio + Ollama + DeepSeek
 A clean, multi-turn chat application for financial data analysis
 """
 
@@ -10,95 +10,14 @@ import json
 import io
 import time
 from typing import List, Tuple, Optional, Dict, Any
-
-class OllamaStarCoder:
-    """Clean Ollama client for StarCoder2 interactions"""
-    
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "starcoder2:latest"):
-        self.base_url = base_url
-        self.model = model
-        self.is_available = self._check_availability()
-    
-    def _check_availability(self) -> bool:
-        """Check if Ollama and StarCoder2 are available"""
-        try:
-            # Check Ollama service
-            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
-            if response.status_code != 200:
-                return False
-            
-            # Check if StarCoder2 model is available
-            models = response.json().get('models', [])
-            model_names = [model.get('name', '') for model in models]
-            return any(self.model.split(':')[0] in name for name in model_names)
-        except:
-            return False
-    
-    def generate_response(self, prompt: str, context: str = "") -> str:
-        """Generate response using StarCoder2"""
-        if not self.is_available:
-            return "❌ Ollama/StarCoder2 not available. Please ensure Ollama is running and StarCoder2 is installed."
-        
-        try:
-            # Construct the full prompt with context
-            full_prompt = self._build_prompt(prompt, context)
-            
-            # Make request to Ollama
-            payload = {
-                "model": self.model,
-                "prompt": full_prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "max_tokens": 2048
-                }
-            }
-            
-            response = requests.post(
-                f"{self.base_url}/api/generate",
-                json=payload,
-                timeout=120
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                return result.get('response', 'No response generated')
-            else:
-                return f"❌ Error: {response.status_code} - {response.text}"
-                
-        except Exception as e:
-            return f"❌ Error generating response: {str(e)}"
-    
-    def _build_prompt(self, user_query: str, data_context: str = "") -> str:
-        """Build a comprehensive prompt for financial analysis"""
-        base_prompt = """You are a financial data analyst AI assistant. You help users analyze financial data, provide insights, and suggest code solutions.
-
-Key capabilities:
-- Analyze financial datasets (revenue, costs, profits, etc.)
-- Provide data insights and trends
-- Suggest Python/pandas code for analysis
-- Answer financial and business questions
-
-Guidelines:
-- Be concise but thorough
-- Provide actionable insights
-- Include relevant code examples when helpful
-- Focus on practical business value
-"""
-        
-        if data_context:
-            base_prompt += f"\n\nCurrent dataset context:\n{data_context}\n"
-        
-        base_prompt += f"\n\nUser question: {user_query}\n\nResponse:"
-        
-        return base_prompt
+from utils.chat_handler import ChatHandler
+from utils.llm_handler import LLMHandler
 
 class FinancialChatApp:
     """Main Gradio application class"""
     
     def __init__(self):
-        self.llm = OllamaStarCoder()
+        self.chat_handler = ChatHandler()
         self.current_data = None
         self.data_summary = ""
     
@@ -151,8 +70,8 @@ class FinancialChatApp:
         if not message.strip():
             return history, ""
         
-        # Generate response using LLM
-        response = self.llm.generate_response(message, self.data_summary)
+        # Generate response using ChatHandler
+        response = self.chat_handler.generate_response(message, self.current_data)
         
         # Add to history
         history.append((message, response))
@@ -163,11 +82,11 @@ class FinancialChatApp:
         """Get current system status"""
         status = "🔍 **System Status**\n\n"
         
-        # Ollama status
-        if self.llm.is_available:
-            status += "✅ Ollama + StarCoder2: Ready\n"
+        # LLM status
+        if self.chat_handler.use_llm:
+            status += f"✅ Ollama + {self.chat_handler.llm_handler.model_name}: Ready\n"
         else:
-            status += "❌ Ollama + StarCoder2: Not available\n"
+            status += f"❌ Ollama + {self.chat_handler.llm_handler.model_name}: Not available\n"
         
         # Data status
         if self.current_data is not None:
@@ -180,12 +99,12 @@ class FinancialChatApp:
     def create_interface(self):
         """Create the Gradio interface"""
         
-        with gr.Blocks(title="Financial Chat App - StarCoder2", theme=gr.themes.Soft()) as interface:
+        with gr.Blocks(title="Financial Chat App - DeepSeek", theme=gr.themes.Soft()) as interface:
             
             gr.HTML("""
             <h1 style="text-align: center; color: #2E86AB;">💼 Financial Chat App</h1>
             <p style="text-align: center; font-size: 18px;">
-                Upload your financial data and chat with StarCoder2 for insights and analysis
+                Upload your financial data and chat with DeepSeek for insights and analysis
             </p>
             """)
             
@@ -214,7 +133,7 @@ class FinancialChatApp:
                 
                 with gr.Column(scale=2):
                     # Chat interface
-                    gr.Markdown("### 💬 Chat with StarCoder2")
+                    gr.Markdown("### 💬 Chat with DeepSeek")
                     
                     chatbot = gr.Chatbot(
                         label="Financial Assistant",
