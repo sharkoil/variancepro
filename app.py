@@ -211,18 +211,13 @@ Please provide a comprehensive analysis that includes:
 - Areas requiring immediate attention
 - TTM performance benchmarking
 
-## Python Code (if relevant)
-- Practical code snippets for deeper analysis
-- Statistical analysis methods
-- TTM calculation examples
-
 ## Recommendations
 - Specific actionable steps
 - Areas for further investigation
 - Risk mitigation strategies
 - Performance improvement opportunities based on TTM trends
 
-Provide clear, concise responses using professional financial terminology. Make recommendations data-driven and actionable. Always consider TTM performance when analyzing financial data."""
+Provide clear, concise responses using professional financial terminology. Make recommendations data-driven and actionable. Always consider TTM performance when analyzing financial data. DO NOT provide code suggestions or programming examples."""
         
         return prompt
         
@@ -414,22 +409,6 @@ Provide clear, concise responses using professional financial terminology. Make 
 Since a time column was detected ({time_col}), this analysis focuses on the most recent period to provide current insights. This follows your preference for time-based prioritization in contribution analysis.
 """)
             
-            # ONLY ADD TIMESCALE ANALYSIS IF NOT SHOWN YET
-            timescale_included = False
-            if not self.timescale_shown:
-                try:
-                    timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
-                    if timescale_analysis and "No date column found" not in timescale_analysis:
-                        response_parts.append("\n" + "="*50)
-                        response_parts.append("📈 **COMPREHENSIVE TIMESCALE ANALYSIS**")
-                        response_parts.append("="*50)
-                        response_parts.append(timescale_analysis)
-                        self.timescale_shown = True  # Mark as shown
-                        timescale_included = True
-                except Exception as e:
-                    response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
-                    self.timescale_shown = True  # Mark as attempted
-            
             # Combine all parts
             final_response = "\n\n".join(response_parts)
             
@@ -440,11 +419,8 @@ Since a time column was detected ({time_col}), this analysis focuses on the most
                 "timestamp": datetime.now()
             })
             
-            # Return appropriate status
-            if timescale_included:
-                return final_response, "[SUCCESS] Contribution analysis + Timescale analysis completed"
-            else:
-                return final_response, "[SUCCESS] Contribution analysis completed"
+            # Return appropriate status  
+            return final_response, "[SUCCESS] Contribution analysis completed"
             
         except Exception as e:
             error_response = f"❌ **Error performing contribution analysis**: {str(e)}\n\n💡 **Tip**: Try specifying columns explicitly like 'Perform contribution analysis on sales by product'"
@@ -1770,7 +1746,7 @@ class ContributionAnalyzer:
             key_contributors = analysis_df[analysis_df['is_key_contributor']].head(10)
             
             response += f"""📈 **TOP CONTRIBUTORS** (Key 80/20 Players)
-```
+
 {'Rank':<4} {'Category':<20} {'Value':<12} {'Share':<8} {'Cumulative':<12}
 {'-'*4} {'-'*20} {'-'*12} {'-'*8} {'-'*12}
 """
@@ -1784,7 +1760,7 @@ class ContributionAnalyzer:
                 
                 response += f"{rank:<4} {category:<20} {value:<12} {share:<8} {cumulative:<12}\n"
             
-            response += "```\n\n"
+            response += "\n\n"
             
             # Insights based on Pareto analysis
             concentration_level = "Strong" if summary['key_contributors_value_share'] > 0.8 else "Moderate" if summary['key_contributors_value_share'] > 0.6 else "Weak"

@@ -68,7 +68,7 @@ class LLMHandler:
         # Enhanced prompt for LLM with code-focused analysis
         prompt = f"""{system_prompt}
 
-You are analyzing financial data and can provide both analytical insights and code suggestions for deeper analysis.
+You are analyzing financial data and can provide analytical insights for financial decision making.
 
 DATASET CONTEXT:
 {data_context}
@@ -86,10 +86,9 @@ Please provide:
 1. **Direct Answer**: Address the specific question with data-driven insights
 2. **Key Findings**: Highlight the most important patterns or trends
 3. **Business Impact**: Explain what these findings mean for business decisions
-4. **Code Suggestions** (if applicable): Suggest Python/pandas code for deeper analysis
-5. **Recommendations**: Actionable next steps based on the analysis
+4. **Recommendations**: Actionable next steps based on the analysis
 
-Format your response with clear sections and use financial terminology appropriately. If the question involves technical analysis, provide relevant code snippets using pandas/numpy.
+Format your response with clear sections and use financial terminology appropriately. DO NOT provide code suggestions or programming examples.
 
 ANALYSIS:"""
         
@@ -164,7 +163,7 @@ ANALYSIS:"""
 **Quick Insights**:
 {data_context[:300]}...
 
-💡 **Note**: For AI-powered analysis with code suggestions, ensure Ollama is running with the appropriate model.
+💡 **Note**: For AI-powered analysis, ensure Ollama is running with the appropriate model.
 To enable: Run `ollama pull gemma3:latest` in terminal, then restart the app.
 
 🔧 **Available Models**: gemma3:latest (recommended), phi3"""
