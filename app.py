@@ -240,9 +240,6 @@ Provide clear, concise responses using professional financial terminology. Make 
             # Store current data for later use
             self.current_data = df
             
-            # Reset timescale shown flag when new data is loaded
-            self.timescale_shown = False
-            
             # Detect contribution analysis requests
             contribution_keywords = ['contribution analysis', 'pareto', '80/20', '80-20', 'key contributors', 'top contributors']
             user_question_lower = user_question.lower()
@@ -250,51 +247,27 @@ Provide clear, concise responses using professional financial terminology. Make 
             if any(keyword in user_question_lower for keyword in contribution_keywords):
                 return self._handle_contribution_analysis_request(df, user_question)
             
-            # GENERATE COMPREHENSIVE CHAT RESPONSE INCLUDING TIMESCALE ANALYSIS
+            # GENERATE ONLY CHAT RESPONSE - NO AUTOMATIC TIMESCALE ANALYSIS
             chat_response_parts = []
             
             # Add initial processing message for data preparation
             if len(df) > 100:  # For larger datasets, show preparation message
                 chat_response_parts.append("🔄 **Preparing your data analysis...**\n")
             
-            # 1. Generate ChatHandler response (LLM or rule-based)
+            # 1. Generate ChatHandler response (LLM or rule-based) - ONLY THIS
             primary_response = self.chat_handler.generate_response(user_question, df)
             chat_response_parts.append(primary_response)
             
-            # 2. Generate automatic timescale analysis ONLY on first data load
-            timescale_included = False
-            if not self.timescale_shown:
-                try:
-                    timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
-                    if timescale_analysis and "No date column found" not in timescale_analysis:
-                        chat_response_parts.append("\n" + "="*50)
-                        chat_response_parts.append("📈 **AUTOMATIC TIMESCALE ANALYSIS**")
-                        chat_response_parts.append("="*50)
-                        chat_response_parts.append(timescale_analysis)
-                        self.timescale_shown = True  # Mark as shown
-                        timescale_included = True
-                    else:
-                        # Add note about timescale analysis when no date column
-                        chat_response_parts.append("\n💡 **Note**: No date column detected for timescale analysis. Upload data with dates for period-over-period insights.")
-                        self.timescale_shown = True  # Mark as attempted
-                except Exception as e:
-                    chat_response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
-                    self.timescale_shown = True  # Mark as attempted
+            # 2. NO AUTOMATIC TIMESCALE ANALYSIS FOR REGULAR QUESTIONS
             
             # 3. Combine all parts into final chat response
             final_response = "\n\n".join(chat_response_parts)
             
-            # Determine status
+            # Determine status - simple status without timescale
             if self.chat_handler.use_llm:
-                if timescale_included:
-                    status = f"[SUCCESS] Using LLM Analysis + Timescale Analysis"
-                else:
-                    status = f"[SUCCESS] Using LLM Analysis"
+                status = f"[SUCCESS] Using LLM Analysis"
             else:
-                if timescale_included:
-                    status = "[SUCCESS] Built-in Analysis + Timescale Analysis"
-                else:
-                    status = "[SUCCESS] Built-in Analysis"
+                status = "[SUCCESS] Built-in Analysis"
             
             # Add to chat history
             self.chat_history.append({
