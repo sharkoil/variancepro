@@ -191,4 +191,38 @@ Your VariancePro app now combines:
 
 ---
 
-🚀 **StarCoder transforms your financial chat app into an AI-powered data science assistant!**
+## 📞 **Public Repository & Support**
+
+**🔗 GitHub Repository**: [https://github.com/yourusername/variancepro](https://github.com/yourusername/variancepro)
+
+### **Repository Features**
+- **📚 Complete Documentation**: Installation, deployment, and usage guides
+- **🧪 Comprehensive Tests**: Validation for all features including StarCoder integration
+- **🤝 Community Support**: Issues, discussions, and contributions welcome
+- **� Release Downloads**: Stable versions and deployment packages
+- **🔧 Development Setup**: Contributors guide and development environment setup
+
+### **Getting the Latest Version**
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/variancepro.git
+cd variancepro
+
+# Switch to development branch for latest features
+git checkout develop
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### **Contribute to StarCoder Integration**
+- **Report Issues**: [GitHub Issues](https://github.com/yourusername/variancepro/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/variancepro/discussions)
+- **Code Contributions**: Submit pull requests for improvements
+- **Documentation**: Help improve guides and examples
+
+---
+
+�🚀 **StarCoder transforms your financial chat app into an AI-powered data science assistant!**
+
+**Visit our repository for the complete VariancePro experience with full documentation, support, and community contributions.**
