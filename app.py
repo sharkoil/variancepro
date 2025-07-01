@@ -90,9 +90,16 @@ class AriaFinancialChat:
                     print(f"[SUCCESS] Using model: {self.model_name}")
                     return True
                 
-                # Also check for any model containing gemma, deepseek, phi, llama, or mistral as fallbacks
+                # Look for any gemma3 variant as first priority
                 for model_name in available_models:
-                    if any(name in model_name for name in ["gemma", "deepseek", "phi", "llama", "mistral"]):
+                    if "gemma3" in model_name:
+                        self.model_name = model_name
+                        print(f"[SUCCESS] Using gemma3 variant: {self.model_name}")
+                        return True
+                
+                # Only then check for other models (excluding deepseek)
+                for model_name in available_models:
+                    if any(name in model_name for name in ["phi", "llama", "mistral"]):
                         self.model_name = model_name
                         print(f"[WARNING] Using fallback model: {self.model_name}")
                         return True
