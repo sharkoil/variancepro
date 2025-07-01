@@ -39,6 +39,7 @@ class AriaFinancialChat:
         self.ollama_url = "http://localhost:11434"
         self.current_data = None
         self.chat_history = []  # Initialize chat history
+        self.timescale_shown = False  # Track if timescale analysis has been shown for current dataset
         
         # Initialize chat handler for LLM integration
         self.chat_handler = ChatHandler()
@@ -244,6 +245,9 @@ Provide clear, concise responses using professional financial terminology. Make 
             # Store current data for later use
             self.current_data = df
             
+            # Reset timescale shown flag when new data is loaded
+            self.timescale_shown = False
+            
             # Detect contribution analysis requests
             contribution_keywords = ['contribution analysis', 'pareto', '80/20', '80-20', 'key contributors', 'top contributors']
             user_question_lower = user_question.lower()
@@ -262,28 +266,40 @@ Provide clear, concise responses using professional financial terminology. Make 
             primary_response = self.chat_handler.generate_response(user_question, df)
             chat_response_parts.append(primary_response)
             
-            # 2. Generate automatic timescale analysis and include in chat
-            try:
-                timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
-                if timescale_analysis and "No date column found" not in timescale_analysis:
-                    chat_response_parts.append("\n" + "="*50)
-                    chat_response_parts.append("📈 **AUTOMATIC TIMESCALE ANALYSIS**")
-                    chat_response_parts.append("="*50)
-                    chat_response_parts.append(timescale_analysis)
-                else:
-                    # Add note about timescale analysis when no date column
-                    chat_response_parts.append("\n💡 **Note**: No date column detected for timescale analysis. Upload data with dates for period-over-period insights.")
-            except Exception as e:
-                chat_response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
+            # 2. Generate automatic timescale analysis ONLY on first data load
+            timescale_included = False
+            if not self.timescale_shown:
+                try:
+                    timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
+                    if timescale_analysis and "No date column found" not in timescale_analysis:
+                        chat_response_parts.append("\n" + "="*50)
+                        chat_response_parts.append("📈 **AUTOMATIC TIMESCALE ANALYSIS**")
+                        chat_response_parts.append("="*50)
+                        chat_response_parts.append(timescale_analysis)
+                        self.timescale_shown = True  # Mark as shown
+                        timescale_included = True
+                    else:
+                        # Add note about timescale analysis when no date column
+                        chat_response_parts.append("\n💡 **Note**: No date column detected for timescale analysis. Upload data with dates for period-over-period insights.")
+                        self.timescale_shown = True  # Mark as attempted
+                except Exception as e:
+                    chat_response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
+                    self.timescale_shown = True  # Mark as attempted
             
             # 3. Combine all parts into final chat response
             final_response = "\n\n".join(chat_response_parts)
             
             # Determine status
             if self.chat_handler.use_llm:
-                status = f"[SUCCESS] Using LLM Analysis + Timescale Analysis"
+                if timescale_included:
+                    status = f"[SUCCESS] Using LLM Analysis + Timescale Analysis"
+                else:
+                    status = f"[SUCCESS] Using LLM Analysis"
             else:
-                status = "[SUCCESS] Built-in Analysis + Timescale Analysis"
+                if timescale_included:
+                    status = "[SUCCESS] Built-in Analysis + Timescale Analysis"
+                else:
+                    status = "[SUCCESS] Built-in Analysis"
             
             # Add to chat history
             self.chat_history.append({
@@ -398,16 +414,21 @@ Provide clear, concise responses using professional financial terminology. Make 
 Since a time column was detected ({time_col}), this analysis focuses on the most recent period to provide current insights. This follows your preference for time-based prioritization in contribution analysis.
 """)
             
-            # ALSO ADD TIMESCALE ANALYSIS TO CONTRIBUTION ANALYSIS
-            try:
-                timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
-                if timescale_analysis and "No date column found" not in timescale_analysis:
-                    response_parts.append("\n" + "="*50)
-                    response_parts.append("📈 **COMPREHENSIVE TIMESCALE ANALYSIS**")
-                    response_parts.append("="*50)
-                    response_parts.append(timescale_analysis)
-            except Exception as e:
-                response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
+            # ONLY ADD TIMESCALE ANALYSIS IF NOT SHOWN YET
+            timescale_included = False
+            if not self.timescale_shown:
+                try:
+                    timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
+                    if timescale_analysis and "No date column found" not in timescale_analysis:
+                        response_parts.append("\n" + "="*50)
+                        response_parts.append("📈 **COMPREHENSIVE TIMESCALE ANALYSIS**")
+                        response_parts.append("="*50)
+                        response_parts.append(timescale_analysis)
+                        self.timescale_shown = True  # Mark as shown
+                        timescale_included = True
+                except Exception as e:
+                    response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
+                    self.timescale_shown = True  # Mark as attempted
             
             # Combine all parts
             final_response = "\n\n".join(response_parts)
@@ -419,7 +440,11 @@ Since a time column was detected ({time_col}), this analysis focuses on the most
                 "timestamp": datetime.now()
             })
             
-            return final_response, "[SUCCESS] Contribution analysis + Timescale analysis completed"
+            # Return appropriate status
+            if timescale_included:
+                return final_response, "[SUCCESS] Contribution analysis + Timescale analysis completed"
+            else:
+                return final_response, "[SUCCESS] Contribution analysis completed"
             
         except Exception as e:
             error_response = f"❌ **Error performing contribution analysis**: {str(e)}\n\n💡 **Tip**: Try specifying columns explicitly like 'Perform contribution analysis on sales by product'"
