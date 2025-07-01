@@ -19,6 +19,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import re
+import plotly.graph_objects as go
 from utils.test_logger import TestResultLogger
 
 # Add parent directory to path to import from app.py

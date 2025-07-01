@@ -111,15 +111,22 @@ python app.py
 
 ## 🏗️ **Project Structure**
 ```
-📁 VariancePro/
-├── 🎯 app.py                    # Main application & chat system
+📁 VariancePro/ (Clean Architecture)
+├── 🎯 app.py                    # Main application (to be refactored)
 ├── 🧠 utils/
 │   ├── chat_handler.py          # LLM integration & chat logic  
 │   ├── llm_handler.py           # Ollama/Gemma3 interface
 │   └── narrative_generator.py   # Aria Sterling persona
 ├── 📊 llamaindex_integration.py # LlamaIndex enhanced analysis
+├── 🧪 tests/
+│   ├── data/
+│   │   ├── sample_financial_data.csv    # Test dataset
+│   │   └── sales_budget_actuals.csv     # Budget vs actual data
+│   └── (test files to be organized)
 ├── 🔧 requirements.txt          # Python dependencies
-└── 📚 docs/                     # Documentation & guides
+├── 📚 README.md                 # This documentation
+├── 🤝 CONTRIBUTING.md           # Contribution guidelines
+└── 📄 LICENSE                   # MIT license
 ```
 
 ## 🔧 **Configuration**
@@ -139,14 +146,12 @@ pip install llama-index llama-index-llms-ollama
 
 ### **Run Test Suite**
 ```bash
-# Test core functionality
-python test_contribution_analysis.py
+# Test files are being reorganized for the new modular architecture
+# Current test data available in tests/data/
 
-# Test LlamaIndex integration
-python test_llamaindex_integration.py
-
-# Test model configuration
-python test_model_configuration.py
+# Available test datasets:
+# - tests/data/sample_financial_data.csv
+# - tests/data/sales_budget_actuals.csv
 ```
 
 ## 🛠️ **Deployment**
@@ -169,9 +174,9 @@ python app.py
 
 ## 📚 **Documentation**
 
-- **[LlamaIndex Integration Guide](LLAMAINDEX_INTEGRATION_GUIDE.md)**: Advanced analysis setup
-- **[Deployment Guide](DEPLOYMENT_SUMMARY.md)**: Production deployment
-- **[StarCoder Integration](STARCODER_INTEGRATION.md)**: Code generation features
+- **[Contributing Guidelines](CONTRIBUTING.md)**: Development and contribution guide
+- **[License](LICENSE)**: MIT open source license
+- **Architecture Documentation**: Coming soon with modular refactor
 
 ## 🔐 **Security & Privacy**
 

@@ -18,13 +18,13 @@ if %errorlevel% neq 0 (
     echo ⚠️ Ollama not running - will use built-in analysis only
 ) else (
     echo ✅ Ollama is running
-    echo 🔍 Checking for deepseek-coder:6.7b model...
-    curl -s http://localhost:11434/api/tags | findstr "deepseek-coder:6.7b" > nul
+    echo 🔍 Checking for gemma3:latest model...
+    curl -s http://localhost:11434/api/tags | findstr "gemma3:latest" > nul
     if %errorlevel% neq 0 (
-        echo ⚠️ deepseek-coder:6.7b not found - will use other available models or built-in analysis
-        echo 💡 To install: ollama pull deepseek-coder:6.7b
+        echo ⚠️ gemma3:latest not found - will use other available models or built-in analysis
+        echo 💡 To install: ollama pull gemma3:latest
     ) else (
-        echo ✅ deepseek-coder:6.7b model is available
+        echo ✅ gemma3:latest model is available
     )
 )
 
