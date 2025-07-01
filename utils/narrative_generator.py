@@ -55,9 +55,9 @@ def generate_response_ollama(system_prompt: str, analysis_data: str) -> str:
         # Create a prompt that includes the system instructions and the analysis data
         prompt = f"{system_prompt}\n\n### Financial Analysis Data\n{analysis_data}\n\nBased on this financial data, provide a brief, engaging introduction as Aria Sterling to start a conversation with the user. Focus on the most interesting insights from the data, express it in your characteristic analytical style, and invite the user to ask questions about their financial data."
         
-        # Query an available model (will use deepseek-coder or another available model)
+        # Query an available model (will use gemma3 or another available model)
         payload = {
-            "model": "deepseek-coder:6.7b",  # Can be replaced with any available model
+            "model": "gemma3:latest",  # Can be replaced with any available model
             "prompt": prompt,
             "stream": False,
             "options": {

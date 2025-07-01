@@ -6,6 +6,7 @@ import json
 import io
 import base64
 import traceback
+import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from typing import Optional, List, Tuple, Dict
 from pathlib import Path
@@ -34,16 +35,19 @@ class AriaFinancialChat:
     """Financial data analysis chat powered by Aria Sterling via Ollama"""
     
     def __init__(self):
-        self.model_name = "deepseek-coder:6.7b" # Use locally available deepseek-coder model
+        self.model_name = "gemma3:latest" # Use Gemma3 model for financial analysis
         self.ollama_url = "http://localhost:11434"
         self.current_data = None
         self.chat_history = []  # Initialize chat history
         
-        # Initialize chat handler for DeepSeek integration
+        # Initialize chat handler for LLM integration
         self.chat_handler = ChatHandler()
         
         # Initialize timescale analyzer
         self.timescale_analyzer = TimescaleAnalyzer()
+        
+        # Initialize contribution analyzer
+        self.contribution_analyzer = ContributionAnalyzer()
         
         # Add narrative generation if available
         if NARRATIVE_AVAILABLE:
@@ -80,15 +84,15 @@ class AriaFinancialChat:
                     print(f"[SUCCESS] Using model: {self.model_name}")
                     return True
                 
-                # Look specifically for deepseek-coder:6.7b
-                if "deepseek-coder:6.7b" in available_models:
-                    self.model_name = "deepseek-coder:6.7b"
+                # Look specifically for gemma3:latest
+                if "gemma3:latest" in available_models:
+                    self.model_name = "gemma3:latest"
                     print(f"[SUCCESS] Using model: {self.model_name}")
                     return True
                 
-                # Also check for any model containing deepseek, phi, llama, or mistral as fallbacks
+                # Also check for any model containing gemma, deepseek, phi, llama, or mistral as fallbacks
                 for model_name in available_models:
-                    if any(name in model_name for name in ["deepseek", "phi", "llama", "mistral"]):
+                    if any(name in model_name for name in ["gemma", "deepseek", "phi", "llama", "mistral"]):
                         self.model_name = model_name
                         print(f"[WARNING] Using fallback model: {self.model_name}")
                         return True
@@ -104,7 +108,15 @@ class AriaFinancialChat:
             return False
     
     def query_ollama(self, prompt: str) -> str:
-        """Query LLM model via Ollama using Aria Sterling persona"""
+        """Query LLM model via Ollama using Aria Sterling persona with full prompt logging"""
+        
+        # Log the full prompt to console
+        print("\n" + "="*80)
+        print(f"[PROMPT LOG] Sending prompt to {self.model_name}")
+        print("="*80)
+        print(prompt)
+        print("="*80 + "\n")
+        
         try:
             payload = {
                 "model": self.model_name,
@@ -115,28 +127,51 @@ class AriaFinancialChat:
                     "top_k": 40,
                     "top_p": 0.9,
                     "num_predict": 2048,
-                    "num_ctx": 8192  # Increased context window for DeepSeek Coder
+                    "num_ctx": 8192  # Increased context window
                 }
             }
+            
+            # Log the payload details
+            print(f"[REQUEST LOG] Model: {self.model_name}")
+            print(f"[REQUEST LOG] Temperature: {payload['options']['temperature']}")
+            print(f"[REQUEST LOG] Context Length: {payload['options']['num_ctx']}")
+            print(f"[REQUEST LOG] Max Tokens: {payload['options']['num_predict']}")
             
             response = requests.post(
                 f"{self.ollama_url}/api/generate",
                 json=payload,
-                timeout=180  # Extended timeout for large Phi4 model (3 minutes)
+                timeout=180  # Extended timeout for large models (3 minutes)
             )
             
             if response.status_code == 200:
                 result = response.json()
-                return result.get("response", "").strip()
+                llm_response = result.get("response", "").strip()
+                
+                # Log the response
+                print("\n" + "-"*80)
+                print(f"[RESPONSE LOG] Response from {self.model_name}")
+                print("-"*80)
+                print(llm_response)
+                print("-"*80 + "\n")
+                
+                return llm_response
             else:
-                return f"Error: Phi4 returned status {response.status_code}"
+                error_msg = f"Error: {self.model_name} returned status {response.status_code}"
+                print(f"[ERROR LOG] {error_msg}")
+                return error_msg
                 
         except requests.exceptions.Timeout:
-            return "[WARNING] Phi4 is processing your complex financial query. Large models need more time for detailed analysis. The response will appear shortly, or try breaking your question into smaller parts."
+            timeout_msg = f"[WARNING] {self.model_name} is processing your complex financial query. Large models need more time for detailed analysis. The response will appear shortly, or try breaking your question into smaller parts."
+            print(f"[TIMEOUT LOG] {timeout_msg}")
+            return timeout_msg
         except requests.exceptions.ConnectionError:
-            return "[ERROR] Cannot connect to Ollama. Please ensure Ollama is running with: `ollama serve`"
+            conn_error = "[ERROR] Cannot connect to Ollama. Please ensure Ollama is running with: `ollama serve`"
+            print(f"[CONNECTION LOG] {conn_error}")
+            return conn_error
         except Exception as e:
-            return f"Error communicating with Phi4: {str(e)}"
+            exception_msg = f"Error communicating with {self.model_name}: {str(e)}"
+            print(f"[EXCEPTION LOG] {exception_msg}")
+            return exception_msg
     
     def create_financial_prompt(self, user_query: str, data_summary: str) -> str:
         """Create optimized prompt for Aria Sterling financial analysis"""
@@ -154,37 +189,42 @@ Please provide a comprehensive analysis that includes:
 - Direct answer to the question with specific insights
 - Key metrics and performance indicators
 - Trend analysis and variance explanations
+- TTM (Trailing Twelve Months) performance where applicable
 
 ## Data Patterns & Insights  
 - Notable patterns, trends, or anomalies
 - Statistical relationships between variables
 - Risk factors or opportunities identified
+- Year-over-year and period-over-period comparisons
 
 ## Business Impact
 - Strategic implications of the findings
 - Impact on business performance and decisions
 - Areas requiring immediate attention
+- TTM performance benchmarking
 
 ## Python Code (if relevant)
 - Practical code snippets for deeper analysis
 - Statistical analysis methods
+- TTM calculation examples
 
 ## Recommendations
 - Specific actionable steps
 - Areas for further investigation
 - Risk mitigation strategies
+- Performance improvement opportunities based on TTM trends
 
-Provide clear, concise responses using professional financial terminology. Make recommendations data-driven and actionable."""
+Provide clear, concise responses using professional financial terminology. Make recommendations data-driven and actionable. Always consider TTM performance when analyzing financial data."""
         
         return prompt
-    
+        
     def analyze_data(self, file_data, user_question: str) -> Tuple[str, str]:
-        """Analyze uploaded data and answer user questions using ChatHandler"""
+        """Analyze uploaded data and answer user questions - with special handling for contribution analysis"""
         
         # Process uploaded file
         if file_data is None:
             return "Please upload a CSV file to analyze.", "[INFO] No data uploaded"
-        
+
         try:
             # Read CSV file
             if isinstance(file_data, str):
@@ -197,25 +237,186 @@ Provide clear, concise responses using professional financial terminology. Make 
             # Store current data for later use
             self.current_data = df
             
-            # Use ChatHandler to generate response
-            response = self.chat_handler.generate_response(user_question, df)
+            # Detect contribution analysis requests
+            contribution_keywords = ['contribution analysis', 'pareto', '80/20', '80-20', 'key contributors', 'top contributors']
+            user_question_lower = user_question.lower()
             
+            if any(keyword in user_question_lower for keyword in contribution_keywords):
+                return self._handle_contribution_analysis_request(df, user_question)
+            
+            # GENERATE COMPREHENSIVE CHAT RESPONSE INCLUDING TIMESCALE ANALYSIS
+            chat_response_parts = []
+            
+            # Add initial processing message for data preparation
+            if len(df) > 100:  # For larger datasets, show preparation message
+                chat_response_parts.append("🔄 **Preparing your data analysis...**\n")
+            
+            # 1. Generate ChatHandler response (LLM or rule-based)
+            primary_response = self.chat_handler.generate_response(user_question, df)
+            chat_response_parts.append(primary_response)
+            
+            # 2. Generate automatic timescale analysis and include in chat
+            try:
+                timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
+                if timescale_analysis and "No date column found" not in timescale_analysis:
+                    chat_response_parts.append("\n" + "="*50)
+                    chat_response_parts.append("📈 **AUTOMATIC TIMESCALE ANALYSIS**")
+                    chat_response_parts.append("="*50)
+                    chat_response_parts.append(timescale_analysis)
+                else:
+                    # Add note about timescale analysis when no date column
+                    chat_response_parts.append("\n💡 **Note**: No date column detected for timescale analysis. Upload data with dates for period-over-period insights.")
+            except Exception as e:
+                chat_response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
+            
+            # 3. Combine all parts into final chat response
+            final_response = "\n\n".join(chat_response_parts)
+            
+            # Determine status
             if self.chat_handler.use_llm:
-                status = f"[SUCCESS] Using DeepSeek LLM"
+                status = f"[SUCCESS] Using LLM Analysis + Timescale Analysis"
             else:
-                status = "[WARNING] LLM not available - using built-in analysis"
+                status = "[SUCCESS] Built-in Analysis + Timescale Analysis"
             
             # Add to chat history
             self.chat_history.append({
                 "user": user_question,
-                "assistant": response,
+                "assistant": final_response,
                 "timestamp": datetime.now()
             })
             
-            return response, status
+            return final_response, status
             
         except Exception as e:
             return f"Error processing data: {str(e)}", "[ERROR] Processing Error"
+    
+    def _handle_contribution_analysis_request(self, df: pd.DataFrame, user_question: str) -> Tuple[str, str]:
+        """Handle contribution analysis requests with intelligent column detection"""
+        
+        try:
+            # Detect suitable columns for contribution analysis
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+            text_cols = df.select_dtypes(include=['object']).columns.tolist()
+            date_cols = df.select_dtypes(include=['datetime64']).columns.tolist()
+            
+            # Try to detect date columns that might not be datetime type yet
+            for col in df.columns:
+                if col.lower() in ['date', 'time', 'period', 'period_end'] and col not in date_cols:
+                    try:
+                        pd.to_datetime(df[col].head(), errors='raise')
+                        date_cols.append(col)
+                    except:
+                        pass
+            
+            if not numeric_cols or not text_cols:
+                return (
+                    "❌ **Cannot perform contribution analysis**: Need at least one numeric column and one category column.\n\n" +
+                    f"📊 **Your data has**: {len(numeric_cols)} numeric columns, {len(text_cols)} category columns\n\n" +
+                    "💡 **Tip**: Ensure your data has categories (like products, regions) and numeric values (like sales, revenue).",
+                    "[ERROR] Insufficient columns for contribution analysis"
+                )
+            
+            # Auto-detect the best columns
+            value_col = None
+            category_col = None
+            time_col = None
+            
+            # Find the best value column (prioritize sales, revenue, amount)
+            priority_value_terms = ['sales', 'revenue', 'amount', 'value', 'total', 'sum']
+            for term in priority_value_terms:
+                for col in numeric_cols:
+                    if term in col.lower():
+                        value_col = col
+                        break
+                if value_col:
+                    break
+            
+            # If no priority column found, use the first numeric column
+            if not value_col:
+                value_col = numeric_cols[0]
+            
+            # Find the best category column (prioritize product, category, region)
+            priority_category_terms = ['product', 'category', 'region', 'customer', 'item', 'name']
+            for term in priority_category_terms:
+                for col in text_cols:
+                    if term in col.lower():
+                        category_col = col
+                        break
+                if category_col:
+                    break
+            
+            # If no priority column found, use the first text column
+            if not category_col:
+                category_col = text_cols[0]
+            
+            # Use time column if available (prioritize time-based analysis as requested)
+            if date_cols:
+                time_col = date_cols[0]
+            
+            # Initialize contribution analyzer
+            if not hasattr(self, 'contribution_analyzer'):
+                self.contribution_analyzer = ContributionAnalyzer()
+            
+            # Perform contribution analysis
+            analysis_df, summary, fig = self.contribution_analyzer.perform_contribution_analysis_pandas(
+                df=df,
+                category_col=category_col,
+                value_col=value_col,
+                time_col=time_col,  # Automatic time-based prioritization
+                threshold=0.8
+            )
+            
+            # Format results for chat display
+            chat_response = self.contribution_analyzer.format_contribution_analysis_for_chat(
+                analysis_df, summary, category_col, value_col
+            )
+            
+            # Add column selection info to the response
+            column_info = f"""
+🔍 **AUTO-DETECTED COLUMNS**
+• **Category Column**: {category_col}
+• **Value Column**: {value_col}
+• **Time Column**: {time_col if time_col else 'None detected'}
+
+"""
+            
+            # Start building comprehensive response
+            response_parts = [column_info, chat_response]
+            
+            # Add time-based note if time column was used
+            if time_col:
+                response_parts.append(f"""
+
+⏰ **TIME-BASED ANALYSIS NOTE**
+Since a time column was detected ({time_col}), this analysis focuses on the most recent period to provide current insights. This follows your preference for time-based prioritization in contribution analysis.
+""")
+            
+            # ALSO ADD TIMESCALE ANALYSIS TO CONTRIBUTION ANALYSIS
+            try:
+                timescale_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
+                if timescale_analysis and "No date column found" not in timescale_analysis:
+                    response_parts.append("\n" + "="*50)
+                    response_parts.append("📈 **COMPREHENSIVE TIMESCALE ANALYSIS**")
+                    response_parts.append("="*50)
+                    response_parts.append(timescale_analysis)
+            except Exception as e:
+                response_parts.append(f"\n⚠️ **Timescale Analysis**: Could not generate due to: {str(e)}")
+            
+            # Combine all parts
+            final_response = "\n\n".join(response_parts)
+            
+            # Add to chat history
+            self.chat_history.append({
+                "user": user_question,
+                "assistant": final_response,
+                "timestamp": datetime.now()
+            })
+            
+            return final_response, "[SUCCESS] Contribution analysis + Timescale analysis completed"
+            
+        except Exception as e:
+            error_response = f"❌ **Error performing contribution analysis**: {str(e)}\n\n💡 **Tip**: Try specifying columns explicitly like 'Perform contribution analysis on sales by product'"
+            return error_response, "[ERROR] Contribution analysis failed"
     
     def create_data_summary(self, df: pd.DataFrame) -> str:
         """Create comprehensive data summary for Aria Sterling analysis"""
@@ -285,8 +486,8 @@ I'm Aria Sterling, your financial analysis assistant. I can help you analyze fin
 
 [INFO] **To enable Ollama**:
 1. Ensure Ollama is running: `ollama serve`
-2. Verify deepseek-coder is installed: `ollama list`
-3. If missing, install: `ollama pull deepseek-coder:6.7b`"""
+2. Verify gemma3 is installed: `ollama list`
+3. If missing, install: `ollama pull gemma3:latest`"""
         
         df = self.current_data
         
@@ -333,7 +534,7 @@ As Aria Sterling, your financial analyst, I can provide more insightful analysis
         # Geographic columns
         geo_cols = [col for col in columns if any(geo in col.lower() for geo in ['region', 'country', 'state', 'city', 'territory'])]
         
-        # Product/category columns  
+        # Product/Category columns  
         product_cols = [col for col in columns if any(prod in col.lower() for prod in ['product', 'line', 'category', 'segment'])]
         
         suggestions = []
@@ -526,26 +727,27 @@ You can still ask specific questions about your data using the chat interface.""
         """Create optimized prompt using the Aria Sterling persona for financial analysis"""
         
         # Aria Sterling system prompt
-        aria_system_prompt = """**[SYSTEM] System Prompt: Financial Analyst Persona**
+        aria_system_prompt = """**📌 System Prompt: Financial Analyst Persona**
 
 You are **Aria Sterling**, a world-class financial analyst and strategist. You possess exceptional quantitative reasoning, market intuition, and business acumen. You analyze financial data with precision, distill market signals into actionable insights, and communicate with clarity, confidence, and charisma.
 
-### [CORE] Core Attributes
+### 🎯 Core Attributes
 - **Brilliant and Analytical**: Expert in time series analysis, financial forecasting, valuation, corporate finance, and macroeconomic interpretation.
 - **Data-Driven**: Extracts insights from raw data using rigorous statistical and financial techniques. You speak in ratios, deltas, time horizons, and benchmarks.
 - **Fluent in Market Language**: Speaks in sharp, well-structured financial commentary—think investor calls, analyst briefings, earnings breakdowns, pitch decks.
 - **Human-Centric Communicator**: Makes complex concepts accessible to both CFOs and startup founders. Adjusts tone and vocabulary based on audience's financial fluency.
 - **Forward-Looking**: Scans for inflection points, tailwinds/headwinds, and market signals that influence KPIs and company valuations.
 
-### [KNOWLEDGE] Knowledge Domains
+### 🧠 Knowledge Domains
 - Financial statements, KPIs, profitability analysis
-- Forecasting, TTM, YoY, QoQ analysis
+- Forecasting, TTM (Trailing Twelve Months), YoY, QoQ analysis
 - Time series analysis and growth metrics (CAGR, MoM, rolling averages)
+- TTM calculations and performance benchmarking
 - Corporate strategy, M&A basics, capital structure
 - Industry benchmarking and competitive analysis
 - Equities, credit markets, macroeconomic indicators
 
-### [STYLE] Communication Style
+### 💬 Communication Style
 - Sharp, credible, and confident—yet approachable.
 - Speaks in terms like "overdelivered by 14.2%," "driven by margin expansion," or "growth decelerating at a 3-month rolling rate."
 - Capable of switching tones: quick elevator pitch, deep-dive analysis, or executive summary."""
@@ -897,7 +1099,7 @@ class TimescaleAnalyzer:
         return "\n".join(insights)
     
     def generate_timescale_analysis(self, df: pd.DataFrame) -> str:
-        """Generate comprehensive timescale analysis for the given dataframe"""
+        """Generate comprehensive timescale analysis for the given dataframe including TTM"""
         # Find date column using our helper method
         date_col = self.find_date_column(df)
         
@@ -919,16 +1121,50 @@ class TimescaleAnalyzer:
         if date_col in value_cols:
             value_cols.remove(date_col)
         
-        # Prepare aggregations
+        # Calculate TTM metrics
+        ttm_metrics = self.calculate_ttm_metrics(df, date_col, value_cols)
+        ttm_analysis = self.generate_ttm_analysis_text(ttm_metrics)
+        
+        # Prepare aggregations for period-over-period analysis
         aggregations = self.prepare_timescale_aggregations(df, date_col, value_cols)
         
         # Calculate period-over-period analysis
         pop_analysis = self.calculate_period_over_period_analysis(aggregations, value_cols)
         
         # Generate insights
-        insights = self._generate_summary_insights(pop_analysis)
+        pop_insights = self._generate_summary_insights(pop_analysis)
         
-        return insights
+        # Combine TTM and period-over-period analysis
+        combined_analysis = f"""{pop_insights}
+
+{ttm_analysis}
+
+---
+
+### [EXECUTIVE] Executive Summary with TTM Context
+*Comprehensive analysis combining period-over-period trends and trailing twelve months performance*
+
+**Key Findings:**
+- **Data Coverage**: {len(df)} records from {df[date_col].min().strftime('%Y-%m-%d')} to {df[date_col].max().strftime('%Y-%m-%d')}
+- **TTM Period**: {ttm_metrics['period_start'].strftime('%Y-%m-%d')} to {ttm_metrics['period_end'].strftime('%Y-%m-%d')}
+- **Analysis Granularity**: {granularity} level data detected"""
+
+        # Add TTM performance summary
+        if ttm_metrics["metrics"]:
+            yoy_changes = []
+            for metric_name, metric_data in ttm_metrics["metrics"].items():
+                if metric_data["yoy_change_pct"] is not None:
+                    yoy_changes.append(metric_data["yoy_change_pct"])
+            
+            if yoy_changes:
+                avg_yoy = sum(yoy_changes) / len(yoy_changes)
+                combined_analysis += f"""
+- **TTM Performance**: Average YoY change of {avg_yoy:.1f}% across all metrics
+- **TTM Data Quality**: {ttm_metrics['data_points']} data points in trailing twelve months"""
+        
+        combined_analysis += "\n\n*Use this analysis to understand both short-term trends and long-term performance patterns.*"
+        
+        return combined_analysis
 
     def find_date_column(self, df: pd.DataFrame) -> Optional[str]:
         """Find a date column in the dataframe with enhanced detection logic
@@ -999,6 +1235,591 @@ class TimescaleAnalyzer:
         # No date column found
         return None
 
+    def calculate_ttm_metrics(self, df: pd.DataFrame, date_col: str, value_cols: List[str]) -> Dict:
+        """Calculate Trailing Twelve Months (TTM) metrics from the last date in the series"""
+        
+        # Ensure date column is datetime
+        df = df.copy()
+        df[date_col] = pd.to_datetime(df[date_col])
+        
+        # Sort by date and get the last date
+        df_sorted = df.sort_values(by=date_col)
+        last_date = df_sorted[date_col].max()
+        
+        print(f"[TTM LOG] Last date in series: {last_date}")
+        
+        # Calculate TTM start date (12 months before last date)
+        ttm_start_date = last_date - pd.DateOffset(months=12)
+        
+        print(f"[TTM LOG] TTM period: {ttm_start_date} to {last_date}")
+        
+        # Filter data for TTM period
+        ttm_data = df_sorted[
+            (df_sorted[date_col] > ttm_start_date) & 
+            (df_sorted[date_col] <= last_date)
+        ]
+        
+        print(f"[TTM LOG] TTM data points: {len(ttm_data)} rows")
+        
+        # Calculate TTM metrics
+        ttm_metrics = {
+            "period_start": ttm_start_date,
+            "period_end": last_date,
+            "data_points": len(ttm_data),
+            "metrics": {}
+        }
+        
+        for col in value_cols:
+            if col in ttm_data.columns:
+                ttm_sum = ttm_data[col].sum()
+                ttm_mean = ttm_data[col].mean()
+                ttm_std = ttm_data[col].std()
+                
+                # Calculate YoY comparison if we have data from previous year
+                yoy_start = ttm_start_date - pd.DateOffset(months=12)
+                yoy_end = last_date - pd.DateOffset(months=12)
+                
+                yoy_data = df_sorted[
+                    (df_sorted[date_col] > yoy_start) & 
+                    (df_sorted[date_col] <= yoy_end)
+                ]
+                
+                yoy_sum = yoy_data[col].sum() if len(yoy_data) > 0 else None
+                yoy_change = ((ttm_sum - yoy_sum) / yoy_sum * 100) if yoy_sum and yoy_sum != 0 else None
+                
+                ttm_metrics["metrics"][col] = {
+                    "ttm_total": ttm_sum,
+                    "ttm_average": ttm_mean,
+                    "ttm_std_dev": ttm_std,
+                    "yoy_comparison": yoy_sum,
+                    "yoy_change_pct": yoy_change
+                }
+                
+                print(f"[TTM LOG] {col}: TTM Total = {ttm_sum:,.2f}, YoY Change = {yoy_change:.2f}%" if yoy_change else f"[TTM LOG] {col}: TTM Total = {ttm_sum:,.2f}")
+        
+        return ttm_metrics
+    
+    def generate_ttm_analysis_text(self, ttm_metrics: Dict) -> str:
+        """Generate natural language analysis of TTM metrics"""
+        
+        analysis = []
+        
+        # Add TTM header
+        analysis.append("## [TTM] Trailing Twelve Months Analysis")
+        analysis.append(f"*Analysis period: {ttm_metrics['period_start'].strftime('%Y-%m-%d')} to {ttm_metrics['period_end'].strftime('%Y-%m-%d')}*")
+        analysis.append(f"*Data points: {ttm_metrics['data_points']} records*\n")
+        
+        if not ttm_metrics["metrics"]:
+            analysis.append("- No numeric metrics available for TTM analysis")
+            return "\n".join(analysis)
+        
+        # Analyze each metric
+        for metric_name, metric_data in ttm_metrics["metrics"].items():
+            analysis.append(f"### {metric_name.replace('_', ' ').title()}")
+            
+            # TTM totals and averages
+            ttm_total = metric_data["ttm_total"]
+            ttm_avg = metric_data["ttm_average"]
+            
+            analysis.append(f"- **TTM Total**: {ttm_total:,.2f}")
+            analysis.append(f"- **TTM Monthly Average**: {ttm_avg:,.2f}")
+            
+            # Year-over-year comparison
+            if metric_data["yoy_change_pct"] is not None:
+                yoy_change = metric_data["yoy_change_pct"]
+                direction = "increased" if yoy_change > 0 else "decreased"
+                analysis.append(f"- **YoY Change**: {direction} by {abs(yoy_change):.1f}%")
+                
+                # Add performance commentary
+                if abs(yoy_change) > 20:
+                    performance = "significant" if yoy_change > 0 else "concerning"
+                    analysis.append(f"  - This represents a **{performance}** year-over-year change")
+                elif abs(yoy_change) > 10:
+                    performance = "strong" if yoy_change > 0 else "notable"
+                    analysis.append(f"  - This shows **{performance}** year-over-year movement")
+                else:
+                    analysis.append(f"  - This indicates **stable** year-over-year performance")
+            else:
+                analysis.append("- **YoY Change**: Insufficient historical data for comparison")
+            
+            # Volatility analysis
+            if metric_data["ttm_std_dev"] is not None and ttm_avg != 0:
+                cv = (metric_data["ttm_std_dev"] / ttm_avg) * 100
+                if cv > 30:
+                    volatility = "high"
+                elif cv > 15:
+                    volatility = "moderate"
+                else:
+                    volatility = "low"
+                analysis.append(f"- **Volatility**: {volatility} (CV: {cv:.1f}%)")
+            
+            analysis.append("")
+        
+        # Add TTM summary insights
+        analysis.append("### TTM Key Insights")
+        insights = []
+        
+        # Find the best and worst performing metrics
+        yoy_changes = {}
+        for metric_name, metric_data in ttm_metrics["metrics"].items():
+            if metric_data["yoy_change_pct"] is not None:
+                yoy_changes[metric_name] = metric_data["yoy_change_pct"]
+        
+        if yoy_changes:
+            best_metric = max(yoy_changes, key=yoy_changes.get)
+            worst_metric = min(yoy_changes, key=yoy_changes.get)
+            
+            insights.append(f"- **Best TTM Performance**: {best_metric.replace('_', ' ').title()} (+{yoy_changes[best_metric]:.1f}% YoY)")
+            insights.append(f"- **Weakest TTM Performance**: {worst_metric.replace('_', ' ').title()} ({yoy_changes[worst_metric]:.1f}% YoY)")
+            
+            # Overall trend assessment
+            avg_change = sum(yoy_changes.values()) / len(yoy_changes)
+            if avg_change > 5:
+                insights.append(f"- **Overall TTM Trend**: Positive growth trajectory (avg +{avg_change:.1f}% YoY)")
+            elif avg_change < -5:
+                insights.append(f"- **Overall TTM Trend**: Declining performance (avg {avg_change:.1f}% YoY)")
+            else:
+                insights.append(f"- **Overall TTM Trend**: Stable performance (avg {avg_change:.1f}% YoY)")
+        else:
+            insights.append("- Insufficient historical data for comprehensive TTM trend analysis")
+        
+        analysis.extend(insights)
+        
+        return "\n".join(analysis)
+
+class ContributionAnalyzer:
+    """Contribution analysis for financial data - identifies key contributors to metrics"""
+    
+    def __init__(self):
+        pass
+
+    def perform_pareto_analysis(
+        self, 
+        df: pd.DataFrame, 
+        category_col: str, 
+        value_col: str, 
+        time_col: Optional[str] = None, 
+        threshold: float = 0.8
+    ) -> Tuple[pd.DataFrame, Optional[go.Figure]]:
+        """
+        Performs Pareto analysis (80/20 rule) on the given data.
+
+        Args:
+            df (pd.DataFrame): The input data.
+            category_col (str): The column with categories to analyze (e.g., 'Product').
+            value_col (str): The numeric column with the value to analyze (e.g., 'Sales').
+            time_col (str, optional): The time column for time-based analysis. Defaults to None.
+            threshold (float, optional): The cumulative contribution threshold. Defaults to 0.8.
+
+        Returns:
+            Tuple[pd.DataFrame, Optional[go.Figure]]: A DataFrame with the Pareto analysis and a Plotly figure.
+        """
+        df = df.copy()
+        df[value_col] = pd.to_numeric(df[value_col], errors='coerce')
+        df.dropna(subset=[value_col], inplace=True)
+
+        if time_col:
+            # Group by the time column and apply Pareto analysis to each period
+            # This is a simplified approach; for a full implementation, we would loop through each period
+            # For now, we'll analyze the most recent period if it's a datetime column
+            if pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                latest_period = df[time_col].max()
+                df = df[df[time_col] == latest_period]
+
+        # Group by category and sum the values
+        analysis_df = df.groupby(category_col)[value_col].sum().reset_index()
+        analysis_df = analysis_df.sort_values(by=value_col, ascending=False)
+        
+        # Calculate cumulative sum and percentage
+        analysis_df['cumulative_sum'] = analysis_df[value_col].cumsum()
+        total_sum = analysis_df[value_col].sum()
+        analysis_df['cumulative_pct'] = analysis_df['cumulative_sum'] / total_sum
+        
+        # Calculate individual contribution percentage
+        analysis_df['individual_pct'] = analysis_df[value_col] / total_sum
+        
+        # Identify key contributors (those that contribute to reaching threshold)
+        key_contributors_mask = analysis_df['cumulative_pct'] <= threshold
+        if key_contributors_mask.any():
+            # Include one more item that crosses the threshold
+            threshold_idx = key_contributors_mask.sum()
+            if threshold_idx < len(analysis_df):
+                key_contributors_mask.iloc[threshold_idx] = True
+        
+        analysis_df['is_key_contributor'] = key_contributors_mask
+        
+        # Add ranking
+        analysis_df['rank'] = range(1, len(analysis_df) + 1)
+
+        # Generate plot
+        fig = self._plot_pareto(analysis_df, category_col, value_col, threshold)
+
+        return analysis_df, fig
+
+    def _plot_pareto(self, analysis_df: pd.DataFrame, category_col: str, value_col: str, threshold: float) -> go.Figure:
+        """Generates a Pareto plot using Plotly."""
+        
+        fig = go.Figure()
+
+        # Bar chart for the values
+        fig.add_trace(go.Bar(
+            x=analysis_df[category_col],
+            y=analysis_df[value_col],
+            name=value_col.title(),
+            marker_color=['blue' if key else 'lightblue' for key in analysis_df['is_key_contributor']],
+            text=[f"{val:,.0f}" for val in analysis_df[value_col]],
+            textposition='auto'
+        ))
+
+        # Line chart for the cumulative percentage
+        fig.add_trace(go.Scatter(
+            x=analysis_df[category_col],
+            y=analysis_df['cumulative_pct'],
+            name='Cumulative Percentage',
+            yaxis='y2',
+            mode='lines+markers',
+            line=dict(color='red', dash='dash', width=2),
+            marker=dict(color='red', size=6),
+            text=[f"{pct:.1%}" for pct in analysis_df['cumulative_pct']],
+            textposition='top center'
+        ))
+
+        # Add threshold line
+        threshold_line_y = [threshold] * len(analysis_df)
+        fig.add_trace(go.Scatter(
+            x=analysis_df[category_col],
+            y=threshold_line_y,
+            name=f'{threshold:.0%} Threshold',
+            yaxis='y2',
+            mode='lines',
+            line=dict(color='green', dash='dot', width=2),
+            showlegend=True
+        ))
+
+        # Find the key point where threshold is crossed
+        threshold_crossed = analysis_df[analysis_df['cumulative_pct'] >= threshold]
+        if not threshold_crossed.empty:
+            key_point_index = threshold_crossed.index[0]
+            key_point_category = analysis_df.loc[key_point_index, category_col]
+            key_point_value = analysis_df.loc[key_point_index, 'cumulative_pct']
+            
+            # Add annotation for the key point
+            fig.add_annotation(
+                x=key_point_category,
+                y=key_point_value,
+                yref='y2',
+                text=f"Key Point: {key_point_value:.1%}",
+                showarrow=True,
+                arrowhead=2,
+                arrowcolor='green',
+                bgcolor='lightgreen',
+                bordercolor='green'
+            )
+
+        fig.update_layout(
+            title=f'Pareto Analysis: {value_col.title()} by {category_col.title()}',
+            xaxis_title=category_col.title(),
+            yaxis_title=value_col.title(),
+            yaxis2=dict(
+                title='Cumulative Percentage',
+                overlaying='y',
+                side='right',
+                tickformat='.0%',
+                range=[0, 1.05]
+            ),
+            legend=dict(x=0, y=1.15, orientation='h'),
+            height=500,
+            template='plotly_white'
+        )
+        
+        return fig
+    
+    def perform_contribution_analysis_pandas(
+        self, 
+        df: pd.DataFrame, 
+        category_col: str, 
+        value_col: str, 
+        time_col: Optional[str] = None,
+        threshold: float = 0.8
+    ) -> Tuple[pd.DataFrame, Dict[str, any], Optional[go.Figure]]:
+        """
+        Performs contribution analysis using pandas following the 80/20 rule approach.
+        Based on the Medium article methodology.
+
+        Args:
+            df (pd.DataFrame): The input data.
+            category_col (str): The column with categories to analyze.
+            value_col (str): The numeric column with values to analyze.
+            time_col (str, optional): The time column for time-based analysis.
+            threshold (float, optional): The cumulative contribution threshold. Defaults to 0.8.
+
+        Returns:
+            Tuple containing:
+            - pd.DataFrame: Analysis results with contribution metrics
+            - Dict: Summary statistics and key insights  
+            - go.Figure: Pareto chart visualization
+        """
+        df = df.copy()
+        df[value_col] = pd.to_numeric(df[value_col], errors='coerce')
+        df.dropna(subset=[value_col], inplace=True)
+
+        # Handle time-based analysis
+        if time_col and time_col in df.columns:
+            # Convert time column to datetime if needed
+            if not pd.api.types.is_datetime64_any_dtype(df[time_col]):
+                df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+            
+            # Use the most recent period for analysis
+            latest_period = df[time_col].max()
+            df = df[df[time_col] == latest_period]
+
+        # Step 1: Group by category and sum values (following pandas approach)
+        data = df.groupby(category_col)[value_col].sum().reset_index()
+        
+        # Step 2: Sort in descending order
+        data = data.sort_values(by=value_col, ascending=False).reset_index(drop=True)
+        
+        # Step 3: Calculate cumulative sum and contribution percentage
+        total_sum = data[value_col].sum()
+        data['cumulative_sum'] = data[value_col].cumsum()
+        data['contribution'] = data['cumulative_sum'] / total_sum
+        data['individual_contribution'] = data[value_col] / total_sum
+        
+        # Step 4: Identify key contributors (following the pandas approach)
+        key_contributors = data[data['contribution'] <= threshold]
+        
+        # Include the first item that crosses the threshold if exists
+        if len(key_contributors) < len(data):
+            threshold_crosser_idx = len(key_contributors)
+            key_contributors = pd.concat([
+                key_contributors, 
+                data.iloc[[threshold_crosser_idx]]
+            ], ignore_index=True)
+        
+        # Mark key contributors
+        data['is_key_contributor'] = data.index < len(key_contributors)
+        
+        # Add ranking
+        data['rank'] = range(1, len(data) + 1)
+        
+        # Step 5: Generate summary statistics and insights
+        summary = self._generate_contribution_summary(data, category_col, value_col, threshold)
+        
+        # Step 6: Create visualization
+        fig = self._plot_contribution_analysis(data, category_col, value_col, threshold)
+        
+        return data, summary, fig
+    
+    def _generate_contribution_summary(self, data: pd.DataFrame, category_col: str, value_col: str, threshold: float) -> Dict[str, any]:
+        """Generate summary statistics and insights from contribution analysis."""
+        key_contributors = data[data['is_key_contributor']]
+        top_contributor = data.iloc[0]
+        
+        summary = {
+            'total_categories': len(data),
+            'key_contributors_count': len(key_contributors),
+            'key_contributors_percentage': (len(key_contributors) / len(data)) * 100,
+            'key_contributors_value_share': key_contributors['individual_contribution'].sum(),
+            'key_contributors_list': key_contributors[category_col].tolist(),
+            'top_contributor': top_contributor[category_col],
+            'top_contributor_share': top_contributor['individual_contribution'] * 100,
+            'insights': [
+                f"{len(key_contributors)} out of {len(data)} contributors account for {key_contributors['individual_contribution'].sum():.1%} of total value",
+                "Distribution follows Pareto principle pattern",
+                f"Top contributor: {top_contributor[category_col]} ({top_contributor['individual_contribution']:.1%})"
+            ]
+        }
+        
+        return summary
+    
+    def _plot_contribution_analysis(self, data: pd.DataFrame, category_col: str, value_col: str, threshold: float) -> go.Figure:
+        """Create an interactive Pareto chart for contribution analysis."""
+        # Create figure with secondary y-axis
+        fig = go.Figure()
+        
+        # Add bar chart for individual values
+        fig.add_trace(
+            go.Bar(
+                x=data[category_col],
+                y=data[value_col],
+                name=f'{value_col}',
+                marker_color=['red' if is_key else 'lightblue' for is_key in data['is_key_contributor']],
+                hovertemplate=f'<b>%{{x}}</b><br>{value_col}: %{{y:,.0f}}<br>Share: %{{customdata:.1%}}<extra></extra>',
+                customdata=data['individual_contribution'],
+                yaxis='y'
+            )
+        )
+        
+        # Add line chart for cumulative percentage
+        fig.add_trace(
+            go.Scatter(
+                x=data[category_col],
+                y=data['contribution'],
+                mode='lines+markers',
+                name='Cumulative %',
+                line=dict(color='red', width=3),
+                marker=dict(size=8),
+                hovertemplate='<b>%{x}</b><br>Cumulative: %{y:.1%}<extra></extra>',
+                yaxis='y2'
+            )
+        )
+        
+        # Add threshold line
+        fig.add_hline(
+            y=threshold,
+            line_dash="dash",
+            line_color="orange",
+            annotation_text=f"{threshold:.0%} Threshold",
+            annotation_position="bottom right",
+            yref='y2'
+        )
+        
+        # Update layout
+        fig.update_layout(
+            title=f'Contribution Analysis - {category_col} by {value_col} (80/20 Pareto)',
+            xaxis_title=category_col,
+            yaxis=dict(
+                title=f'{value_col}',
+                side='left'
+            ),
+            yaxis2=dict(
+                title='Cumulative Contribution (%)',
+                side='right',
+                overlaying='y',
+                tickformat='.0%',
+                range=[0, 1.05]
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            height=600,
+            template='plotly_white',
+            hovermode='x unified'
+        )
+        
+        return fig
+    
+    def format_contribution_analysis_for_chat(
+        self, 
+        analysis_df: pd.DataFrame, 
+        summary: Dict[str, any], 
+        category_col: str, 
+        value_col: str
+    ) -> str:
+        """
+        Format contribution analysis results for chat display.
+        
+        Args:
+            analysis_df: The analyzed data with contributions
+            summary: Summary statistics from analysis
+            category_col: Name of the category column
+            value_col: Name of the value column
+            
+        Returns:
+            Formatted string for chat display
+        """
+        try:
+            # Header
+            response = f"""📊 **CONTRIBUTION ANALYSIS RESULTS** (80/20 Pareto Principle)
+
+🎯 **ANALYSIS SUMMARY**
+• **Total {category_col.title()}s**: {summary['total_categories']}
+• **Key Contributors**: {summary['key_contributors_count']} ({summary['key_contributors_percentage']:.1f}%)
+• **Value Share of Key Contributors**: {summary['key_contributors_value_share']:.1%}
+• **Top Contributor**: {summary['top_contributor']} ({summary['top_contributor_share']:.1%})
+
+"""
+
+            # Top contributors table
+            key_contributors = analysis_df[analysis_df['is_key_contributor']].head(10)
+            
+            response += f"""📈 **TOP CONTRIBUTORS** (Key 80/20 Players)
+```
+{'Rank':<4} {'Category':<20} {'Value':<12} {'Share':<8} {'Cumulative':<12}
+{'-'*4} {'-'*20} {'-'*12} {'-'*8} {'-'*12}
+"""
+            
+            for idx, row in key_contributors.iterrows():
+                rank = idx + 1
+                category = str(row[category_col])[:18]  # Truncate long names
+                value = f"{row[value_col]:,.0f}"
+                share = f"{row['individual_contribution']:.1%}"
+                cumulative = f"{row['contribution']:.1%}"
+                
+                response += f"{rank:<4} {category:<20} {value:<12} {share:<8} {cumulative:<12}\n"
+            
+            response += "```\n\n"
+            
+            # Insights based on Pareto analysis
+            concentration_level = "Strong" if summary['key_contributors_value_share'] > 0.8 else "Moderate" if summary['key_contributors_value_share'] > 0.6 else "Weak"
+            
+            response += f"""🔍 **KEY INSIGHTS** (Following 80/20 Pareto Principle)
+
+• **Concentration**: {concentration_level} concentration pattern detected
+• **Pareto Efficiency**: {summary['key_contributors_percentage']:.1f}% of {category_col.lower()}s drive {summary['key_contributors_value_share']:.1%} of total {value_col.lower()}
+• **Strategic Focus**: Top 3 contributors account for {analysis_df.head(3)['contribution'].iloc[-1]:.1%} of total value
+
+"""
+
+            # Business recommendations
+            if summary['key_contributors_value_share'] > 0.8:
+                response += f"""💡 **STRATEGIC RECOMMENDATIONS**
+
+🎯 **HIGH PRIORITY**:
+• Focus resources on top {min(3, summary['key_contributors_count'])} contributors
+• Protect and expand relationships with key {category_col.lower()}s
+• Analyze success factors of top performers
+
+⚠️ **RISK MANAGEMENT**:
+• High concentration creates dependency risk
+• Diversification strategy may be needed
+• Monitor top contributor stability closely
+
+"""
+            else:
+                response += f"""💡 **STRATEGIC RECOMMENDATIONS**
+
+📊 **BALANCED PORTFOLIO**:
+• More evenly distributed contribution pattern
+• Opportunities for growth across multiple {category_col.lower()}s
+• Consider targeted improvement initiatives
+
+🚀 **OPTIMIZATION OPPORTUNITIES**:
+• Identify potential for top performers to increase share
+• Analyze underperforming {category_col.lower()}s for improvement potential
+• Balanced growth strategy recommended
+
+"""
+
+            # Bottom performers section
+            bottom_performers = analysis_df[~analysis_df['is_key_contributor']]
+            if not bottom_performers.empty:
+                response += f"""⚠️ **UNDERPERFORMING {category_col.upper()}S** ({len(bottom_performers)} items)
+
+Bottom 3 contributors account for only {bottom_performers.tail(3)['individual_contribution'].sum():.1%} of total {value_col.lower()}
+
+Consider:
+• Performance improvement programs
+• Resource reallocation decisions  
+• Cost-benefit analysis for continued investment
+
+"""
+
+            response += f"""---
+✅ **Analysis Complete** | Following pandas-based 80/20 methodology from Medium article
+📊 Data sorted by {value_col.lower()} in descending order | Cumulative percentages calculated using pandas cumsum()
+🎯 Key contributors identified at 80% threshold | Charts available for visual analysis
+"""
+
+            return response
+            
+        except Exception as e:
+            return f"❌ Error formatting contribution analysis: {str(e)}"
+
 # Initialize the chat system
 chat_system = AriaFinancialChat()
 
@@ -1063,6 +1884,7 @@ def load_data_for_grid(file):
             print(f"[DEBUG] Loading from file content (decoded)")
             df = pd.read_csv(io.StringIO(file.decode('utf-8')))
         
+        
         print(f"[SUCCESS] Successfully loaded DataFrame - Shape: {df.shape}, Columns: {list(df.columns)}")
         
         # Store in chat system for analysis
@@ -1088,9 +1910,9 @@ def check_system_status():
     
     # Ollama status
     if ollama_available:
-        status_parts.append("[SUCCESS] **DeepSeek Coder** Active")
+        status_parts.append("[SUCCESS] **Gemma3** Active")
     else:
-        status_parts.append("[WARNING] **DeepSeek Coder** Offline (Run: `ollama serve`)")
+        status_parts.append("[WARNING] **Gemma3** Offline (Run: `ollama serve`)")
     
     # LlamaIndex status
     if llamaindex_available:
@@ -1102,256 +1924,226 @@ def check_system_status():
     
     # Enhancement note
     if ollama_available and llamaindex_available:
-        enhancement = "\n\n[ENHANCED] **Full Enhancement Mode**: Both DeepSeek Coder conversational AI and LlamaIndex structured extraction available for maximum analytical power!"
+        enhancement = "\n\n[ENHANCED] **Full Enhancement Mode**: Both Gemma3 conversational AI and LlamaIndex structured extraction available for maximum analytical power!"
     elif ollama_available:
-        enhancement = "\n\n[BOT] **Standard Mode**: DeepSeek Coder conversational analysis active. Install LlamaIndex for enhanced document processing."
+        enhancement = "\n\n[BOT] **Standard Mode**: Gemma3 conversational analysis active. Install LlamaIndex for enhanced document processing."
     else:
-        enhancement = "\n\n[BASIC] **Basic Mode**: Using built-in analysis. Enable DeepSeek Coder and LlamaIndex for full AI capabilities."
+        enhancement = "\n\n[BASIC] **Basic Mode**: Using built-in analysis. Enable Gemma3 and LlamaIndex for full AI capabilities."
     
     return " | ".join(status_parts) + enhancement
 
 # Create Gradio interface
 def create_interface():
-    """Create the Gradio interface"""
+    """Create the Gradio interface - Pure chat-focused with all analysis inline"""
     
     with gr.Blocks(
-        title="VariancePro - DeepSeek Financial Chat",
+        title="VariancePro - Financial Analysis Chat",
         theme=gr.themes.Soft(),
         css="""
-        .container { max-width: 1200px; margin: auto; }
-        .status-box { background: #f0f8ff; padding: 10px; border-radius: 5px; margin: 10px 0; }
-        .chat-container { height: 400px; overflow-y: auto; }
-        .data-grid { max-height: 500px; overflow: auto; }
+        .container { max-width: 1000px; margin: auto; }
+        .chat-container { height: 600px; overflow-y: auto; }
         """
     ) as interface:
         
-        gr.Markdown("# VariancePro - Financial Data Analysis Chat")
-        gr.Markdown("### Powered by DeepSeek Coder via Ollama")
+        gr.Markdown("# 🚀 VariancePro - Financial Analysis Chat")
+        gr.Markdown("### 📊 Powered by Gemma3 via Ollama | All analysis appears in chat conversation")
         
-        # Create tabs for different views - ONLY 2 TABS
-        with gr.Tabs():
-            # Chat Analysis Tab
-            with gr.TabItem("[CHAT] Chat Analysis"):
-                with gr.Row():
-                    with gr.Column(scale=2):
-                        # File upload
-                        file_input = gr.File(
-                            label="[UPLOAD] Upload Financial Data (CSV)",
-                            file_types=[".csv"],
-                            type="filepath",
-                            file_count="single"
-                        )
-                        
-                        # Chat interface
-                        chatbot = gr.Chatbot(
-                            label="[CHAT] Financial Analysis Chat",
-                            height=400,
-                            show_label=True,
-                            type="messages"
-                        )
-                        
-                        # User input
-                        user_input = gr.Textbox(
-                            label="Ask about your financial data:",
-                            placeholder="e.g., 'Analyze sales variance by region and suggest Python code'",
-                            lines=2
-                        )
-                        
-                        # Buttons
-                        with gr.Row():
-                            submit_btn = gr.Button("[SEARCH] Analyze", variant="primary")
-                            clear_btn = gr.Button("[CLEAR] Clear Chat")
-                    
-                    with gr.Column(scale=1):
-                        # Status panel
-                        status_display = gr.Textbox(
-                            label="[STATUS] System Status",
-                            value=check_system_status(),
-                            interactive=False,
-                            lines=2
-                        )
-                        
-                        # Dynamic sample questions based on data
-                        suggested_questions = gr.Markdown(
-                            value=chat_system.get_default_suggested_questions(),
-                            label="[TIPS] Suggested Questions"
-                        )
-                        
-                        # Refresh status button
-                        refresh_btn = gr.Button("[REFRESH] Refresh Status")
+        # Single column layout - pure chat interface
+        with gr.Column():
+            # File upload at the top
+            file_input = gr.File(
+                label="📁 Upload Financial Data (CSV) - Analysis will appear in chat below",
+                file_types=[".csv"],
+                type="filepath",
+                file_count="single"
+            )
             
-            # Data Grid Tab
-            with gr.TabItem("[DATA] Data View"):
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        # File upload for data view (shared with chat)
-                        gr.Markdown("### [INFO] Data Overview")
-                        gr.Markdown("Upload a CSV file in the Chat Analysis tab to view the data here.")
-                        
-                        # Data info panel
-                        data_info = gr.Textbox(
-                            label="[INFO] Dataset Information",
-                            value="No data loaded yet. Please upload a CSV file in the Chat Analysis tab.",
-                            interactive=False,
-                            lines=3
-                        )
-                        
-                        # Data grid
-                        data_grid = gr.DataFrame(
-                            label="[GRID] Data Grid",
-                            interactive=False,
-                            wrap=True,
-                            elem_classes=["data-grid"]
-                        )
-                    
-                    with gr.Column(scale=1):
-                        # Automatic timescale analysis
-                        gr.Markdown("### Automatic Timescale Analysis")
-                        gr.Markdown("*Comprehensive period-over-period analysis generated automatically*")
-                        
-                        auto_analysis_display = gr.Markdown(
-                            label="[AUTO] Automatic Analysis",
-                            value="Please upload data to see automatic analysis.",
-                            elem_classes=["analysis-display"]
-                        )
+            # Main chat interface - all analysis appears here
+            chatbot = gr.Chatbot(
+                label="💬 Financial Analysis Chat - All results appear here inline",
+                height=600,
+                show_label=True,
+                type="messages",
+                elem_classes=["chat-container"]
+            )
+            
+            # User input
+            user_input = gr.Textbox(
+                label="💭 Ask about your financial data:",
+                placeholder="e.g., 'Perform contribution analysis', 'Analyze sales variance by region', 'Show 80/20 Pareto analysis'",
+                lines=2
+            )
+            
+            # Buttons row
+            with gr.Row():
+                submit_btn = gr.Button("🔍 Analyze", variant="primary")
+                clear_btn = gr.Button("🗑️ Clear Chat")
+                status_btn = gr.Button("📊 System Status")
+            
+            # Tips section - compact
+            gr.Markdown("""
+            💡 **Tips**: Upload CSV → Ask questions → All analysis (including contribution analysis, charts, insights) appears in chat above
+            
+            🎯 **Sample Questions**: "Perform contribution analysis", "Show me 80/20 analysis", "Analyze budget vs actual", "Generate Python code"
+            """)
         
-        # State for chat history and data
+        # State for chat history only - all analysis goes into chat
         chat_state = gr.State([])
         
-        # Event handlers
+        # Event handlers - ALL ANALYSIS APPEARS IN CHAT
         def submit_query(file, question, history, chat_state):
-            new_history, new_chat_state, status, current_data = process_query(file, question, chat_state)
-            
-            # Update data info and grid
-            if current_data is not None:
-                info_text = f"""[DATA] Dataset Loaded: {len(current_data)} rows × {len(current_data.columns)} columns
-
-[NUMERIC] Numeric Columns: {len(current_data.select_dtypes(include=[np.number]).columns)}
-[TEXT] Text Columns: {len(current_data.select_dtypes(include=['object']).columns)}
-[DATE] Date Columns: {len(current_data.select_dtypes(include=['datetime64']).columns)}
-
-[MEMORY] Memory Usage: {current_data.memory_usage(deep=True).sum() / 1024:.1f} KB"""
-                return new_history, "", new_chat_state, status, info_text, current_data
-            else:
-                return new_history, "", new_chat_state, status, "No data loaded", None
-        
-        def update_data_view(file):
-            """Update data view when file is uploaded - includes automatic timescale analysis"""
-            if file is None:
-                return "No data loaded yet. Please upload a CSV file.", None, "Please upload data to see automatic analysis."
-            
-            df = load_data_for_grid(file)
-            if df is not None:
-                # Basic data info
-                info_text = f"""[DATA] Dataset Loaded: {len(df)} rows × {len(df.columns)} columns
+            """Handle user queries - all results appear in chat conversation"""
+            try:
+                # Process the query using existing logic
+                new_history, new_chat_state, status, current_data = process_query(file, question, chat_state)
                 
-[NUMERIC] Numeric Columns: {len(df.select_dtypes(include=[np.number]).columns)}
-[TEXT] Text Columns: {len(df.select_dtypes(include=['object']).columns)}
-[DATE] Date Columns: {len(df.select_dtypes(include=['datetime64']).columns)}
-
-[MEMORY] Memory Usage: {df.memory_usage(deep=True).sum() / 1024:.1f} KB
-
-[COLUMNS] Column Names: {', '.join(df.columns.tolist())}"""
+                # All analysis appears in the new_history (chat conversation)
+                # No separate panels needed
+                return new_history, "", new_chat_state
                 
-                # Generate automatic timescale analysis
-                print("Generating automatic timescale analysis...")
-                auto_analysis = chat_system.generate_automatic_timescale_analysis(df)
-                
-                return info_text, df, auto_analysis
-            else:
-                return "Error loading data. Please check your CSV file.", None, "Unable to generate analysis due to data loading error."
+            except Exception as e:
+                error_msg = f"❌ Error processing query: {str(e)}"
+                updated_history = (history or []) + [
+                    {"role": "user", "content": question},
+                    {"role": "assistant", "content": error_msg}
+                ]
+                return updated_history, "", chat_state
         
         def clear_chat():
+            """Clear chat history"""
             chat_system.chat_history = []
             return [], []
         
-        def update_suggested_questions(file):
-            """Update suggested questions based on uploaded data"""
-            if file is None:
-                return chat_system.get_default_suggested_questions()
-            
-            df = load_data_for_grid(file)
-            if df is not None:
-                return chat_system.generate_suggested_questions(df)
-            else:
-                return chat_system.get_default_suggested_questions()
+        def show_system_status():
+            """Show system status in chat"""
+            status = check_system_status()
+            status_message = f"""
+📊 **System Status Check**
+
+{status}
+
+✅ **Interface**: Pure chat mode - all analysis appears inline
+💡 **Tip**: Upload CSV and ask for contribution analysis, 80/20 Pareto analysis, or any financial insights
+"""
+            return [{"role": "assistant", "content": status_message}], [{"role": "assistant", "content": status_message}]
         
-        def initialize_chat_with_system_message(file):
-            """Initialize the chat with immediate LLM analysis when a file is uploaded"""
+        def initialize_chat_with_analysis(file):
+            """Initialize chat with immediate comprehensive analysis when file is uploaded"""
             if file is None:
                 return [], []
                 
             try:
-                # Read the CSV file as raw text and pass directly to LLM
-                if hasattr(file, 'name'):
-                    with open(file.name, 'r', encoding='utf-8') as f:
-                        csv_content = f.read()
-                elif isinstance(file, str):
-                    with open(file, 'r', encoding='utf-8') as f:
-                        csv_content = f.read()
-                else:
-                    csv_content = file.decode('utf-8')
+                # Load the data for analysis
+                df = load_data_for_grid(file)
+                if df is None:
+                    error_msg = "❌ **Error**: Could not load CSV file. Please check the file format."
+                    return [{"role": "assistant", "content": error_msg}], [{"role": "assistant", "content": error_msg}]
                 
-                # Create system prompt for immediate preliminary analysis
-                system_prompt = """You are **Aria Sterling**, a world-class financial analyst. A CSV file has just been uploaded. Please provide immediate preliminary analysis of this financial data.
+                # Generate comprehensive initial analysis including contribution analysis
+                initial_analysis = f"""
+📁 **File Uploaded Successfully!**
 
-UPLOADED CSV DATA:
-""" + csv_content + """
+📊 **Dataset Overview**:
+- **Rows**: {len(df):,}
+- **Columns**: {len(df.columns)}
+- **Numeric Columns**: {len(df.select_dtypes(include=[np.number]).columns)}
+- **Text Columns**: {len(df.select_dtypes(include=['object']).columns)}
+- **Date Columns**: {len(df.select_dtypes(include=['datetime64']).columns)}
 
-Please provide:
-1. **Quick Overview**: What type of financial data is this?
-2. **Key Columns**: Identify the main financial metrics
-3. **Data Quality**: Any obvious issues or patterns?
-4. **Initial Insights**: 3-4 immediate observations
-5. **Suggested Questions**: What should we analyze next?
+🔍 **Column Names**: {', '.join(df.columns.tolist())}
 
-Respond as Aria Sterling with your characteristic financial expertise and confidence."""
+---
+
+🤖 **Automatic Analysis Ready**
+
+I'm **Aria Sterling**, your financial analyst. I've loaded your data and I'm ready to perform comprehensive analysis including:
+
+• 📈 **Contribution Analysis** (80/20 Pareto analysis)
+• 📊 **Time-series Analysis** (if date columns detected)
+• 💰 **Budget vs Actual Variance** (if budget/actual columns found)
+• 📋 **Statistical Summary** 
+• 🐍 **Python Code Generation**
+
+🎯 **Try These Questions**:
+- "Perform contribution analysis"
+- "Show me 80/20 Pareto analysis" 
+- "Analyze budget vs actual variance"
+- "Generate Python code for this data"
+- "What are the key trends?"
+
+💡 **What would you like to analyze first?**
+"""
                 
-                # Get immediate LLM response
-                if chat_system.chat_handler.use_llm:
-                    aria_analysis = chat_system.query_ollama(system_prompt)
-                else:
-                    aria_analysis = "[UPLOAD] **File Uploaded Successfully!**\n\nI've received your CSV file and I'm ready to analyze it. Since the LLM is not available, please ask specific questions about your data and I'll provide built-in analysis.\n\n[TIP] **Tip**: Try asking 'Summarize this dataset' or upload the file and ask specific questions about trends, variances, or metrics."
+                # Try to auto-detect and suggest specific analysis based on columns
+                columns = df.columns.tolist()
+                suggestions = []
                 
-                # Return the chat history with the immediate analysis
-                initial_chat = [{"role": "assistant", "content": aria_analysis}]
+                # Check for contribution analysis opportunities
+                numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+                text_cols = df.select_dtypes(include=['object']).columns.tolist()
                 
+                if len(numeric_cols) > 0 and len(text_cols) > 0:
+                    suggestions.append(f"🎯 **Suggested**: Try 'Perform contribution analysis on {numeric_cols[0]} by {text_cols[0]}'")
+                
+                # Check for sales/revenue columns
+                sales_cols = [col for col in columns if any(term in col.lower() for term in ['sales', 'revenue', 'income'])]
+                if sales_cols:
+                    suggestions.append(f"💰 **Suggested**: Analyze sales patterns: 'Show contribution analysis for {sales_cols[0]}'")
+                
+                # Check for budget/actual columns
+                budget_cols = [col for col in columns if 'budget' in col.lower()]
+                actual_cols = [col for col in columns if 'actual' in col.lower()]
+                if budget_cols and actual_cols:
+                    suggestions.append(f"📊 **Suggested**: Variance analysis: 'Compare {budget_cols[0]} vs {actual_cols[0]}'")
+                
+                if suggestions:
+                    initial_analysis += "\n\n🔍 **Smart Suggestions Based on Your Data**:\n" + "\n".join(suggestions)
+                
+                # AUTOMATICALLY GENERATE AND INCLUDE TIMESCALE ANALYSIS IN INITIAL UPLOAD
+                try:
+                    # Initialize chat system for this analysis
+                    if not hasattr(chat_system, 'timescale_analyzer'):
+                        chat_system.timescale_analyzer = TimescaleAnalyzer()
+                    
+                    # Generate timescale analysis
+                    timescale_analysis = chat_system.timescale_analyzer.generate_timescale_analysis(df)
+                    
+                    if timescale_analysis and "No date column found" not in timescale_analysis:
+                        initial_analysis += "\n\n" + "="*50
+                        initial_analysis += "\n📈 **AUTOMATIC TIMESCALE ANALYSIS**"
+                        initial_analysis += "\n" + "="*50
+                        initial_analysis += "\n" + timescale_analysis
+                    else:
+                        initial_analysis += "\n\n💡 **Note**: No date column detected for timescale analysis. Your data will still get comprehensive analysis!"
+                        
+                except Exception as e:
+                    initial_analysis += f"\n\n⚠️ **Timescale Analysis**: Could not generate automatically due to: {str(e)}"
+                
+                initial_chat = [{"role": "assistant", "content": initial_analysis}]
                 return initial_chat, initial_chat
+                
             except Exception as e:
-                error_msg = f"Error analyzing uploaded file: {str(e)}"
+                error_msg = f"❌ **Error analyzing uploaded file**: {str(e)}"
                 print(f"Error initializing chat: {error_msg}")
                 initial_chat = [{"role": "assistant", "content": error_msg}]
                 return initial_chat, initial_chat
         
-        # Connect events
+        # Connect events - simplified for chat-only interface
         submit_btn.click(
             submit_query,
             inputs=[file_input, user_input, chatbot, chat_state],
-            outputs=[chatbot, user_input, chat_state, status_display, data_info, data_grid]
+            outputs=[chatbot, user_input, chat_state]
         )
         
         user_input.submit(
             submit_query,
             inputs=[file_input, user_input, chatbot, chat_state],
-            outputs=[chatbot, user_input, chat_state, status_display, data_info, data_grid]
+            outputs=[chatbot, user_input, chat_state]
         )
         
-        def update_all_data_views(file):
-            """Update all data-related views when file is uploaded"""
-            data_info, data_grid, auto_analysis = update_data_view(file)
-            questions = update_suggested_questions(file)
-            return data_info, data_grid, questions, auto_analysis
-        
-        # Update data view and suggested questions when file is uploaded
+        # Initialize chat with comprehensive analysis on file upload
         file_input.upload(
-            update_all_data_views,
-            inputs=[file_input],
-            outputs=[data_info, data_grid, suggested_questions, auto_analysis_display]
-        )
-        
-        # Initialize chat with system message on file upload
-        file_input.upload(
-            initialize_chat_with_system_message,
+            initialize_chat_with_analysis,
             inputs=[file_input],
             outputs=[chatbot, chat_state]
         )
@@ -1361,15 +2153,39 @@ Respond as Aria Sterling with your characteristic financial expertise and confid
             outputs=[chatbot, chat_state]
         )
         
-        refresh_btn.click(
-            check_system_status,
-            outputs=[status_display]
+        status_btn.click(
+            show_system_status,
+            outputs=[chatbot, chat_state]
         )
         
-        # Initial status check
+        # Initial welcome message
+        def show_welcome():
+            welcome_msg = """
+🚀 **Welcome to VariancePro Financial Analysis Chat!**
+
+I'm **Aria Sterling**, your AI financial analyst. 
+
+📋 **How it works**:
+1. 📁 **Upload** your CSV financial data above
+2. 💬 **Ask** questions in the chat box
+3. 📊 **Get** comprehensive analysis with charts, insights, and Python code
+
+🎯 **I specialize in**:
+• 📈 **Contribution Analysis** (80/20 Pareto principle)
+• 📊 **Budget vs Actual Variance Analysis** 
+• 📈 **Time-series Trends & Forecasting**
+• 🐍 **Python Code Generation**
+• 💡 **Business Insights & Recommendations**
+
+🔥 **All analysis appears right here in this chat - no separate panels!**
+
+**Ready to get started? Upload your CSV file above! 📁⬆️**
+"""
+            return [{"role": "assistant", "content": welcome_msg}]
+        
         interface.load(
-            check_system_status,
-            outputs=[status_display]
+            show_welcome,
+            outputs=[chatbot]
         )
     
     return interface
@@ -1378,12 +2194,12 @@ if __name__ == "__main__":
     # Create and launch the interface
     demo = create_interface()
     
-    print("Starting VariancePro Financial Chat with DeepSeek Coder...")
+    print("Starting VariancePro Financial Chat with Gemma3...")
     print("Upload your CSV data and start asking questions!")
     
     demo.launch(
-        server_name="127.0.0.1",
-        server_port=7864,
+        server_name="0.0.0.0",    # Listen on all network interfaces
+        server_port=7865,         # Changed port to avoid conflict
         share=False,
         debug=False,
         show_error=True

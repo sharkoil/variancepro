@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 try:
-    from llama_index.core import Document, VectorStoreIndex, ServiceContext
+    from llama_index.core import Document, VectorStoreIndex, Settings
     from llama_index.core.extractors import (
         SummaryExtractor,
         QuestionsAnsweredExtractor, 
@@ -64,7 +64,11 @@ if LLAMAINDEX_AVAILABLE:
         def __init__(self, model_name: str = "phi4:latest"):
             self.model_name = model_name
             self.llm = Ollama(model=model_name, base_url="http://localhost:11434")
-            self.service_context = ServiceContext.from_defaults(llm=self.llm)
+            
+            # Use new Settings API instead of deprecated ServiceContext
+            Settings.llm = self.llm
+            Settings.chunk_size = 512
+            Settings.chunk_overlap = 50
             self.financial_index = None
             self.documents_indexed = []
             
@@ -172,7 +176,6 @@ if LLAMAINDEX_AVAILABLE:
         # Build index
         self.financial_index = VectorStoreIndex.from_documents(
             docs, 
-            service_context=self.service_context,
             node_parser=node_parser
         )
         
@@ -187,7 +190,6 @@ if LLAMAINDEX_AVAILABLE:
         
         try:
             query_engine = self.financial_index.as_query_engine(
-                service_context=self.service_context,
                 response_mode="tree_summarize"
             )
             

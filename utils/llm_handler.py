@@ -8,7 +8,7 @@ import numpy as np
 class LLMHandler:
     """Handles integration with various LLM models via multiple backends"""
     
-    def __init__(self, backend="ollama", model_name="deepseek-coder:6.7b"):
+    def __init__(self, backend="ollama", model_name="gemma3:latest"):
         self.backend = backend
         self.model_name = model_name
         self.base_url = "http://localhost:11434"  # Default Ollama port
@@ -23,8 +23,8 @@ class LLMHandler:
                 "num_predict": 500,
                 "system_prompt": "You are a professional financial data analyst assistant."
             },
-            "deepseek-coder:6.7b": {
-                "temperature": 0.1,
+            "gemma3:latest": {
+                "temperature": 0.2,
                 "top_k": 40,
                 "top_p": 0.9,
                 "num_predict": 1024,
@@ -62,7 +62,7 @@ class LLMHandler:
     def _create_financial_prompt(self, user_query: str, data_context: str, data_summary: Dict[str, Any]) -> str:
         """Create a comprehensive prompt optimized for financial analysis"""
         
-        config = self.model_configs.get(self.model_name, self.model_configs["deepseek-coder:6.7b"])
+        config = self.model_configs.get(self.model_name, self.model_configs["gemma3:latest"])
         system_prompt = config["system_prompt"]
         
         # Enhanced prompt for LLM with code-focused analysis
@@ -95,9 +95,17 @@ ANALYSIS:"""
         
         return prompt
     def _query_ollama(self, prompt: str) -> str:
-        """Query Ollama API with model-specific configurations"""
+        """Query Ollama API with model-specific configurations and full logging"""
+        
+        # Log the full prompt to console  
+        print("\n" + "="*80)
+        print(f"[LLM HANDLER LOG] Sending prompt to {self.model_name}")
+        print("="*80)
+        print(prompt)
+        print("="*80 + "\n")
+        
         try:
-            config = self.model_configs.get(self.model_name, self.model_configs["deepseek-coder:6.7b"])
+            config = self.model_configs.get(self.model_name, self.model_configs["gemma3:latest"])
             
             payload = {
                 "model": self.model_name,
@@ -111,6 +119,11 @@ ANALYSIS:"""
                 }
             }
             
+            # Log the payload details
+            print(f"[LLM HANDLER CONFIG] Model: {self.model_name}")
+            print(f"[LLM HANDLER CONFIG] Temperature: {config['temperature']}")
+            print(f"[LLM HANDLER CONFIG] Max Tokens: {config['num_predict']}")
+            
             response = self.session.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
@@ -119,12 +132,25 @@ ANALYSIS:"""
             
             if response.status_code == 200:
                 result = response.json()
-                return result.get("response", "").strip()
+                llm_response = result.get("response", "").strip()
+                
+                # Log the response
+                print("\n" + "-"*80)
+                print(f"[LLM HANDLER RESPONSE] Response from {self.model_name}")
+                print("-"*80)
+                print(llm_response)
+                print("-"*80 + "\n")
+                
+                return llm_response
             else:
-                return f"Error: Unable to get response from {self.model_name} (Status: {response.status_code})"
+                error_msg = f"Error: Unable to get response from {self.model_name} (Status: {response.status_code})"
+                print(f"[LLM HANDLER ERROR] {error_msg}")
+                return error_msg
                 
         except Exception as e:
-            return f"Error communicating with {self.model_name}: {str(e)}"
+            exception_msg = f"Error communicating with {self.model_name}: {str(e)}"
+            print(f"[LLM HANDLER EXCEPTION] {exception_msg}")
+            return exception_msg
     def _fallback_response(self, user_query: str, data_context: str, data_summary: Dict[str, Any]) -> str:
         """Fallback response when LLM is not available"""
         return f"""🤖 **Enhanced Analysis** (LLM offline - using built-in intelligence):
@@ -139,9 +165,9 @@ ANALYSIS:"""
 {data_context[:300]}...
 
 💡 **Note**: For AI-powered analysis with code suggestions, ensure Ollama is running with the appropriate model.
-To enable: Run `ollama pull deepseek-coder:6.7b` in terminal, then restart the app.
+To enable: Run `ollama pull gemma3:latest` in terminal, then restart the app.
 
-🔧 **Available Models**: deepseek-coder:6.7b (recommended), phi3"""
+🔧 **Available Models**: gemma3:latest (recommended), phi3"""
 
     def get_model_status(self) -> Dict[str, Any]:
         """Get current model status and available models"""
@@ -149,7 +175,7 @@ To enable: Run `ollama pull deepseek-coder:6.7b` in terminal, then restart the a
             return {
                 "status": "offline",
                 "backend": self.backend,
-                "message": "LLM backend not available. Install Ollama and pull deepseek-coder:6.7b model."
+                "message": "LLM backend not available. Install Ollama and pull gemma3:latest model."
             }
         
         try:
