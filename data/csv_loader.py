@@ -280,24 +280,48 @@ class CSVLoader:
         
         # Suggest value columns (for contribution analysis)
         financial_cols = self.column_info.get('financial_columns', {})
+        
+        # Ensure financial_cols is a dictionary
+        if not isinstance(financial_cols, dict):
+            financial_cols = {}
+        
         if 'value_columns' in financial_cols:
             suggestions['value_columns'] = financial_cols['value_columns']
         else:
             # Fall back to any numeric columns
-            suggestions['value_columns'] = self.column_info.get('numeric_columns', [])[:3]
+            numeric_cols = self.column_info.get('numeric_columns', [])
+            if isinstance(numeric_cols, list):
+                suggestions['value_columns'] = numeric_cols[:3]
         
         # Suggest category columns
         if 'category_columns' in financial_cols:
             suggestions['category_columns'] = financial_cols['category_columns']
         else:
             # Fall back to text columns
-            suggestions['category_columns'] = self.column_info.get('text_columns', [])[:3]
+            text_cols = self.column_info.get('text_columns', [])
+            if isinstance(text_cols, list):
+                suggestions['category_columns'] = text_cols[:3]
         
         # Suggest date columns
-        suggestions['date_columns'] = self.column_info.get('date_columns', [])
+        date_cols = self.column_info.get('date_columns', [])
+        if isinstance(date_cols, list):
+            suggestions['date_columns'] = date_cols
         
         # Suggest budget vs actual pairs
         budget_cols = financial_cols.get('budget_columns', [])
+        actual_cols = financial_cols.get('actual_columns', [])
+        
+        if isinstance(budget_cols, list) and isinstance(actual_cols, list) and budget_cols and actual_cols:
+            for budget_col in budget_cols:
+                for actual_col in actual_cols:
+                    # Try to match similar names
+                    budget_base = budget_col.lower().replace('budget', '').replace('_', '').strip()
+                    actual_base = actual_col.lower().replace('actual', '').replace('_', '').strip()
+                    
+                    if budget_base == actual_base or budget_base in actual_base or actual_base in budget_base:
+                        suggestions['budget_vs_actual'][budget_col] = actual_col
+        
+        return suggestions
         actual_cols = financial_cols.get('actual_columns', [])
         
         if budget_cols and actual_cols:

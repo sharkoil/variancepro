@@ -9,6 +9,7 @@ import requests
 import json
 import io
 import time
+import traceback
 from typing import List, Tuple, Optional, Dict, Any
 
 # Import our modular components
@@ -53,9 +54,17 @@ class VarianceProApp:
             # Load CSV using our CSV loader
             self.current_data = self.csv_loader.load_csv(file.name)
             
-            # Get data summary and suggestions
-            self.data_summary = self.csv_loader.get_data_summary()
-            self.column_suggestions = self.csv_loader.get_column_suggestions()
+            # Get data summary and suggestions with error handling
+            try:
+                self.data_summary = self.csv_loader.get_data_summary()
+            except Exception as e:
+                self.data_summary = f"Error generating summary: {str(e)}"
+                
+            try:
+                self.column_suggestions = self.csv_loader.get_column_suggestions()
+            except Exception as e:
+                self.column_suggestions = {}
+                print(f"Warning: Error getting column suggestions: {str(e)}")
             
             # Create enhanced preview
             preview_parts = [
@@ -68,18 +77,22 @@ class VarianceProApp:
                 "📋 **Column Information:**"
             ]
             
-            # Add column info
-            for col_type, columns in self.csv_loader.column_info.items():
-                if columns and col_type != 'financial_columns':
-                    preview_parts.append(f"• **{col_type.replace('_', ' ').title()}**: {', '.join(columns[:5])}")
-            
-            # Add financial columns info
-            financial_cols = self.csv_loader.column_info.get('financial_columns', {})
-            if financial_cols:
-                preview_parts.append("• **Financial Columns Detected:**")
-                for fin_type, fin_cols in financial_cols.items():
-                    if fin_cols:
-                        preview_parts.append(f"  - {fin_type.replace('_', ' ').title()}: {', '.join(fin_cols[:3])}")
+            # Add column info with error handling
+            try:
+                for col_type, columns in self.csv_loader.column_info.items():
+                    if columns and col_type != 'financial_columns':
+                        if isinstance(columns, list) and len(columns) > 0:
+                            preview_parts.append(f"• **{col_type.replace('_', ' ').title()}**: {', '.join(columns[:5])}")
+                
+                # Add financial columns info
+                financial_cols = self.csv_loader.column_info.get('financial_columns', {})
+                if isinstance(financial_cols, dict) and financial_cols:
+                    preview_parts.append("• **Financial Columns Detected:**")
+                    for fin_type, fin_cols in financial_cols.items():
+                        if isinstance(fin_cols, list) and fin_cols:
+                            preview_parts.append(f"  - {fin_type.replace('_', ' ').title()}: {', '.join(fin_cols[:3])}")
+            except Exception as e:
+                preview_parts.append(f"• **Column Analysis**: Error - {str(e)}")
             
             preview_parts.extend([
                 "",
@@ -93,8 +106,11 @@ class VarianceProApp:
             ])
             
             # Add data preview
-            preview_table = self.current_data.head(5).to_string(index=False, max_cols=8)
-            preview_parts.append(f"```\n{preview_table}\n```")
+            try:
+                preview_table = self.current_data.head(5).to_string(index=False, max_cols=8)
+                preview_parts.append(f"```\n{preview_table}\n```")
+            except Exception as e:
+                preview_parts.append(f"Error displaying preview: {str(e)}")
             
             enhanced_preview = "\n".join(preview_parts)
             
@@ -103,32 +119,13 @@ class VarianceProApp:
         except CSVLoadError as e:
             return f"❌ **Data Loading Error**: {str(e)}", "No data available"
         except Exception as e:
-            return f"❌ **Unexpected Error**: {str(e)}", "No data available"
+            error_msg = f"❌ **Unexpected Error**: {str(e)}"
+            print(f"Debug - Upload error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return error_msg, "No data available"
     
-    def upload_csv(self, file) -> Tuple[str, str]:
-        """Handle CSV file upload and return preview + summary"""
-        if file is None:
-            return "No file uploaded", "No data available"
-        
-        try:
-            # Read the CSV file
-            if hasattr(file, 'name'):
-                df = pd.read_csv(file.name)
-            else:
-                df = pd.read_csv(io.StringIO(file))
-            
-            self.current_data = df
-            
-            # Generate data summary
-            self.data_summary = self._generate_data_summary(df)
-            
-            # Create preview (first 10 rows)
-            preview = df.head(10).to_string(index=False)
-            
-            return f"✅ Data loaded successfully!\n\n{preview}", self.data_summary
-            
-        except Exception as e:
-            return f"❌ Error loading CSV: {str(e)}", "No data available"
+
     
     def chat_response(self, message: str, history: List[Tuple[str, str]]) -> Tuple[List[Tuple[str, str]], str]:
         """Enhanced chat response with AI-powered analysis"""

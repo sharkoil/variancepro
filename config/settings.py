@@ -14,6 +14,10 @@ class Settings:
     Application configuration settings
     """
     
+    # Application Information
+    app_name: str = "VariancePro"
+    app_version: str = "1.0.0"
+    
     # LLM Configuration
     llm_model: str = "gemma3:latest"
     ollama_host: str = "http://localhost:11434"
