@@ -163,6 +163,27 @@ class CSVLoader:
         if self.raw_data is None:
             return {}
         
+        print(f"[DEBUG][CSVLoader] Detecting columns for data with shape: {self.raw_data.shape}")
+        print(f"[DEBUG][CSVLoader] Column dtypes: {self.raw_data.dtypes.to_dict()}")
+        
+        # First pass: convert potential date columns to datetime
+        raw_data_copy = self.raw_data.copy()
+        for col in self.raw_data.columns:
+            col_lower = col.lower()
+            
+            # Look for columns that might be dates
+            if any(term in col_lower for term in ['date', 'time', 'period', 'day', 'month', 'year']):
+                try:
+                    # Try to convert to datetime
+                    raw_data_copy[col] = pd.to_datetime(raw_data_copy[col], errors='coerce')
+                    if raw_data_copy[col].notna().sum() > 0:
+                        print(f"[DEBUG][CSVLoader] Successfully converted {col} to datetime")
+                except Exception as e:
+                    print(f"[DEBUG][CSVLoader] Failed to convert {col} to datetime: {str(e)}")
+        
+        # Update the raw_data with the converted columns
+        self.raw_data = raw_data_copy
+        
         column_info = {
             'numeric_columns': [],
             'text_columns': [],
@@ -176,10 +197,16 @@ class CSVLoader:
         # Analyze each column
         for col in self.raw_data.columns:
             col_lower = col.lower()
+            dtype_str = str(self.raw_data[col].dtype)
+            print(f"[DEBUG][CSVLoader] Analyzing column: {col}, type: {dtype_str}")
             
             # Check data types
-            if self.raw_data[col].dtype in ['int64', 'float64', 'int32', 'float32']:
+            if 'datetime' in dtype_str:
+                column_info['date_columns'].append(col)
+                print(f"[DEBUG][CSVLoader] {col} detected as datetime and added to date_columns")
+            elif self.raw_data[col].dtype in ['int64', 'float64', 'int32', 'float32']:
                 column_info['numeric_columns'].append(col)
+                print(f"[DEBUG][CSVLoader] {col} added to numeric_columns")
                 
                 # Check for financial patterns
                 if any(term in col_lower for term in ['sales', 'revenue', 'amount', 'value', 'price']):
@@ -193,29 +220,45 @@ class CSVLoader:
                 if any(term in col_lower for term in ['actual', 'real']):
                     column_info['financial_columns']['actual_columns'] = column_info['financial_columns'].get('actual_columns', [])
                     column_info['financial_columns']['actual_columns'].append(col)
-                
             elif self.raw_data[col].dtype == 'object':
-                # Check if it's actually a date
-                if any(term in col_lower for term in ['date', 'time', 'period']):
-                    column_info['potential_date_columns'].append(col)
+                # Try to detect if it could be a date but wasn't converted
+                try:
+                    sample = self.raw_data[col].dropna().head(5)
+                    print(f"[DEBUG][CSVLoader] Checking if {col} might be a date. Sample: {sample.tolist()}")
                     
-                    # Try to parse as date
-                    try:
-                        pd.to_datetime(self.raw_data[col].head(10), errors='raise')
+                    # Try to convert to datetime
+                    date_sample = pd.to_datetime(sample, errors='coerce')
+                    
+                    # If at least 80% could be converted, consider it a date
+                    valid_dates = date_sample.notna().sum()
+                    if len(sample) > 0 and valid_dates / len(sample) >= 0.8:
+                        # Convert the whole column
+                        self.raw_data[col] = pd.to_datetime(self.raw_data[col], errors='coerce')
                         column_info['date_columns'].append(col)
-                    except:
+                        print(f"[DEBUG][CSVLoader] {col} identified as date. Sample converted: {date_sample}")
+                    else:
                         column_info['text_columns'].append(col)
-                else:
+                        print(f"[DEBUG][CSVLoader] {col} not a date. Valid conversions: {valid_dates}/{len(sample)}")
+                except Exception as e:
                     column_info['text_columns'].append(col)
-                    
-                    # Check for category patterns
-                    if any(term in col_lower for term in ['product', 'category', 'region', 'customer']):
-                        column_info['financial_columns']['category_columns'] = column_info['financial_columns'].get('category_columns', [])
-                        column_info['financial_columns']['category_columns'].append(col)
-            
-            elif 'datetime' in str(self.raw_data[col].dtype):
-                column_info['date_columns'].append(col)
+                    print(f"[DEBUG][CSVLoader] Error checking if {col} is a date: {str(e)}")
+                
+                # Check for category patterns if not identified as a date
+                if col not in column_info['date_columns'] and any(term in col_lower for term in ['product', 'category', 'region', 'customer']):
+                    column_info['financial_columns']['category_columns'] = column_info['financial_columns'].get('category_columns', [])
+                    column_info['financial_columns']['category_columns'].append(col)
+                    print(f"[DEBUG][CSVLoader] {col} added to category_columns")
         
+        # Ensure we have 'category_columns' in financial_columns
+        if 'category_columns' not in column_info['financial_columns']:
+            column_info['financial_columns']['category_columns'] = []
+        
+        # Ensure we have 'value_columns' in financial_columns
+        if 'value_columns' not in column_info['financial_columns']:
+            # Use all numeric columns as value columns if no specific ones were detected
+            column_info['financial_columns']['value_columns'] = column_info['numeric_columns']
+        
+        print(f"[DEBUG][CSVLoader] Final column detection results: {column_info}")
         return column_info
     
     def _analyze_data_quality(self) -> Dict[str, any]:
@@ -312,19 +355,6 @@ class CSVLoader:
         actual_cols = financial_cols.get('actual_columns', [])
         
         if isinstance(budget_cols, list) and isinstance(actual_cols, list) and budget_cols and actual_cols:
-            for budget_col in budget_cols:
-                for actual_col in actual_cols:
-                    # Try to match similar names
-                    budget_base = budget_col.lower().replace('budget', '').replace('_', '').strip()
-                    actual_base = actual_col.lower().replace('actual', '').replace('_', '').strip()
-                    
-                    if budget_base == actual_base or budget_base in actual_base or actual_base in budget_base:
-                        suggestions['budget_vs_actual'][budget_col] = actual_col
-        
-        return suggestions
-        actual_cols = financial_cols.get('actual_columns', [])
-        
-        if budget_cols and actual_cols:
             for budget_col in budget_cols:
                 for actual_col in actual_cols:
                     # Try to match similar names

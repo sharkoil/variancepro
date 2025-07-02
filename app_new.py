@@ -1,5 +1,5 @@
 """
-VariancePro - AI-Powered Financial Data Analysis
+Quant Commander - AI-Powered Financial Data Analysis
 Modern chat interface with comprehensive financial analytics
 """
 
@@ -22,8 +22,8 @@ from analyzers.news_analyzer_v2 import NewsAnalyzer
 from ai.llm_interpreter import LLMInterpreter
 from ai.narrative_generator import NarrativeGenerator
 
-class VarianceProApp:
-    """Main VariancePro application class with modular architecture"""
+class QuantCommanderApp:
+    """Main Quant Commander application class with modular architecture"""
     
     def __init__(self):
         """Initialize the application with all components"""
@@ -698,11 +698,14 @@ Provide a helpful, contextual response as Aria Sterling.
     def create_interface(self):
         """Create the enhanced Gradio interface"""
         
-        with gr.Blocks(title="VariancePro - AI Financial Analysis", theme=gr.themes.Soft()) as interface:
+        with gr.Blocks(title="Quant Commander - AI Financial Analysis", theme=gr.themes.Soft()) as interface:
             
             gr.HTML("""
-            <h1 style="text-align: center; color: #2E86AB;">� VariancePro</h1>
-            <h2 style="text-align: center; color: #A23B72;">AI-Powered Financial Data Analysis</h2>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <img src="https://i.imgur.com/HCqkkDM.png" alt="Quant Commander Logo" style="height: 120px; margin-right: 20px;">
+                <h1 style="text-align: center; color: #043B4A; margin: 0;">Quant Commander</h1>
+            </div>
+            <h2 style="text-align: center; color: #043B4A;">AI-Powered Financial Data Analysis</h2>
             <p style="text-align: center; font-size: 18px;">
                 Upload your financial data and chat with Aria Sterling for comprehensive insights and analysis
             </p>
@@ -1363,12 +1366,12 @@ RESPOND ONLY WITH VALID JSON (no explanation):
         return ''.join(html_parts)
 
 def main():
-    """Main entry point for VariancePro"""
-    print("🚀 Starting VariancePro - AI-Powered Financial Analysis...")
+    """Main entry point for Quant Commander"""
+    print("🚀 Starting Quant Commander - AI-Powered Financial Analysis...")
     print("📊 Initializing modular components...")
     
     try:
-        app = VarianceProApp()
+        app = QuantCommanderApp()
         print("✅ All components initialized successfully")
         
         interface = app.create_interface()
@@ -1386,7 +1389,7 @@ def main():
         )
         
     except Exception as e:
-        print(f"❌ Failed to start VariancePro: {str(e)}")
+        print(f"❌ Failed to start Quant Commander: {str(e)}")
         import traceback
         traceback.print_exc()
 
