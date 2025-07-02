@@ -17,6 +17,8 @@ from config.settings import Settings
 from data.csv_loader import CSVLoader, CSVLoadError
 from analyzers.contributor_analyzer import ContributorAnalyzer
 from analyzers.financial_analyzer import FinancialAnalyzer
+from analyzers.timescale_analyzer import TimescaleAnalyzer
+from analyzers.news_analyzer_v2 import NewsAnalyzer
 from ai.llm_interpreter import LLMInterpreter
 from ai.narrative_generator import NarrativeGenerator
 
@@ -34,6 +36,8 @@ class VarianceProApp:
         # Initialize analyzers
         self.contributor_analyzer = ContributorAnalyzer(self.settings)
         self.financial_analyzer = FinancialAnalyzer(self.settings)
+        self.timescale_analyzer = TimescaleAnalyzer(self.settings)
+        self.news_analyzer = NewsAnalyzer(self.settings)
         
         # Initialize AI components
         self.llm_interpreter = LLMInterpreter(self.settings)
@@ -45,28 +49,34 @@ class VarianceProApp:
         self.column_suggestions = None
         self.analysis_history = []
     
-    def upload_csv(self, file) -> Tuple[str, str]:
+    def upload_csv(self, file) -> Tuple[str, str, Optional[Dict]]:
         """Handle CSV file upload with enhanced processing"""
         if file is None:
-            return "No file uploaded", "No data available"
+            return "No file uploaded", "No data available", None
         
         try:
-            # Load CSV using our CSV loader
+            print(f"[DEBUG] Attempting to load CSV file: {file.name}")
+            
+            # Load CSV using our improved CSV loader
             self.current_data = self.csv_loader.load_csv(file.name)
+            print(f"[DEBUG] CSV loaded successfully. Shape: {self.current_data.shape}")
             
             # Get data summary and suggestions with error handling
             try:
                 self.data_summary = self.csv_loader.get_data_summary()
+                print("[DEBUG] Data summary generated successfully")
             except Exception as e:
                 self.data_summary = f"Error generating summary: {str(e)}"
+                print(f"[DEBUG] Error generating data summary: {str(e)}")
                 
             try:
                 self.column_suggestions = self.csv_loader.get_column_suggestions()
+                print(f"[DEBUG] Column suggestions generated successfully: {self.column_suggestions}")
             except Exception as e:
                 self.column_suggestions = {}
-                print(f"Warning: Error getting column suggestions: {str(e)}")
+                print(f"[DEBUG] Error getting column suggestions: {str(e)}")
             
-            # Create enhanced preview
+            # Create enhanced preview - without the analysis
             preview_parts = [
                 "✅ **Data loaded successfully!**",
                 "",
@@ -101,6 +111,90 @@ class VarianceProApp:
                 "• Type 'analyze variance' for budget vs actual comparison",
                 "• Type 'analyze trends' for time-series analysis",
                 "• Ask questions like 'What are the top contributors to revenue?'",
+                ""
+            ])
+            
+            # Auto-generate timescale analysis (like the original) - but for the chat
+            analysis_message = None
+            
+            try:
+                # Check if we have date and numeric columns for timescale analysis
+                date_cols = self.csv_loader.column_info.get('date_columns', [])
+                numeric_cols = self.csv_loader.column_info.get('numeric_columns', [])
+                
+                print(f"[DEBUG] Auto-analysis - Date columns: {date_cols}")
+                print(f"[DEBUG] Auto-analysis - Numeric columns: {numeric_cols}")
+                
+                if date_cols and numeric_cols:
+                    # Perform automatic timescale analysis
+                    date_col = date_cols[0]  # Use first date column
+                    print(f"[DEBUG] Performing timescale analysis with date column: {date_col}")
+                    
+                    # Use dedicated TimescaleAnalyzer for comprehensive analysis
+                    try:
+                        timescale_results = self.timescale_analyzer.analyze(
+                            data=self.current_data,
+                            date_col=date_col,
+                            value_cols=numeric_cols
+                        )
+                        print(f"[DEBUG] Timescale analysis completed successfully")
+                        
+                        # Format the timescale analysis for chat
+                        formatted_results = self.timescale_analyzer.format_for_chat()
+                        print(f"[DEBUG] Formatted timescale results length: {len(formatted_results)}")
+                        
+                        # Create an automatic analysis message for the chat
+                        analysis_message = {
+                            'type': 'timescale',
+                            'content': formatted_results
+                        }
+                        
+                    except Exception as e:
+                        print(f"[DEBUG] Error in timescale analysis: {str(e)}")
+                        print(f"[DEBUG] Traceback: {traceback.format_exc()}")
+                        analysis_message = {
+                            'type': 'error',
+                            'content': f"❌ **Timescale Analysis Error**: {str(e)}"
+                        }
+                
+                else:
+                    print("[DEBUG] No date or numeric columns found for timescale analysis, using fallback")
+                    # Fallback to other analysis types if no timescale data
+                    if (self.column_suggestions.get('category_columns') and 
+                        self.column_suggestions.get('value_columns')):
+                        
+                        category_col = self.column_suggestions['category_columns'][0]
+                        value_col = self.column_suggestions['value_columns'][0]
+                        
+                        # Perform contribution analysis as fallback
+                        results = self.contributor_analyzer.analyze(
+                            data=self.current_data,
+                            category_col=category_col,
+                            value_col=value_col
+                        )
+                        
+                        # Format for chat
+                        formatted_results = self.contributor_analyzer.format_for_chat()
+                        analysis_message = {
+                            'type': 'contribution',
+                            'content': f"📊 **AUTOMATIC CONTRIBUTION ANALYSIS**\n\n{formatted_results}"
+                        }
+                    
+                    else:
+                        analysis_message = {
+                            'type': 'info',
+                            'content': "ℹ️ **AUTOMATIC ANALYSIS**\n\nUnable to automatically determine the best analysis type.\nPlease use the chat commands or quick buttons to run specific analyses."
+                        }
+                        
+            except Exception as e:
+                print(f"[DEBUG] Auto-analysis overall error: {str(e)}")
+                analysis_message = {
+                    'type': 'error',
+                    'content': f"❌ **Auto-analysis Error**: {str(e)}"
+                }
+            
+            # Add data preview section (without analysis)
+            preview_parts.extend([
                 "",
                 "📄 **Data Preview (first 5 rows):**"
             ])
@@ -114,16 +208,16 @@ class VarianceProApp:
             
             enhanced_preview = "\n".join(preview_parts)
             
-            return enhanced_preview, self.data_summary
+            return enhanced_preview, self.data_summary, analysis_message
             
         except CSVLoadError as e:
-            return f"❌ **Data Loading Error**: {str(e)}", "No data available"
+            return f"❌ **Data Loading Error**: {str(e)}", "No data available", None
         except Exception as e:
             error_msg = f"❌ **Unexpected Error**: {str(e)}"
             print(f"Debug - Upload error: {str(e)}")
             import traceback
             traceback.print_exc()
-            return error_msg, "No data available"
+            return error_msg, "No data available", None
     
 
     
@@ -153,9 +247,18 @@ class VarianceProApp:
             return history, ""
     
     def _process_user_query(self, query: str) -> str:
-        """Process user query and generate appropriate response"""
+        """Process user query using LLM-powered intent recognition"""
         try:
-            # Quick analysis commands
+            # First, try LLM-powered intent classification if available
+            if self.llm_interpreter.is_available:
+                intent_response = self._classify_user_intent(query)
+                if intent_response:
+                    return intent_response
+            
+            # Fallback to keyword-based detection if LLM unavailable
+            print("[DEBUG] LLM unavailable, using keyword fallback")
+            
+            # Quick analysis commands (fallback)
             if any(word in query for word in ['contribution', 'pareto', '80/20', 'top contributors']):
                 return self._perform_contribution_analysis(query)
             
@@ -168,7 +271,14 @@ class VarianceProApp:
             elif any(word in query for word in ['summary', 'overview', 'describe']):
                 return self._generate_data_overview()
             
-            # General AI-powered response
+            # Top N / Bottom N fallback detection
+            elif any(word in query for word in ['top ', 'best ', 'highest ', 'largest ', 'most ']):
+                return self._perform_top_n_analysis(query, is_bottom=False)
+            
+            elif any(word in query for word in ['bottom ', 'worst ', 'lowest ', 'smallest ', 'least ']):
+                return self._perform_top_n_analysis(query, is_bottom=True)
+            
+            # General response for unrecognized queries
             else:
                 return self._generate_ai_response(query)
                 
@@ -321,8 +431,31 @@ class VarianceProApp:
                 )
             
             # Use first available columns
-            value_col = value_cols[0]
             date_col = date_cols[0]
+            
+            # Determine analysis type based on query
+            if any(word in query for word in ['timescale', 'time scale', 'all periods']):
+                # Use TimescaleAnalyzer for comprehensive multi-period analysis
+                try:
+                    print(f"[DEBUG] Performing comprehensive timescale analysis with date column: {date_col}")
+                    numeric_cols = self.csv_loader.column_info.get('numeric_columns', [])
+                    
+                    # Use TimescaleAnalyzer for multi-period analysis
+                    timescale_results = self.timescale_analyzer.analyze(
+                        data=self.current_data,
+                        date_col=date_col,
+                        value_cols=numeric_cols
+                    )
+                    
+                    # Return formatted results from TimescaleAnalyzer
+                    return self.timescale_analyzer.format_for_chat()
+                except Exception as e:
+                    print(f"[DEBUG] Error in comprehensive timescale analysis: {str(e)}")
+                    # Fall back to standard trend analysis if timescale fails
+                    pass
+            
+            # Standard trend analysis if not using timescale or if timescale failed
+            value_col = value_cols[0]
             category_col = category_cols[0] if category_cols else None
             
             # Determine analysis type based on query
@@ -331,7 +464,7 @@ class VarianceProApp:
             else:
                 analysis_type = 'trend'
             
-            # Perform analysis
+            # Perform analysis with FinancialAnalyzer
             results = self.financial_analyzer.analyze(
                 data=self.current_data,
                 date_col=date_col,
@@ -435,7 +568,7 @@ class VarianceProApp:
             return f"❌ **Overview Generation Error**: {str(e)}"
     
     def _generate_ai_response(self, query: str) -> str:
-        """Generate AI-powered response to general queries"""
+        """Generate AI-powered response to general queries with enhanced context"""
         try:
             if not self.llm_interpreter.is_available:
                 return (
@@ -448,18 +581,52 @@ class VarianceProApp:
                     "• `summary` - Data overview and capabilities"
                 )
             
-            # Build context for AI
+            # Build comprehensive context for AI including data samples
             context = {
                 'dataset_info': {
                     'rows': len(self.current_data),
                     'columns': len(self.current_data.columns),
+                    'column_names': list(self.current_data.columns),
                     'column_types': dict(self.csv_loader.column_info),
-                    'data_summary': self.data_summary
+                    'data_summary': self.data_summary,
+                    'available_analyses': self._get_available_analyses()
+                },
+                'sample_data': {
+                    'first_few_rows': self.current_data.head(3).to_dict('records'),
+                    'data_range': {
+                        col: {
+                            'min': self.current_data[col].min() if self.current_data[col].dtype in ['int64', 'float64'] else None,
+                            'max': self.current_data[col].max() if self.current_data[col].dtype in ['int64', 'float64'] else None,
+                            'unique_count': self.current_data[col].nunique()
+                        } for col in self.current_data.columns[:5]  # Limit to first 5 columns
+                    }
                 }
             }
             
-            # Query the AI
-            ai_response = self.llm_interpreter.query_llm(query, context)
+            # Enhanced prompt for contextual understanding
+            enhanced_prompt = f"""
+You are Aria Sterling, a professional financial analyst AI assistant. You have access to a dataset and should provide insightful, actionable responses.
+
+USER QUESTION: "{query}"
+
+DATASET CONTEXT:
+- {len(self.current_data):,} rows × {len(self.current_data.columns)} columns
+- Columns: {', '.join(self.current_data.columns)}
+- Available analyses: {', '.join(self._get_available_analyses())}
+
+RESPONSE GUIDELINES:
+1. Provide specific, actionable insights based on the actual data structure
+2. Reference specific columns and data patterns when relevant
+3. Suggest appropriate analyses if the user's question could be answered with a specific analysis type
+4. Be conversational but professional
+5. If asking about specific metrics, explain what columns contain that information
+6. Always relate your response to the actual dataset structure and content
+
+Provide a helpful, contextual response as Aria Sterling.
+"""
+            
+            # Query the AI with enhanced context
+            ai_response = self.llm_interpreter.query_llm(enhanced_prompt, context)
             
             if ai_response.success:
                 return self.narrative_generator.format_for_chat(
@@ -591,8 +758,47 @@ class VarianceProApp:
                     with gr.Row():
                         contrib_btn = gr.Button("📈 Contribution Analysis", size="sm")
                         variance_btn = gr.Button("💰 Variance Analysis", size="sm")
-                        trend_btn = gr.Button("� Trend Analysis", size="sm")
+                        trend_btn = gr.Button("📊 Trend Analysis", size="sm")
                         summary_btn = gr.Button("📋 Data Summary", size="sm")
+                    
+                    # Top N / Bottom N buttons
+                    gr.Markdown("**Top/Bottom Analysis:**")
+                    with gr.Row():
+                        top_n_btn = gr.Button("🔝 Top 10", size="sm")
+                        bottom_n_btn = gr.Button("🔻 Bottom 10", size="sm")
+                        top_5_btn = gr.Button("⭐ Top 5", size="sm")
+                        bottom_5_btn = gr.Button("⚠️ Bottom 5", size="sm")
+                    
+                    # Field Picker Section
+                    gr.Markdown("### 🎯 Field Picker")
+                    gr.Markdown("*Click on field names to add them to your chat query*")
+                    
+                    # Example usage
+                    gr.Markdown("""
+                    **💡 Example Usage:**
+                    • Click "Product" + type "top 10" → "Product top 10"
+                    • Click "State" + "Budget" → "State Budget analysis"
+                    • Build queries like: "Show me top 5 [Category] by [Actual]"
+                    """)
+                    
+                    # Column type sections
+                    with gr.Row():
+                        with gr.Column():
+                            gr.Markdown("**📅 Date Columns:**")
+                            date_columns_display = gr.HTML(value="<i>Upload data to see available fields</i>")
+                        
+                        with gr.Column():
+                            gr.Markdown("**📊 Numeric Columns:**")
+                            numeric_columns_display = gr.HTML(value="<i>Upload data to see available fields</i>")
+                    
+                    with gr.Row():
+                        with gr.Column():
+                            gr.Markdown("**🏷️ Category Columns:**")
+                            category_columns_display = gr.HTML(value="<i>Upload data to see available fields</i>")
+                        
+                        with gr.Column():
+                            gr.Markdown("**💰 Value Columns:**")
+                            value_columns_display = gr.HTML(value="<i>Upload data to see available fields</i>")
             
             # Data summary (hidden, for context)
             data_summary_state = gr.State("")
@@ -603,10 +809,71 @@ class VarianceProApp:
                 outputs=[status_display]
             )
             
+            # Custom file upload event handler that adds analysis to chat
+            def handle_file_upload(file, chatbot):
+                if file is None:
+                    return None, "No data available", chatbot, "<i>Upload data to see available fields</i>", "<i>Upload data to see available fields</i>", "<i>Upload data to see available fields</i>", "<i>Upload data to see available fields</i>"
+                
+                preview, data_summary, analysis_message = self.upload_csv(file)
+                
+                # Generate field picker HTML
+                date_html = self._generate_field_picker_html(
+                    self.csv_loader.column_info.get('date_columns', []), 
+                    "date"
+                )
+                numeric_html = self._generate_field_picker_html(
+                    self.csv_loader.column_info.get('numeric_columns', []), 
+                    "numeric"
+                )
+                category_html = self._generate_field_picker_html(
+                    self.column_suggestions.get('category_columns', []), 
+                    "category"
+                )
+                value_html = self._generate_field_picker_html(
+                    self.column_suggestions.get('value_columns', []), 
+                    "value"
+                )
+                
+                # Start with the primary analysis message if available
+                updated_chatbot = chatbot
+                if analysis_message:
+                    bot_message = analysis_message['content']
+                    updated_chatbot = updated_chatbot + [("CSV File Loaded", bot_message)]
+                
+                # Add News Analysis as second message
+                try:
+                    print("[DEBUG] Starting news analysis...")
+                    news_results = self.news_analyzer.analyze_data_context(
+                        data=self.current_data,
+                        column_info=self.csv_loader.column_info
+                    )
+                    
+                    if news_results and isinstance(news_results, dict) and news_results.get('search_queries'):
+                        print(f"[DEBUG] News search queries: {news_results.get('search_queries')}")
+                        # Display up to 6 news items, 3 per location/query
+                        formatted_results = news_results.copy()
+                        if len(formatted_results.get('news_items', [])) > 6:
+                            formatted_results['news_items'] = formatted_results['news_items'][:6]
+                        news_content = self.news_analyzer.format_news_for_chat(formatted_results)
+                        updated_chatbot = updated_chatbot + [("Business Context Analysis", news_content)]
+                        print(f"[DEBUG] News analysis added to chat")
+                    else:
+                        print("[DEBUG] No news results found or no location data detected")
+                        fallback_news_content = "📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo location data detected in your dataset for relevant business news analysis. Focus on core data metrics instead."
+                        updated_chatbot = updated_chatbot + [("Business Context Analysis", fallback_news_content)]
+                        
+                except Exception as e:
+                    print(f"[DEBUG] News analysis error: {str(e)}")
+                    # Add error message to chat as well
+                    error_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\n⚠️ Unable to fetch business context: {str(e)}\n\nContinuing with data analysis..."
+                    updated_chatbot = updated_chatbot + [("Business Context Analysis", error_content)]
+                
+                return preview, data_summary, updated_chatbot, date_html, numeric_html, category_html, value_html
+            
             file_input.change(
-                fn=self.upload_csv,
-                inputs=[file_input],
-                outputs=[data_preview, data_summary_state]
+                fn=handle_file_upload,
+                inputs=[file_input, chatbot],
+                outputs=[data_preview, data_summary_state, chatbot, date_columns_display, numeric_columns_display, category_columns_display, value_columns_display]
             )
             
             send_btn.click(
@@ -635,7 +902,7 @@ class VarianceProApp:
             )
             
             trend_btn.click(
-                fn=lambda hist: self.chat_response("analyze trends", hist),
+                fn=lambda hist: self.chat_response("analyze timescale trends for all periods", hist),
                 inputs=[chatbot],
                 outputs=[chatbot, chat_input]
             )
@@ -645,8 +912,455 @@ class VarianceProApp:
                 inputs=[chatbot],
                 outputs=[chatbot, chat_input]
             )
+            
+            # Top N / Bottom N button handlers
+            top_n_btn.click(
+                fn=lambda hist: self.chat_response("show me the top 10 performers", hist),
+                inputs=[chatbot],
+                outputs=[chatbot, chat_input]
+            )
+            
+            bottom_n_btn.click(
+                fn=lambda hist: self.chat_response("show me the bottom 10 performers", hist),
+                inputs=[chatbot],
+                outputs=[chatbot, chat_input]
+            )
+            
+            top_5_btn.click(
+                fn=lambda hist: self.chat_response("show me the top 5 performers", hist),
+                inputs=[chatbot],
+                outputs=[chatbot, chat_input]
+            )
+            
+            bottom_5_btn.click(
+                fn=lambda hist: self.chat_response("show me the bottom 5 performers", hist),
+                inputs=[chatbot],
+                outputs=[chatbot, chat_input]
+            )
         
         return interface
+
+    def _classify_user_intent(self, query: str) -> Optional[str]:
+        """Use LLM to classify user intent and route to appropriate analysis"""
+        try:
+            # Build context about available analysis types based on data
+            available_analyses = []
+            suggestions = self.column_suggestions
+            
+            if suggestions.get('category_columns') and suggestions.get('value_columns'):
+                available_analyses.append("contribution_analysis")
+            
+            if suggestions.get('budget_vs_actual'):
+                available_analyses.append("variance_analysis")
+            
+            if self.csv_loader.column_info.get('date_columns'):
+                available_analyses.append("trend_analysis")
+            
+            # Always available
+            available_analyses.extend(["data_overview", "general_question"])
+            
+            # Create intent classification prompt
+            intent_prompt = f"""
+You are an AI assistant that classifies user queries about financial data analysis.
+
+AVAILABLE ANALYSIS TYPES:
+{', '.join(available_analyses)}
+
+USER QUERY: "{query}"
+
+DATASET CONTEXT:
+- Rows: {len(self.current_data):,}
+- Columns: {list(self.current_data.columns)}
+- Available columns: {dict(self.csv_loader.column_info)}
+
+CLASSIFICATION RULES:
+1. contribution_analysis: Questions about top performers, pareto analysis, biggest contributors, 80/20 rule, ranking, market share
+2. variance_analysis: Questions about budget vs actual, variances, over/under budget, performance vs target
+3. trend_analysis: Questions about trends, time series, growth, patterns over time, seasonal analysis, forecasting
+4. top_n_analysis: Questions asking for top N, best N, highest N, largest N, most N (e.g., "top 10 products", "best 5 states")
+5. bottom_n_analysis: Questions asking for bottom N, worst N, lowest N, smallest N, least N (e.g., "bottom 5 performers", "worst 3 regions")
+6. data_overview: Questions asking for summary, overview, description of the data, capabilities, what can be analyzed
+7. general_question: All other questions that need contextual answers about the data
+
+RESPOND WITH ONLY ONE WORD - THE CLASSIFICATION TYPE (e.g., "contribution_analysis" or "top_n_analysis")
+"""
+            
+            # Query the LLM for intent classification
+            print(f"[DEBUG] Classifying intent for query: {query}")
+            ai_response = self.llm_interpreter.query_llm(intent_prompt, {})
+            
+            if not ai_response.success:
+                print(f"[DEBUG] Intent classification failed: {ai_response.error}")
+                return None
+            
+            # Parse the classification result
+            classification = ai_response.content.strip().lower()
+            print(f"[DEBUG] LLM classified intent as: {classification}")
+            
+            # Route to appropriate analysis based on classification
+            if classification == "contribution_analysis":
+                if "contribution_analysis" in available_analyses:
+                    print("[DEBUG] Routing to contribution analysis")
+                    return self._perform_contribution_analysis(query)
+                else:
+                    return "⚠️ **Contribution analysis not available** - Missing required category and value columns"
+            
+            elif classification == "variance_analysis":
+                if "variance_analysis" in available_analyses:
+                    print("[DEBUG] Routing to variance analysis")
+                    return self._perform_variance_analysis(query)
+                else:
+                    return "⚠️ **Variance analysis not available** - Missing required budget/actual columns"
+            
+            elif classification == "trend_analysis":
+                if "trend_analysis" in available_analyses:
+                    print("[DEBUG] Routing to trend analysis")
+                    return self._perform_trend_analysis(query)
+                else:
+                    return "⚠️ **Trend analysis not available** - Missing required date column"
+            
+            elif classification == "top_n_analysis":
+                print("[DEBUG] Routing to top N analysis")
+                return self._perform_top_n_analysis(query, is_bottom=False)
+            
+            elif classification == "bottom_n_analysis":
+                print("[DEBUG] Routing to bottom N analysis")
+                return self._perform_top_n_analysis(query, is_bottom=True)
+            
+            elif classification == "data_overview":
+                print("[DEBUG] Routing to data overview")
+                return self._generate_data_overview()
+            
+            elif classification == "general_question":
+                print("[DEBUG] Routing to general AI response")
+                return self._generate_ai_response(query)
+            
+            else:
+                print(f"[DEBUG] Unrecognized classification: {classification}, using general response")
+                return self._generate_ai_response(query)
+        
+        except Exception as e:
+            print(f"[DEBUG] Error in intent classification: {str(e)}")
+            return None  # Fall back to keyword matching
+
+    def _get_available_analyses(self) -> List[str]:
+        """Get list of available analysis types based on current dataset"""
+        available = []
+        suggestions = self.column_suggestions
+        
+        if suggestions.get('category_columns') and suggestions.get('value_columns'):
+            available.append("Contribution Analysis (80/20 Pareto)")
+        
+        if suggestions.get('budget_vs_actual'):
+            available.append("Variance Analysis (Budget vs Actual)")
+        
+        if self.csv_loader.column_info.get('date_columns'):
+            available.append("Trend Analysis (Time Series & TTM)")
+        
+        # Top N / Bottom N analysis (always available if we have categorical and numeric data)
+        if suggestions.get('category_columns') and (suggestions.get('value_columns') or self.csv_loader.column_info.get('numeric_columns')):
+            available.append("Top N / Bottom N Analysis")
+        
+        # Always available
+        available.append("Data Overview & Summary")
+        
+        return available
+
+    def _perform_top_n_analysis(self, query: str, is_bottom: bool = False) -> str:
+        """Perform Top N or Bottom N analysis using LLM to understand parameters"""
+        try:
+            # Use LLM to extract analysis parameters from the query
+            if not self.llm_interpreter.is_available:
+                return (
+                    "⚠️ **Top/Bottom N Analysis Requires AI**\n\n"
+                    "This analysis type requires the AI assistant to understand your query parameters. "
+                    "Please ensure Ollama/Gemma3 is running.\n\n"
+                    "Alternative: Use specific commands like 'analyze contribution' for similar insights."
+                )
+            
+            # Get available columns for analysis
+            suggestions = self.column_suggestions
+            category_cols = suggestions.get('category_columns', [])
+            value_cols = suggestions.get('value_columns', [])
+            numeric_cols = self.csv_loader.column_info.get('numeric_columns', [])
+            
+            # Create parameter extraction prompt
+            direction = "bottom" if is_bottom else "top"
+            param_prompt = f"""
+You are analyzing a user query to extract parameters for {direction} N analysis on financial data.
+
+USER QUERY: "{query}"
+
+AVAILABLE COLUMNS IN DATASET:
+- Category/Grouping columns: {category_cols}
+- Value/Numeric columns: {value_cols}
+- All numeric columns: {numeric_cols}
+- All available columns: {list(self.current_data.columns)}
+
+TASK: Extract these 3 parameters from the user query:
+
+1. N (number): How many items to show (look for numbers like "5", "10", "top 3", etc. Default: 10)
+2. GROUP_BY_COLUMN: What to group/rank by (Product, State, Category, etc. - must be from available columns)
+3. VALUE_COLUMN: What metric to measure/sort by (Budget, Actual, Sales, Revenue, etc. - must be numeric)
+
+EXTRACTION RULES:
+- If user doesn't specify N, use 10
+- If user doesn't specify group_by_column, use the first category column: {category_cols[0] if category_cols else 'Product'}
+- If user doesn't specify value_column, use the first value column: {value_cols[0] if value_cols else numeric_cols[0] if numeric_cols else 'Actual'}
+- Column names must EXACTLY match available columns (case sensitive)
+
+EXAMPLES:
+- "top 5 products by sales" → n=5, group_by_column="Product", value_column="Sales"  
+- "bottom 10 states" → n=10, group_by_column="State", value_column=<best numeric column>
+- "worst performers" → n=10, group_by_column=<best category column>, value_column=<best numeric column>
+
+RESPOND ONLY WITH VALID JSON (no explanation):
+{{
+    "n": <number>,
+    "group_by_column": "<exact_column_name>",
+    "value_column": "<exact_column_name>"
+}}
+"""
+            
+            # Extract parameters using LLM
+            print(f"[DEBUG] Extracting {direction} N parameters from query: '{query}'")
+            param_response = self.llm_interpreter.query_llm(param_prompt, {})
+            
+            if not param_response.success:
+                return f"❌ **Parameter Extraction Error**: {param_response.error}"
+            
+            # Parse the JSON response with better error handling
+            try:
+                print(f"[DEBUG] Raw LLM response: {param_response.content}")
+                
+                # Clean up the response (remove any extra text)
+                response_text = param_response.content.strip()
+                
+                # Find JSON content (look for {...})
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
+                
+                if start_idx == -1 or end_idx == 0:
+                    raise ValueError("No JSON found in response")
+                
+                json_text = response_text[start_idx:end_idx]
+                print(f"[DEBUG] Extracted JSON: {json_text}")
+                
+                import json
+                params = json.loads(json_text)
+                
+                n = params.get('n', 10)
+                group_by_col = params.get('group_by_column')
+                value_col = params.get('value_column')
+                
+                print(f"[DEBUG] Parsed parameters - N: {n}, Group: {group_by_col}, Value: {value_col}")
+                
+                # Validate and fix parameters
+                if not isinstance(n, int) or n <= 0:
+                    n = 10
+                
+                # Validate group_by_column exists
+                if not group_by_col or group_by_col not in self.current_data.columns:
+                    if category_cols:
+                        group_by_col = category_cols[0]
+                        print(f"[DEBUG] Using fallback group column: {group_by_col}")
+                    else:
+                        return "⚠️ **No suitable grouping column found in data**"
+                
+                # Validate value_column exists and is numeric
+                if not value_col or value_col not in self.current_data.columns:
+                    if value_cols:
+                        value_col = value_cols[0]
+                        print(f"[DEBUG] Using fallback value column: {value_col}")
+                    elif numeric_cols:
+                        value_col = numeric_cols[0]
+                        print(f"[DEBUG] Using fallback numeric column: {value_col}")
+                    else:
+                        return "⚠️ **No suitable numeric column found in data**"
+                
+                print(f"[DEBUG] Final parameters - N: {n}, Group: {group_by_col}, Value: {value_col}")
+                
+            except (json.JSONDecodeError, ValueError, KeyError) as e:
+                print(f"[DEBUG] JSON parsing failed: {e}")
+                print(f"[DEBUG] Raw response was: {param_response.content}")
+                
+                # Fallback to intelligent defaults
+                n = 10
+                
+                # Extract number from query if possible
+                import re
+                numbers = re.findall(r'\b(\d+)\b', query)
+                if numbers:
+                    try:
+                        n = int(numbers[0])
+                        if n > 100:  # Reasonable limit
+                            n = 10
+                    except ValueError:
+                        n = 10
+                
+                # Use first available columns as fallback
+                group_by_col = category_cols[0] if category_cols else None
+                value_col = value_cols[0] if value_cols else (numeric_cols[0] if numeric_cols else None)
+                
+                if not group_by_col or not value_col:
+                    return "⚠️ **Cannot determine analysis parameters** - Please specify columns explicitly"
+                
+                print(f"[DEBUG] Using fallback parameters - N: {n}, Group: {group_by_col}, Value: {value_col}")
+            
+            # Validate columns exist
+            if not group_by_col or group_by_col not in self.current_data.columns:
+                return (
+                    f"⚠️ **Invalid Group Column**: '{group_by_col}' not found.\n\n"
+                    f"Available columns: {', '.join(self.current_data.columns)}"
+                )
+            
+            if not value_col or value_col not in self.current_data.columns:
+                return (
+                    f"⚠️ **Invalid Value Column**: '{value_col}' not found.\n\n"
+                    f"Available numeric columns: {', '.join(numeric_cols)}"
+                )
+            
+            # Perform the Top/Bottom N analysis
+            try:
+                # Group by the specified column and aggregate the value column
+                if self.current_data[value_col].dtype not in ['int64', 'float64']:
+                    return f"⚠️ **Non-numeric Value Column**: '{value_col}' must be numeric for ranking analysis."
+                
+                # Aggregate data
+                grouped = self.current_data.groupby(group_by_col)[value_col].agg(['sum', 'mean', 'count']).reset_index()
+                grouped.columns = [group_by_col, f'{value_col}_Total', f'{value_col}_Average', 'Record_Count']
+                
+                # Sort and get top/bottom N
+                ascending = is_bottom  # Bottom N = ascending sort
+                sorted_data = grouped.sort_values(f'{value_col}_Total', ascending=ascending).head(n)
+                
+                # Format results
+                direction_text = "Bottom" if is_bottom else "Top"
+                results = [
+                    f"🎯 **{direction_text} {n} {group_by_col} by {value_col}**",
+                    "",
+                    f"📊 **Analysis**: {direction_text} {n} analysis of {group_by_col} ranked by {value_col}",
+                    "",
+                    "📋 **Results:**"
+                ]
+                
+                for idx, row in sorted_data.iterrows():
+                    rank = len(sorted_data) - sorted_data.index.get_loc(idx) if is_bottom else sorted_data.index.get_loc(idx) + 1
+                    total = f"{row[f'{value_col}_Total']:,.0f}" if pd.notnull(row[f'{value_col}_Total']) else "N/A"
+                    avg = f"{row[f'{value_col}_Average']:,.0f}" if pd.notnull(row[f'{value_col}_Average']) else "N/A"
+                    count = f"{row['Record_Count']:,}" if pd.notnull(row['Record_Count']) else "N/A"
+                    
+                    results.append(f"**{rank}. {row[group_by_col]}**")
+                    results.append(f"   • Total {value_col}: {total}")
+                    results.append(f"   • Average {value_col}: {avg}")
+                    results.append(f"   • Records: {count}")
+                    results.append("")
+                
+                # Add summary statistics
+                total_sum = sorted_data[f'{value_col}_Total'].sum()
+                overall_sum = grouped[f'{value_col}_Total'].sum()
+                percentage = (total_sum / overall_sum * 100) if overall_sum > 0 else 0
+                
+                results.extend([
+                    "📈 **Summary:**",
+                    f"• {direction_text} {n} {group_by_col} represent {percentage:.1f}% of total {value_col}",
+                    f"• Combined {value_col}: {total_sum:,.0f}",
+                    f"• Average per {group_by_col}: {total_sum/len(sorted_data):,.0f}"
+                ])
+                
+                # Generate AI insights if available
+                if self.llm_interpreter.is_available:
+                    context = {
+                        'analysis_type': f'{direction}_n_analysis',
+                        'parameters': {
+                            'n': n,
+                            'group_by_column': group_by_col,
+                            'value_column': value_col,
+                            'direction': direction
+                        },
+                        'results': sorted_data.to_dict('records'),
+                        'summary_stats': {
+                            'percentage_of_total': percentage,
+                            'combined_value': total_sum,
+                            'average_per_item': total_sum/len(sorted_data)
+                        }
+                    }
+                    
+                    insight_prompt = f"Provide business insights on this {direction} {n} analysis of {group_by_col} by {value_col}"
+                    ai_response = self.llm_interpreter.query_llm(insight_prompt, context)
+                    
+                    if ai_response.success:
+                        ai_insights = self.narrative_generator.format_for_chat(
+                            ai_response.content,
+                            f"AI Insights - {direction_text} {n} Analysis"
+                        )
+                        results.extend(["", ai_insights])
+                
+                return "\n".join(results)
+                
+            except Exception as e:
+                return f"❌ **Analysis Execution Error**: {str(e)}"
+                
+        except Exception as e:
+            return f"❌ **Top/Bottom N Analysis Error**: {str(e)}"
+
+    def _generate_field_picker_html(self, columns, column_type="field"):
+        """Generate clickable HTML buttons for field names"""
+        if not columns:
+            return "<i>No columns available</i>"
+        
+        html_parts = []
+        for col in columns[:8]:  # Limit to 8 columns to avoid overcrowding
+            # Create clickable button with JavaScript to add to chat input
+            button_html = f'''
+            <button 
+                onclick="
+                    let chatInput = document.querySelector('textarea[placeholder*=\\'Ask about your data\\']');
+                    if (chatInput) {{
+                        let currentValue = chatInput.value;
+                        let newValue = currentValue + (currentValue ? ' ' : '') + '{col}';
+                        chatInput.value = newValue;
+                        chatInput.dispatchEvent(new Event('input', {{bubbles: true}}));
+                        chatInput.focus();
+                        
+                        // Visual feedback
+                        this.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {{
+                            this.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                            this.style.transform = 'scale(1)';
+                        }}, 150);
+                    }} else {{
+                        alert('Chat input not found. Please make sure the page is fully loaded.');
+                    }}
+                "
+                style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 6px 12px;
+                    margin: 3px;
+                    border-radius: 15px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    font-weight: 600;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    user-select: none;
+                "
+                onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)';"
+                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';"
+                title="Click to add '{col}' to your query"
+            >
+                {col}
+            </button>
+            '''
+            html_parts.append(button_html)
+        
+        if len(columns) > 8:
+            html_parts.append(f"<br><small style='color: #666; font-style: italic;'>... and {len(columns) - 8} more columns</small>")
+        
+        return ''.join(html_parts)
 
 def main():
     """Main entry point for VariancePro"""
@@ -665,7 +1379,7 @@ def main():
         
         interface.launch(
             server_name="0.0.0.0",
-            server_port=7860,
+            server_port=7862,
             share=False,
             debug=True,
             show_error=True
