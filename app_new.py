@@ -1322,39 +1322,81 @@ RESPOND ONLY WITH VALID JSON (no explanation):
                 ascending = is_bottom  # Bottom N = ascending sort
                 sorted_data = grouped.sort_values(f'{value_col}_Total', ascending=ascending).head(n)
                 
-                # Format results
+                # Format results using AnalysisFormatter
+                from analyzers.base_analyzer import AnalysisFormatter
+                formatter = AnalysisFormatter()
+                
                 direction_text = "Bottom" if is_bottom else "Top"
-                results = [
-                    f"🎯 **{direction_text} {n} {group_by_col} by {value_col}**",
-                    "",
-                    f"📊 **Analysis**: {direction_text} {n} analysis of {group_by_col} ranked by {value_col}",
-                    "",
-                    "📋 **Results:**"
+                
+                # Create summary section
+                explanation = f"Analysis of the {direction_text.lower()} {n} {group_by_col} items ranked by {value_col} totals."
+                assumptions = [
+                    f"Ranking based on total {value_col} values per {group_by_col}",
+                    f"Data aggregated by {group_by_col} grouping",
+                    f"Showing {direction_text.lower()} {n} performers",
+                    "Includes total, average, and record count for each item"
                 ]
                 
-                for idx, row in sorted_data.iterrows():
-                    rank = len(sorted_data) - sorted_data.index.get_loc(idx) if is_bottom else sorted_data.index.get_loc(idx) + 1
-                    total = f"{row[f'{value_col}_Total']:,.0f}" if pd.notnull(row[f'{value_col}_Total']) else "N/A"
-                    avg = f"{row[f'{value_col}_Average']:,.0f}" if pd.notnull(row[f'{value_col}_Average']) else "N/A"
-                    count = f"{row['Record_Count']:,}" if pd.notnull(row['Record_Count']) else "N/A"
-                    
-                    results.append(f"**{rank}. {row[group_by_col]}**")
-                    results.append(f"   • Total {value_col}: {total}")
-                    results.append(f"   • Average {value_col}: {avg}")
-                    results.append(f"   • Records: {count}")
-                    results.append("")
+                formatted_output = formatter.create_summary_section(
+                    f"{direction_text} {n} Analysis",
+                    explanation,
+                    assumptions
+                )
                 
-                # Add summary statistics
+                # Create metrics grid for high-level stats
                 total_sum = sorted_data[f'{value_col}_Total'].sum()
                 overall_sum = grouped[f'{value_col}_Total'].sum()
                 percentage = (total_sum / overall_sum * 100) if overall_sum > 0 else 0
                 
-                results.extend([
-                    "📈 **Summary:**",
-                    f"• {direction_text} {n} {group_by_col} represent {percentage:.1f}% of total {value_col}",
-                    f"• Combined {value_col}: {total_sum:,.0f}",
-                    f"• Average per {group_by_col}: {total_sum/len(sorted_data):,.0f}"
-                ])
+                summary_metrics = {
+                    f"{direction_text}_{n}_Items": len(sorted_data),
+                    "Total_Value": formatter.format_currency(total_sum),
+                    "Percentage_of_Total": formatter.format_percentage(percentage / 100),
+                    "Average_per_Item": formatter.format_currency(total_sum/len(sorted_data))
+                }
+                
+                formatted_output += "\n\n" + formatter.create_metrics_grid(
+                    summary_metrics, 
+                    f"{direction_text} {n} Summary"
+                )
+                
+                # Create detailed results table
+                formatted_output += f"\n\n🎯 **{direction_text.upper()} {n} {group_by_col.upper()} BY {value_col.upper()}:**\n"
+                
+                table_data = []
+                for idx, row in sorted_data.iterrows():
+                    rank = len(sorted_data) - sorted_data.index.get_loc(idx) if is_bottom else sorted_data.index.get_loc(idx) + 1
+                    
+                    table_data.append({
+                        "Rank": rank,
+                        group_by_col: row[group_by_col],
+                        f"Total_{value_col}": formatter.format_currency(row[f'{value_col}_Total']),
+                        f"Avg_{value_col}": formatter.format_currency(row[f'{value_col}_Average']),
+                        "Records": f"{row['Record_Count']:,}",
+                        "% of Total": formatter.format_percentage((row[f'{value_col}_Total'] / overall_sum) if overall_sum > 0 else 0)
+                    })
+                
+                headers = ["Rank", group_by_col, f"Total_{value_col}", f"Avg_{value_col}", "Records", "% of Total"]
+                formatted_output += "\n" + formatter.create_banded_table(table_data, headers, max_rows=n+2)
+                
+                # Add insights section
+                insights = [
+                    f"{direction_text} {n} {group_by_col} represent {percentage:.1f}% of total {value_col}",
+                    f"Combined value: {formatter.format_currency(total_sum)}",
+                    f"Average performance per {group_by_col}: {formatter.format_currency(total_sum/len(sorted_data))}",
+                    f"Distribution shows {'concentration' if percentage > 50 else 'dispersion'} in the {'worst' if is_bottom else 'best'} performers"
+                ]
+                
+                recommendations = [
+                    f"Focus on {'improving' if is_bottom else 'maintaining'} the {'underperforming' if is_bottom else 'top-performing'} {group_by_col}",
+                    f"Analyze what makes the {'worst' if is_bottom else 'best'} performers different",
+                    f"Consider {'intervention strategies' if is_bottom else 'scaling best practices'} for these {group_by_col}",
+                    f"Monitor changes in this {direction_text.lower()} {n} ranking over time"
+                ]
+                
+                formatted_output += "\n\n" + formatter.create_insights_section(insights, recommendations)
+                
+                results_text = formatted_output
                 
                 # Generate AI insights if available
                 if self.llm_interpreter.is_available:
@@ -1382,9 +1424,9 @@ RESPOND ONLY WITH VALID JSON (no explanation):
                             ai_response.content,
                             f"AI Insights - {direction_text} {n} Analysis"
                         )
-                        results.extend(["", ai_insights])
+                        results_text += "\n\n" + ai_insights
                 
-                return "\n".join(results)
+                return results_text
                 
             except Exception as e:
                 return f"❌ **Analysis Execution Error**: {str(e)}"
