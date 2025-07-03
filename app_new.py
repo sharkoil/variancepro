@@ -1,5 +1,5 @@
 """
-Quant Commander - AI-Powered Financial Data Analysis
+AI-Powered Financial Data Analysis
 Modern chat interface with comprehensive financial analytics
 """
 
@@ -23,7 +23,7 @@ from ai.llm_interpreter import LLMInterpreter
 from ai.narrative_generator import NarrativeGenerator
 
 class QuantCommanderApp:
-    """Main Quant Commander application class with modular architecture"""
+    """Main financial analysis application class with modular architecture"""
     
     def __init__(self):
         """Initialize the application with all components"""
@@ -698,7 +698,7 @@ Provide a helpful, contextual response as Aria Sterling.
     def create_interface(self):
         """Create the enhanced Gradio interface"""
         
-        with gr.Blocks(title="Quant Commander - AI Financial Analysis", theme=gr.themes.Soft()) as interface:
+        with gr.Blocks(title="AI Financial Analysis", theme=gr.themes.Soft()) as interface:
             
             # Add the logo image using the Image component
             with gr.Row():
@@ -709,10 +709,9 @@ Provide a helpful, contextual response as Aria Sterling.
                 with gr.Column():
                     gr.HTML("""
                     <div style="text-align: center; margin-top: -20px;">
-                        <h1 style="color: #043B4A; margin: 0;">Quant Commander</h1>
-                        <h2 style="color: #043B4A;">AI-Powered Financial Data Analysis</h2>
+                        <h1 style="color: #043B4A; margin: 0;">AI-Powered Financial Data Analysis</h1>
                         <p style="font-size: 18px;">
-                            Upload your financial data and chat with Aria Sterling for comprehensive insights and analysis
+                            Professional insights and analysis powered by artificial intelligence
                         </p>
                     </div>
                     """)
@@ -750,7 +749,8 @@ Provide a helpful, contextual response as Aria Sterling.
                         height=450,
                         show_label=True,
                         placeholder="Start by uploading a CSV file, then ask questions or request analysis...",
-                        avatar_images=["👤", "🤖"]
+                        avatar_images=["👤", "🤖"],
+                        value=[(None, "👋 Welcome! I'm Aria Sterling, your AI financial analyst. 📊 Upload your financial data and chat with me for comprehensive insights and analysis! 💼✨")]
                     )
                     
                     with gr.Row():
@@ -1387,8 +1387,8 @@ RESPOND ONLY WITH VALID JSON (no explanation):
         return ''.join(html_parts)
 
 def main():
-    """Main entry point for Quant Commander"""
-    print("🚀 Starting Quant Commander - AI-Powered Financial Analysis...")
+    """Main entry point for AI-Powered Financial Analysis"""
+    print("🚀 Starting AI-Powered Financial Analysis...")
     print("📊 Initializing modular components...")
     
     try:
@@ -1410,7 +1410,7 @@ def main():
         )
         
     except Exception as e:
-        print(f"❌ Failed to start Quant Commander: {str(e)}")
+        print(f"❌ Failed to start application: {str(e)}")
         import traceback
         traceback.print_exc()
 
