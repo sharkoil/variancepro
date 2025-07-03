@@ -221,7 +221,7 @@ class QuantCommanderApp:
     
 
     
-    def chat_response(self, message: str, history: List[Tuple[str, str]]) -> Tuple[List[Tuple[str, str]], str]:
+    def chat_response(self, message: str, history: List[Dict]) -> Tuple[List[Dict], str]:
         """Enhanced chat response with AI-powered analysis"""
         if not message.strip():
             return history, ""
@@ -230,20 +230,23 @@ class QuantCommanderApp:
             # Check if data is loaded
             if self.current_data is None:
                 response = "⚠️ **No data loaded**. Please upload a CSV file first to start analysis."
-                history.append((message, response))
+                history.append({"role": "user", "content": message})
+                history.append({"role": "assistant", "content": response})
                 return history, ""
             
             # Analyze the user's query to determine intent
             response = self._process_user_query(message.lower().strip())
             
             # Add to history
-            history.append((message, response))
+            history.append({"role": "user", "content": message})
+            history.append({"role": "assistant", "content": response})
             
             return history, ""
             
         except Exception as e:
             error_response = f"❌ **Error processing request**: {str(e)}"
-            history.append((message, error_response))
+            history.append({"role": "user", "content": message})
+            history.append({"role": "assistant", "content": error_response})
             return history, ""
     
     def _process_user_query(self, query: str) -> str:
@@ -698,7 +701,67 @@ Provide a helpful, contextual response as Aria Sterling.
     def create_interface(self):
         """Create the enhanced Gradio interface"""
         
-        with gr.Blocks(title="AI Financial Analysis", theme=gr.themes.Soft()) as interface:
+        with gr.Blocks(title="AI Financial Analysis", theme=gr.themes.Soft(), css="""
+        /* Custom CSS for better chat bubble contrast */
+        .message-wrap.svelte-1lcyrx4.svelte-1lcyrx4.svelte-1lcyrx4 {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+            margin: 8px 0 !important;
+        }
+        
+        /* User messages (right side) */
+        .message-wrap.svelte-1lcyrx4.svelte-1lcyrx4.svelte-1lcyrx4:has(.user) {
+            background: linear-gradient(135deg, #e3f2fd, #f0f8ff) !important;
+            border-left: 4px solid #2196f3 !important;
+        }
+        
+        /* Bot messages (left side) */
+        .message-wrap.svelte-1lcyrx4.svelte-1lcyrx4.svelte-1lcyrx4:has(.bot) {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+            border-left: 4px solid #4caf50 !important;
+        }
+        
+        /* Message text styling */
+        .message.svelte-1lcyrx4.svelte-1lcyrx4 {
+            color: #2c3e50 !important;
+            font-weight: 500 !important;
+            line-height: 1.5 !important;
+        }
+        
+        /* Chatbot container styling */
+        .chatbot .wrap.svelte-1lcyrx4 {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+            border-radius: 12px !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        /* Better table styling within chat */
+        .message table {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+        }
+        
+        .message table th {
+            background: #f1f3f4 !important;
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
+        }
+        
+        .message table td {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: #2c3e50 !important;
+        }
+        
+        /* Code block styling */
+        .message pre, .message code {
+            background: rgba(248, 249, 250, 0.95) !important;
+            border: 1px solid #e9ecef !important;
+            color: #495057 !important;
+        }
+        """) as interface:
             
             # Add the logo image using the Image component
             with gr.Row():
@@ -750,7 +813,8 @@ Provide a helpful, contextual response as Aria Sterling.
                         show_label=True,
                         placeholder="Start by uploading a CSV file, then ask questions or request analysis...",
                         avatar_images=["👤", "🤖"],
-                        value=[(None, "👋 Welcome! I'm Aria Sterling, your AI financial analyst. 📊 Upload your financial data and chat with me for comprehensive insights and analysis! 💼✨")]
+                        type="messages",
+                        value=[{"role": "assistant", "content": "👋 Welcome! I'm Aria Sterling, your AI financial analyst. 📊 Upload your financial data and chat with me for comprehensive insights and analysis! 💼✨"}]
                     )
                     
                     with gr.Row():
@@ -847,7 +911,7 @@ Provide a helpful, contextual response as Aria Sterling.
                 updated_chatbot = chatbot
                 if analysis_message:
                     bot_message = analysis_message['content']
-                    updated_chatbot = updated_chatbot + [("CSV File Loaded", bot_message)]
+                    updated_chatbot = updated_chatbot + [{"role": "user", "content": "CSV File Loaded"}, {"role": "assistant", "content": bot_message}]
                 
                 # Add News Analysis as second message
                 try:
@@ -864,18 +928,18 @@ Provide a helpful, contextual response as Aria Sterling.
                         if len(formatted_results.get('news_items', [])) > 6:
                             formatted_results['news_items'] = formatted_results['news_items'][:6]
                         news_content = self.news_analyzer.format_news_for_chat(formatted_results)
-                        updated_chatbot = updated_chatbot + [("Business Context Analysis", news_content)]
+                        updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": news_content}]
                         print(f"[DEBUG] News analysis added to chat")
                     else:
                         print("[DEBUG] No news results found or no location data detected")
                         fallback_news_content = "📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo location data detected in your dataset for relevant business news analysis. Focus on core data metrics instead."
-                        updated_chatbot = updated_chatbot + [("Business Context Analysis", fallback_news_content)]
+                        updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": fallback_news_content}]
                         
                 except Exception as e:
                     print(f"[DEBUG] News analysis error: {str(e)}")
                     # Add error message to chat as well
                     error_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\n⚠️ Unable to fetch business context: {str(e)}\n\nContinuing with data analysis..."
-                    updated_chatbot = updated_chatbot + [("Business Context Analysis", error_content)]
+                    updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": error_content}]
                 
                 return preview, data_summary, updated_chatbot, date_html, numeric_html, category_html, value_html
             
