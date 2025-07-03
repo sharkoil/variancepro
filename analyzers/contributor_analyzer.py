@@ -350,7 +350,7 @@ class ContributorAnalyzer(BaseAnalyzer):
     
     def format_for_chat(self) -> str:
         """
-        Format analysis results for chat display
+        Format analysis results for chat display using standardized formatting
         
         Returns:
             Formatted string for chat interface
@@ -362,52 +362,81 @@ class ContributorAnalyzer(BaseAnalyzer):
         insights = results['insights']
         pareto = results['pareto_analysis']
         params = results['parameters']
+        contribution_data = results['contribution_data']
         
-        # Build chat response
-        response_parts = [
-            "📊 **CONTRIBUTION ANALYSIS RESULTS (80/20 Pareto Principle)**",
-            "",
-            f"**Analysis**: {insights['summary']['analysis_type']}",
-            f"**Total Value**: {insights['summary']['total_value']}",
-            f"**Contributors Analyzed**: {insights['summary']['total_contributors']:,}",
-            "",
-            "🎯 **KEY FINDINGS**:"
+        # 1. Summary section with explanation and assumptions
+        explanation = "Identifies the most important contributors to your business using the 80/20 Pareto Principle."
+        assumptions = [
+            f"Analysis performed on {params['data_rows']:,} data rows",
+            f"Grouped by '{params['category_col']}' and measured by '{params['value_col']}'",
+            "Only positive values included in analysis",
+            f"Using {int(self.threshold * 100)}% threshold for top contributor identification"
         ]
         
-        # Add key findings
-        for finding in insights['key_findings']:
-            response_parts.append(f"• {finding}")
+        if params['time_col']:
+            assumptions.append(f"Time-based filtering applied using '{params['time_col']}' column")
         
-        response_parts.append("")
-        response_parts.append("📈 **PARETO ANALYSIS**:")
-        response_parts.append(f"• **Top {pareto['top_contributors']['count']} contributors** ({pareto['top_contributors']['percentage_of_total']:.1f}% of total)")
-        response_parts.append(f"• **Generate {pareto['top_contributors']['value_percentage']:.1f}% of total value**")
-        response_parts.append(f"• **Remaining {pareto['remaining_contributors']['count']} contributors** generate {pareto['remaining_contributors']['value_percentage']:.1f}% of value")
+        formatted_output = self.formatter.create_summary_section(
+            "Contribution Analysis (80/20 Pareto Principle)",
+            explanation,
+            assumptions
+        )
         
-        # Add top contributors table
+        # 2. Key metrics
+        total_value_raw = contribution_data['total_value'].sum()
+        metrics = {
+            "Total_Value": total_value_raw,
+            "Total_Contributors": f"{insights['summary']['total_contributors']:,}",
+            "Top_Contributors": f"{pareto['top_contributors']['count']} ({pareto['top_contributors']['percentage_of_total']:.1f}%)",
+            "Value_Concentration": f"{pareto['top_contributors']['value_percentage']:.1f}%"
+        }
+        
+        formatted_output += "\n\n" + self.formatter.create_metrics_grid(metrics, "Performance Summary")
+        
+        # 3. Top Contributors Table
         if pareto['top_contributors']['data']:
-            response_parts.append("")
-            response_parts.append("🏆 **TOP CONTRIBUTORS**:")
+            formatted_output += "\n\n🏆 **TOP CONTRIBUTORS TABLE:**\n"
             
-            for i, contributor in enumerate(pareto['top_contributors']['data'][:5], 1):  # Show top 5
-                response_parts.append(
-                    f"{i}. **{contributor[params['category_col']]}**: "
-                    f"{self.format_currency(contributor['total_value'])} "
-                    f"({contributor['value_percentage']:.1f}%)"
-                )
+            # Prepare table data
+            table_data = []
+            for contributor in pareto['top_contributors']['data'][:10]:  # Top 10
+                table_data.append({
+                    "Rank": contributor['rank'],
+                    "Category": contributor[params['category_col']],
+                    "Total_Value": contributor['total_value'],
+                    "Percentage": f"{contributor['value_percentage']:.1f}%",
+                    "Cumulative_Pct": f"{contributor['cumulative_percentage']:.1f}%",
+                    "Transactions": f"{contributor['transaction_count']:,}"
+                })
+            
+            headers = ["Rank", "Category", "Total_Value", "Percentage", "Cumulative_Pct", "Transactions"]
+            formatted_output += "\n" + self.formatter.create_banded_table(table_data, headers, max_rows=10)
         
-        # Add recommendations
-        if insights['recommendations']:
-            response_parts.append("")
-            response_parts.append("💡 **RECOMMENDATIONS**:")
-            for rec in insights['recommendations']:
-                response_parts.append(f"• {rec}")
+        # 4. Insights and recommendations
+        key_insights = []
+        for finding in insights['key_findings']:
+            # Clean up finding text (remove emojis for cleaner display)
+            clean_finding = finding.replace('🎯 **', '').replace('🥇 **', '').replace('📊 **', '').replace('**', '').replace(':', '')
+            key_insights.append(clean_finding)
         
-        # Add warnings if any
+        recommendations = []
+        for rec in insights['recommendations']:
+            # Clean up recommendation text
+            clean_rec = rec.replace('🎯 **', '').replace('⚠️ **', '').replace('🧹 **', '').replace('**', '').replace(':', '')
+            recommendations.append(clean_rec)
+        
+        formatted_output += "\n\n" + self.formatter.create_insights_section(key_insights, recommendations)
+        
+        # 5. Pareto Analysis Summary
+        formatted_output += f"\n\n📊 **PARETO ANALYSIS SUMMARY:**\n"
+        formatted_output += f"• **{pareto['pareto_description']}**\n"
+        formatted_output += f"• **Pareto Ratio**: {pareto['pareto_ratio']} (Top contributors / Total contributors)\n"
+        formatted_output += f"• **Remaining {pareto['remaining_contributors']['count']} contributors** generate {pareto['remaining_contributors']['value_percentage']:.1f}% of total value"
+        
+        # 6. Analysis notes (warnings)
         if self.warnings:
-            response_parts.append("")
-            response_parts.append("⚠️ **ANALYSIS NOTES**:")
+            formatted_output += "\n\n⚠️ **ANALYSIS NOTES:**\n"
             for warning in self.warnings:
-                response_parts.append(f"• {warning}")
+                formatted_output += f"• {warning}\n"
         
-        return "\n".join(response_parts)
+        return formatted_output

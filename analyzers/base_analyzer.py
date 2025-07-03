@@ -14,6 +14,204 @@ class AnalysisError(Exception):
     pass
 
 
+class AnalysisFormatter:
+    """
+    Centralized formatter for all analysis outputs
+    Provides consistent formatting with banded tables and clear structure
+    """
+    
+    @staticmethod
+    def format_currency(value: Union[int, float], currency_symbol: str = "$") -> str:
+        """Format numeric value as currency"""
+        if pd.isna(value):
+            return "N/A"
+        
+        if abs(value) >= 1_000_000_000:
+            return f"{currency_symbol}{value/1_000_000_000:.1f}B"
+        elif abs(value) >= 1_000_000:
+            return f"{currency_symbol}{value/1_000_000:.1f}M"
+        elif abs(value) >= 1_000:
+            return f"{currency_symbol}{value/1_000:.1f}K"
+        else:
+            return f"{currency_symbol}{value:.2f}"
+    
+    @staticmethod
+    def format_percentage(value: Union[int, float], decimal_places: int = 1) -> str:
+        """Format numeric value as percentage"""
+        if pd.isna(value):
+            return "N/A"
+        return f"{value * 100:.{decimal_places}f}%"
+    
+    @staticmethod
+    def format_number(value: Union[int, float], decimal_places: int = 0) -> str:
+        """Format large numbers with K/M/B suffixes"""
+        if pd.isna(value):
+            return "N/A"
+        
+        if abs(value) >= 1_000_000_000:
+            return f"{value/1_000_000_000:.1f}B"
+        elif abs(value) >= 1_000_000:
+            return f"{value/1_000_000:.1f}M"
+        elif abs(value) >= 1_000:
+            return f"{value/1_000:.1f}K"
+        else:
+            return f"{value:.{decimal_places}f}"
+    
+    @staticmethod
+    def create_banded_table(data: List[Dict], headers: List[str], max_rows: int = 10) -> str:
+        """
+        Create a banded table with alternating row styling for better readability
+        
+        Args:
+            data: List of dictionaries with row data
+            headers: List of column headers
+            max_rows: Maximum number of rows to display
+            
+        Returns:
+            Formatted table string
+        """
+        if not data or not headers:
+            return "_No data to display_"
+        
+        # Limit rows if necessary
+        display_data = data[:max_rows]
+        
+        # Calculate column widths
+        col_widths = {}
+        for header in headers:
+            col_widths[header] = len(header)
+            for row in display_data:
+                if header in row:
+                    value_str = str(row[header])
+                    col_widths[header] = max(col_widths[header], len(value_str))
+        
+        # Create table
+        table_lines = []
+        
+        # Header
+        header_line = "| " + " | ".join(header.ljust(col_widths[header]) for header in headers) + " |"
+        table_lines.append(header_line)
+        
+        # Separator
+        separator = "| " + " | ".join("-" * col_widths[header] for header in headers) + " |"
+        table_lines.append(separator)
+        
+        # Data rows
+        for i, row in enumerate(display_data):
+            row_values = []
+            for header in headers:
+                value = row.get(header, "")
+                if isinstance(value, (int, float)) and not pd.isna(value):
+                    if header.lower() in ['percentage', 'percent', '%'] or 'pct' in header.lower():
+                        value_str = f"{value:.1f}%"
+                    elif header.lower() in ['value', 'amount', 'total', 'revenue', 'sales', 'cost']:
+                        value_str = AnalysisFormatter.format_currency(value)
+                    else:
+                        value_str = AnalysisFormatter.format_number(value, 1)
+                else:
+                    value_str = str(value)
+                row_values.append(value_str.ljust(col_widths[header]))
+            
+            # Add row styling indicator for banded effect
+            row_indicator = "🔸" if i % 2 == 0 else "🔹"
+            row_line = f"| {' | '.join(row_values)} |"
+            table_lines.append(row_line)
+        
+        # Add truncation note if data was limited
+        if len(data) > max_rows:
+            table_lines.append(f"\n_Showing top {max_rows} of {len(data)} total rows_")
+        
+        return "\n".join(table_lines)
+    
+    @staticmethod
+    def create_summary_section(title: str, explanation: str, assumptions: List[str] = None) -> str:
+        """
+        Create a standardized summary section with title, explanation, and assumptions
+        
+        Args:
+            title: Section title
+            explanation: Simple explanation of the analysis
+            assumptions: List of assumptions made during analysis
+            
+        Returns:
+            Formatted summary section
+        """
+        lines = [
+            f"📊 **{title.upper()}**",
+            "",
+            f"**Analysis Summary:** {explanation}",
+            ""
+        ]
+        
+        if assumptions:
+            lines.extend([
+                "**Key Assumptions:**",
+                *[f"• {assumption}" for assumption in assumptions],
+                ""
+            ])
+        
+        return "\n".join(lines)
+    
+    @staticmethod
+    def create_insights_section(insights: List[str], recommendations: List[str] = None) -> str:
+        """
+        Create standardized insights and recommendations section
+        
+        Args:
+            insights: List of key insights
+            recommendations: Optional list of recommendations
+            
+        Returns:
+            Formatted insights section
+        """
+        lines = ["🎯 **KEY INSIGHTS:**"]
+        
+        for i, insight in enumerate(insights, 1):
+            lines.append(f"{i}. {insight}")
+        
+        if recommendations:
+            lines.extend([
+                "",
+                "💡 **RECOMMENDATIONS:**",
+                *[f"• {rec}" for rec in recommendations]
+            ])
+        
+        return "\n".join(lines)
+    
+    @staticmethod
+    def create_metrics_grid(metrics: Dict[str, Any], title: str = "Key Metrics") -> str:
+        """
+        Create a formatted metrics grid
+        
+        Args:
+            metrics: Dictionary of metric name to value
+            title: Title for the metrics section
+            
+        Returns:
+            Formatted metrics grid
+        """
+        lines = [
+            f"📈 **{title.upper()}:**",
+            ""
+        ]
+        
+        # Format metrics in a grid
+        for metric_name, value in metrics.items():
+            if isinstance(value, (int, float)) and not pd.isna(value):
+                if metric_name.lower() in ['percentage', 'percent', '%'] or 'pct' in metric_name.lower():
+                    formatted_value = f"{value:.1f}%"
+                elif metric_name.lower() in ['value', 'amount', 'total', 'revenue', 'sales', 'cost']:
+                    formatted_value = AnalysisFormatter.format_currency(value)
+                else:
+                    formatted_value = AnalysisFormatter.format_number(value)
+            else:
+                formatted_value = str(value)
+            
+            lines.append(f"• **{metric_name.replace('_', ' ').title()}**: {formatted_value}")
+        
+        return "\n".join(lines)
+
+
 class BaseAnalyzer(ABC):
     """
     Base class for all financial analyzers
@@ -34,6 +232,7 @@ class BaseAnalyzer(ABC):
         self.analysis_type: str = "base"
         self.errors: List[str] = []
         self.warnings: List[str] = []
+        self.formatter = AnalysisFormatter()
     
     @abstractmethod
     def analyze(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
@@ -49,6 +248,17 @@ class BaseAnalyzer(ABC):
             
         Raises:
             AnalysisError: If analysis fails
+        """
+        pass
+    
+    @abstractmethod
+    def format_for_chat(self) -> str:
+        """
+        Format analysis results for chat display using standardized formatting
+        Must be implemented by subclasses
+        
+        Returns:
+            Formatted string for chat interface with consistent structure
         """
         pass
     
@@ -174,43 +384,6 @@ class BaseAnalyzer(ABC):
                     )
         
         return cleaned_data
-    
-    def format_currency(self, value: Union[int, float], currency_symbol: str = "$") -> str:
-        """
-        Format numeric value as currency
-        
-        Args:
-            value: Numeric value to format
-            currency_symbol: Currency symbol to use
-            
-        Returns:
-            Formatted currency string
-        """
-        if pd.isna(value):
-            return "N/A"
-        
-        if abs(value) >= 1_000_000:
-            return f"{currency_symbol}{value/1_000_000:.1f}M"
-        elif abs(value) >= 1_000:
-            return f"{currency_symbol}{value/1_000:.1f}K"
-        else:
-            return f"{currency_symbol}{value:.2f}"
-    
-    def format_percentage(self, value: Union[int, float], decimal_places: int = 1) -> str:
-        """
-        Format numeric value as percentage
-        
-        Args:
-            value: Numeric value to format (0.1 = 10%)
-            decimal_places: Number of decimal places
-            
-        Returns:
-            Formatted percentage string
-        """
-        if pd.isna(value):
-            return "N/A"
-        
-        return f"{value * 100:.{decimal_places}f}%"
     
     def calculate_summary_stats(self, data: pd.DataFrame, column: str) -> Dict[str, float]:
         """

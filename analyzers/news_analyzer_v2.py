@@ -7,6 +7,7 @@ import pandas as pd
 import requests
 import json
 import time
+import re
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 import urllib.parse
@@ -367,7 +368,7 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
             return []
     
     def format_news_for_chat(self, results: Dict) -> str:
-        """Format news results for chat display"""
+        """Format news results for chat display using standardized formatting"""
         if not results or not isinstance(results, dict):
             return "📰 **BUSINESS CONTEXT ANALYSIS**\n\nUnable to generate business context analysis."
         
@@ -381,55 +382,104 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
         locations = results.get('top_locations', [])
         search_queries = results.get('search_queries', [])
         
-        # Format the output
-        formatted_parts = [
-            "📰 **BUSINESS CONTEXT ANALYSIS**",
-            "",
-            f"Based on your data's {industry} metrics and location information, here's relevant business context:"
+        # 1. Summary section
+        explanation = "Provides relevant business news and market context based on location data and industry patterns identified in your dataset."
+        assumptions = [
+            f"Industry context: {industry} sector analysis",
+            f"Geographic focus: {', '.join(locations[:3]) if locations else 'General business context'}",
+            f"News articles analyzed: {len(news_items)}",
+            "News relevance determined by location and business keywords",
+            "Headlines from past 30 days prioritized for current relevance"
         ]
         
-        # Add location context
-        if locations:
-            formatted_parts.append(f"\n**Key Areas**: {', '.join(locations[:3])}")
+        # Use the AnalysisFormatter from base_analyzer (we need to create an instance)
+        from .base_analyzer import AnalysisFormatter
+        formatter = AnalysisFormatter()
         
-        # Add news items
-        formatted_parts.append("\n**Recent Business Headlines:**")
+        formatted_output = formatter.create_summary_section(
+            "Business Context Analysis",
+            explanation,
+            assumptions
+        )
         
-        for i, item in enumerate(news_items[:5], 1):
-            source = item.get('source', 'Unknown').replace('.com', '').title()
-            published = item.get('published', '')
-            if published:
-                try:
-                    # Try to parse and format the date
-                    date_obj = pd.to_datetime(published)
-                    date_str = date_obj.strftime("%b %d")
-                    source_date = f"{source} • {date_str}"
-                except:
-                    source_date = source
-            else:
-                source_date = source
-                
-            formatted_parts.append(f"{i}. **{item.get('title', 'No title')}** ({source_date})")
+        # 2. Key metrics about the news analysis
+        context_metrics = {
+            "News_Articles_Found": len(news_items),
+            "Key_Locations": ', '.join(locations[:3]) if locations else 'N/A',
+            "Industry_Context": industry.title(),
+            "Search_Queries_Used": len(search_queries)
+        }
+        
+        formatted_output += "\n\n" + formatter.create_metrics_grid(context_metrics, "Context Analysis Summary")
+        
+        # 3. News articles table
+        if news_items:
+            formatted_output += "\n\n📰 **BUSINESS HEADLINES TABLE:**\n"
             
-            # Add summary if available and not too long
-            summary = item.get('summary', '').strip()
-            if summary and len(summary) < 200:  # Keep summaries short
-                formatted_parts.append(f"   {summary}")
+            table_data = []
+            for i, item in enumerate(news_items[:8], 1):  # Top 8 articles
+                source = item.get('source', 'Unknown').replace('.com', '').title()
+                title = item.get('title', 'No title').strip()
+                published = item.get('published', '')
+                link = item.get('link', '')
+                
+                # Clean and truncate title
+                if len(title) > 60:
+                    title = title[:57] + "..."
+                
+                # Format date
+                date_str = "Recent"
+                if published:
+                    try:
+                        date_obj = pd.to_datetime(published)
+                        date_str = date_obj.strftime("%b %d")
+                    except:
+                        pass
+                
+                table_data.append({
+                    "#": i,
+                    "Headline": title,
+                    "Source": source,
+                    "Date": date_str,
+                    "Relevant_Link": "Yes" if link else "No"
+                })
+            
+            headers = ["#", "Headline", "Source", "Date", "Relevant_Link"]
+            formatted_output += "\n" + formatter.create_banded_table(table_data, headers, max_rows=8)
         
-        # Add insights and impact section
-        formatted_parts.extend([
-            "",
-            "📊 **Business Context Insights:**",
-            "• Consider how these headlines might relate to trends in your data",
-            "• Look for correlations between news events and performance changes",
-            "• Use this context when interpreting anomalies in your analysis",
-            "",
-            "💡 **Business Impact**: Consider how these trends might relate to your data patterns in the analysis below.",
-            "",
-            "---"
-        ])
+        # 4. Article links section (separate from table for better readability)
+        if news_items:
+            formatted_output += "\n\n🔗 **ARTICLE LINKS:**\n"
+            for i, item in enumerate(news_items[:5], 1):
+                title = item.get('title', 'No title').strip()
+                link = item.get('link', '')
+                
+                if len(title) > 80:
+                    title = title[:77] + "..."
+                
+                if link:
+                    formatted_output += f"{i}. [{title}]({link})\n"
+                else:
+                    formatted_output += f"{i}. {title} (No link available)\n"
         
-        return "\n".join(formatted_parts)
+        # 5. Business insights
+        insights = [
+            "News context provides external factors that may influence your data patterns",
+            "Look for correlations between news events and performance changes in your metrics",
+            "Consider timing of headlines when interpreting data anomalies or trends",
+            "Use this context to ask more informed questions about your business performance"
+        ]
+        
+        recommendations = [
+            "Review news headlines for events that coincide with data changes",
+            "Consider external market factors when analyzing variance or performance dips",
+            "Use geographic news context to understand regional performance differences",
+            "Integrate news insights with financial analysis for comprehensive business view"
+        ]
+        
+        formatted_output += "\n\n" + formatter.create_insights_section(insights, recommendations)
+        
+        return formatted_output
     
     def analyze(self, data: pd.DataFrame, column_info: Dict, llm_interpreter=None) -> Dict:
         """Main analysis method that returns news context"""

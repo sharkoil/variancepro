@@ -1038,7 +1038,7 @@ class FinancialAnalyzer(BaseAnalyzer):
     
     def format_for_chat(self) -> str:
         """
-        Format analysis results for chat display
+        Format analysis results for chat display using standardized formatting
         
         Returns:
             Formatted string for chat interface
@@ -1050,141 +1050,188 @@ class FinancialAnalyzer(BaseAnalyzer):
         analysis_type = results['analysis_type']
         insights = results['insights']
         metrics = results['metrics']
+        params = results['parameters']
         
-        # Build chat response based on analysis type
+        # Build standardized format based on analysis type
         if analysis_type == "ttm":
-            response_parts = [
-                "📊 **TTM ANALYSIS RESULTS (Trailing Twelve Months)**",
-                "",
-                f"**Current TTM {results['parameters']['value_col']}**: {metrics['current_ttm_formatted']}",
-            ]
-            
-            if 'current_growth' in metrics:
-                growth_emoji = "🔼" if metrics['current_growth'] > 0 else "🔽"
-                response_parts.append(f"**YoY Growth**: {growth_emoji} {metrics['current_growth_formatted']}")
-            
-            response_parts.append(f"**Period**: {metrics['date_range']}")
-            response_parts.append("")
-            
-            # Add key findings
-            response_parts.append("🎯 **KEY FINDINGS**:")
-            for finding in insights['key_findings']:
-                response_parts.append(f"• {finding}")
-            
-            # Add trends
-            if insights['trends']:
-                response_parts.append("")
-                response_parts.append("📈 **TREND ANALYSIS**:")
-                for trend in insights['trends']:
-                    response_parts.append(f"• {trend}")
-            
-            # Add recommendations
-            if insights['recommendations']:
-                response_parts.append("")
-                response_parts.append("💡 **RECOMMENDATIONS**:")
-                for rec in insights['recommendations']:
-                    response_parts.append(f"• {rec}")
-        
+            return self._format_ttm_analysis(results, insights, metrics, params)
         elif analysis_type == "variance":
-            variance_emoji = "🔼" if metrics['total_variance'] > 0 else "🔽"
-            response_parts = [
-                "📊 **BUDGET VS ACTUAL VARIANCE ANALYSIS**",
-                "",
-                f"**Actual**: {metrics['total_actual_formatted']}",
-                f"**Budget**: {metrics['total_budget_formatted']}",
-                f"**Variance**: {variance_emoji} {metrics['total_variance_formatted']} ({metrics['total_variance_pct_formatted']})",
-                f"**Period**: {metrics['date_range']}",
-                "",
-            ]
-            
-            # Add key findings
-            response_parts.append("🎯 **KEY FINDINGS**:")
-            for finding in insights['key_findings']:
-                response_parts.append(f"• {finding}")
-            
-            # Add trends
-            if insights['trends']:
-                response_parts.append("")
-                response_parts.append("📈 **PERFORMANCE TRENDS**:")
-                for trend in insights['trends']:
-                    response_parts.append(f"• {trend}")
-            
-            # Add top variances
-            top_variances = results.get('top_variances', [])
-            if top_variances and len(top_variances) > 0:
-                response_parts.append("")
-                response_parts.append("📊 **NOTABLE VARIANCES**:")
-                
-                for i, variance in enumerate(top_variances[:4]):  # Show top 4
-                    emoji = "🔼" if variance['type'] == "over_budget" else "🔽"
-                    period_str = f"{variance['period']}"
-                    if 'category' in variance:
-                        period_str += f" ({variance['category']})"
-                    
-                    response_parts.append(
-                        f"• {emoji} **{period_str}**: {variance['variance_formatted']} "
-                        f"({variance['variance_pct_formatted']})"
-                    )
-            
-            # Add recommendations
-            if insights['recommendations']:
-                response_parts.append("")
-                response_parts.append("💡 **RECOMMENDATIONS**:")
-                for rec in insights['recommendations']:
-                    response_parts.append(f"• {rec}")
-        
+            return self._format_variance_analysis(results, insights, metrics, params)
         elif analysis_type == "trend":
-            response_parts = [
-                "📈 **TREND ANALYSIS RESULTS**",
-                "",
-            ]
-            
-            if isinstance(results['data'], list):  # Multiple categories
-                response_parts.append(f"**Categories Analyzed**: {metrics['total_categories']}")
-                response_parts.append(f"**Growing Categories**: {metrics['growing_categories']}")
-                response_parts.append(f"**Declining Categories**: {metrics['declining_categories']}")
-            else:
-                trend_emoji = "🔼" if metrics['overall_trend'] == "up" else "🔽"
-                response_parts.append(f"**Overall Trend**: {trend_emoji} {metrics['overall_trend'].title()}")
-                response_parts.append(f"**Trend Strength**: {metrics['overall_trend_pct']:.2f}%")
-                response_parts.append(f"**Current Value**: {metrics['current_value_formatted']}")
-            
-            response_parts.append(f"**Period**: {metrics['date_range']}")
-            response_parts.append("")
-            
-            # Add key findings
-            response_parts.append("🎯 **KEY FINDINGS**:")
-            for finding in insights['key_findings']:
-                response_parts.append(f"• {finding}")
-            
-            # Add trends
-            if insights['trends']:
-                response_parts.append("")
-                response_parts.append("📊 **DETAILED TRENDS**:")
-                for trend in insights['trends']:
-                    response_parts.append(f"• {trend}")
-            
-            # Add recommendations
-            if insights['recommendations']:
-                response_parts.append("")
-                response_parts.append("💡 **RECOMMENDATIONS**:")
-                for rec in insights['recommendations']:
-                    response_parts.append(f"• {rec}")
-        
+            return self._format_trend_analysis(results, insights, metrics, params)
         else:
-            response_parts = [
-                f"📊 **{analysis_type.upper()} ANALYSIS RESULTS**",
-                "",
-                "Analysis completed successfully, but display format not recognized.",
-                f"Type: {analysis_type}",
-                f"Status: {self.status}"
-            ]
+            return self._format_generic_analysis(analysis_type, results)
+    
+    def _format_ttm_analysis(self, results: Dict, insights: Dict, metrics: Dict, params: Dict) -> str:
+        """Format TTM analysis with standardized structure"""
         
-        # Add warnings if any
-        if self.warnings:
-            response_parts.append("")
-            response_parts.append("⚠️ **ANALYSIS NOTES**:")
-            for warning in self.warnings[:3]:  # Show top 3 warnings
-                response_parts.append(f"• {warning}")
+        # 1. Summary section
+        explanation = "Analyzes Trailing Twelve Months (TTM) performance to provide a rolling 12-month view of financial metrics."
+        assumptions = [
+            f"Analysis performed on '{params['value_col']}' column",
+            f"Date range: {metrics['date_range']}",
+            "TTM calculated as sum of most recent 12 months",
+            "Growth calculated year-over-year where data available"
+        ]
         
-        return "\n".join(response_parts)
+        if params.get('category_col'):
+            assumptions.append(f"Segmented by '{params['category_col']}' categories")
+        
+        formatted_output = self.formatter.create_summary_section(
+            "TTM Analysis (Trailing Twelve Months)",
+            explanation,
+            assumptions
+        )
+        
+        # 2. Key metrics
+        key_metrics = {
+            "Current_TTM_Value": metrics.get('current_ttm', 0),
+            "Period_Coverage": metrics.get('date_range', 'N/A')
+        }
+        
+        if 'current_growth' in metrics:
+            key_metrics["YoY_Growth"] = f"{metrics['current_growth']:.1f}%"
+        
+        formatted_output += "\n\n" + self.formatter.create_metrics_grid(key_metrics, "TTM Performance Summary")
+        
+        # 3. Insights and recommendations
+        clean_findings = [finding.replace('🎯 **', '').replace('**', '') for finding in insights.get('key_findings', [])]
+        clean_recs = [rec.replace('💡 **', '').replace('**', '') for rec in insights.get('recommendations', [])]
+        
+        formatted_output += "\n\n" + self.formatter.create_insights_section(clean_findings, clean_recs)
+        
+        # 4. Trend details
+        if insights.get('trends'):
+            formatted_output += "\n\n� **TREND DETAILS:**\n"
+            for i, trend in enumerate(insights['trends'], 1):
+                clean_trend = trend.replace('📈', '').replace('📊', '').strip()
+                formatted_output += f"{i}. {clean_trend}\n"
+        
+        return formatted_output
+    
+    def _format_variance_analysis(self, results: Dict, insights: Dict, metrics: Dict, params: Dict) -> str:
+        """Format variance analysis with standardized structure"""
+        
+        # 1. Summary section
+        explanation = "Compares actual performance against budgeted targets to identify areas of over or under-performance."
+        assumptions = [
+            f"Actual values from '{params['value_col']}' column",
+            f"Budget values from '{params.get('budget_col', 'Budget')}' column",
+            f"Analysis period: {metrics['date_range']}",
+            "Positive variance = actual exceeds budget",
+            "Negative variance = actual below budget"
+        ]
+        
+        formatted_output = self.formatter.create_summary_section(
+            "Budget vs Actual Variance Analysis",
+            explanation,
+            assumptions
+        )
+        
+        # 2. Key metrics
+        key_metrics = {
+            "Total_Actual": metrics.get('total_actual', 0),
+            "Total_Budget": metrics.get('total_budget', 0),
+            "Total_Variance": metrics.get('total_variance', 0),
+            "Variance_Percentage": f"{metrics.get('total_variance_pct', 0):.1f}%"
+        }
+        
+        formatted_output += "\n\n" + self.formatter.create_metrics_grid(key_metrics, "Variance Summary")
+        
+        # 3. Top variances table
+        top_variances = results.get('top_variances', [])
+        if top_variances:
+            formatted_output += "\n\n📊 **NOTABLE VARIANCES TABLE:**\n"
+            
+            table_data = []
+            for variance in top_variances[:10]:  # Top 10
+                table_data.append({
+                    "Period": variance.get('period', 'N/A'),
+                    "Category": variance.get('category', 'All'),
+                    "Actual": variance.get('actual', 0),
+                    "Budget": variance.get('budget', 0),
+                    "Variance": variance.get('variance', 0),
+                    "Variance_Pct": f"{variance.get('variance_pct', 0):.1f}%"
+                })
+            
+            headers = ["Period", "Category", "Actual", "Budget", "Variance", "Variance_Pct"]
+            formatted_output += "\n" + self.formatter.create_banded_table(table_data, headers, max_rows=10)
+        
+        # 4. Insights and recommendations
+        clean_findings = [finding.replace('🎯 **', '').replace('**', '') for finding in insights.get('key_findings', [])]
+        clean_recs = [rec.replace('💡 **', '').replace('**', '') for rec in insights.get('recommendations', [])]
+        
+        formatted_output += "\n\n" + self.formatter.create_insights_section(clean_findings, clean_recs)
+        
+        return formatted_output
+    
+    def _format_trend_analysis(self, results: Dict, insights: Dict, metrics: Dict, params: Dict) -> str:
+        """Format trend analysis with standardized structure"""
+        
+        # 1. Summary section
+        explanation = "Analyzes patterns and trends in financial data over time to identify growth, decline, and seasonal patterns."
+        assumptions = [
+            f"Analysis performed on '{params['value_col']}' column",
+            f"Date range: {metrics['date_range']}",
+            "Trends calculated using period-over-period comparison",
+            "Seasonal patterns identified where sufficient data available"
+        ]
+        
+        if params.get('category_col'):
+            assumptions.append(f"Trend analysis segmented by '{params['category_col']}'")
+        
+        formatted_output = self.formatter.create_summary_section(
+            "Trend Analysis",
+            explanation,
+            assumptions
+        )
+        
+        # 2. Key metrics
+        key_metrics = {}
+        
+        if isinstance(results['data'], list):  # Multiple categories
+            key_metrics.update({
+                "Categories_Analyzed": metrics.get('total_categories', 0),
+                "Growing_Categories": metrics.get('growing_categories', 0),
+                "Declining_Categories": metrics.get('declining_categories', 0)
+            })
+        else:
+            key_metrics.update({
+                "Overall_Trend": metrics.get('overall_trend', 'N/A').title(),
+                "Trend_Strength": f"{metrics.get('overall_trend_pct', 0):.1f}%",
+                "Current_Value": metrics.get('current_value', 0)
+            })
+        
+        formatted_output += "\n\n" + self.formatter.create_metrics_grid(key_metrics, "Trend Summary")
+        
+        # 3. Insights and recommendations
+        clean_findings = [finding.replace('🎯 **', '').replace('**', '') for finding in insights.get('key_findings', [])]
+        clean_recs = [rec.replace('💡 **', '').replace('**', '') for rec in insights.get('recommendations', [])]
+        
+        formatted_output += "\n\n" + self.formatter.create_insights_section(clean_findings, clean_recs)
+        
+        # 4. Detailed trends
+        if insights.get('trends'):
+            formatted_output += "\n\n� **DETAILED TREND ANALYSIS:**\n"
+            for i, trend in enumerate(insights['trends'], 1):
+                clean_trend = trend.replace('📊', '').replace('📈', '').strip()
+                formatted_output += f"{i}. {clean_trend}\n"
+        
+        return formatted_output
+    
+    def _format_generic_analysis(self, analysis_type: str, results: Dict) -> str:
+        """Format generic analysis when specific format not available"""
+        explanation = f"Completed {analysis_type} analysis on financial data."
+        assumptions = ["Standard financial analysis assumptions applied"]
+        
+        formatted_output = self.formatter.create_summary_section(
+            f"{analysis_type.title()} Analysis",
+            explanation,
+            assumptions
+        )
+        
+        formatted_output += f"\n\n📊 **Analysis Status**: Completed\n"
+        formatted_output += f"**Type**: {analysis_type}\n"
+        formatted_output += f"**Results Available**: {', '.join(results.keys())}"
+        
+        return formatted_output

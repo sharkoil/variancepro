@@ -320,11 +320,105 @@ class TimescaleAnalyzer(BaseAnalyzer):
         return "\n".join(insights)
     
     def format_for_chat(self) -> str:
-        """Format results for chat display"""
-        print(f"[DEBUG][TimescaleAnalyzer] Formatting results for chat, results exist: {self.results is not None}")
-        if not self.results:
-            return "❌ No analysis results available"
+        """
+        Format analysis results for chat display using standardized formatting
         
-        insights = self.results.get('insights', 'No insights generated')
-        print(f"[DEBUG][TimescaleAnalyzer] Insights length: {len(insights)}")
-        return insights
+        Returns:
+            Formatted string for chat interface
+        """
+        if self.status != "completed" or not self.results:
+            return "❌ **Analysis not completed or failed**"
+        
+        # Extract results data
+        period_analysis = self.results.get('period_analysis', {})
+        summary = self.results.get('summary', {})
+        insights_text = self.results.get('insights', '')
+        
+        # 1. Summary section
+        explanation = "Analyzes financial performance across multiple time periods (YoY, QoQ, MoM) to identify trends and patterns."
+        assumptions = [
+            f"Analysis performed on {summary.get('total_columns', 'N/A')} numeric columns",
+            f"Data period: {summary.get('date_range', 'N/A')}",
+            f"Total data points: {summary.get('total_periods', 'N/A')}",
+            "Growth rates calculated period-over-period",
+            "Trends identified using statistical analysis"
+        ]
+        
+        formatted_output = self.formatter.create_summary_section(
+            "Comprehensive Timescale Analysis",
+            explanation,
+            assumptions
+        )
+        
+        # 2. Key metrics from summary
+        key_metrics = {}
+        if summary:
+            key_metrics.update({
+                "Time_Periods_Analyzed": summary.get('total_periods', 'N/A'),
+                "Numeric_Columns": summary.get('total_columns', 'N/A'),
+                "Date_Range": summary.get('date_range', 'N/A')
+            })
+            
+            # Add growth metrics if available
+            if 'yoy_growth' in summary:
+                key_metrics["YoY_Growth"] = f"{summary['yoy_growth']:.1f}%"
+            if 'qoq_growth' in summary:
+                key_metrics["QoQ_Growth"] = f"{summary['qoq_growth']:.1f}%"
+            if 'mom_growth' in summary:
+                key_metrics["MoM_Growth"] = f"{summary['mom_growth']:.1f}%"
+        
+        formatted_output += "\n\n" + self.formatter.create_metrics_grid(key_metrics, "Timescale Performance Summary")
+        
+        # 3. Period analysis table if available
+        if period_analysis:
+            formatted_output += "\n\n📊 **PERIOD ANALYSIS TABLE:**\n"
+            
+            # Convert period analysis to table format
+            table_data = []
+            for period_type, metrics in period_analysis.items():
+                if isinstance(metrics, dict):
+                    table_data.append({
+                        "Period_Type": period_type.upper(),
+                        "Current_Value": metrics.get('current_value', 'N/A'),
+                        "Previous_Value": metrics.get('previous_value', 'N/A'),
+                        "Growth_Rate": f"{metrics.get('growth_rate', 0):.1f}%",
+                        "Trend": metrics.get('trend', 'N/A').title()
+                    })
+            
+            if table_data:
+                headers = ["Period_Type", "Current_Value", "Previous_Value", "Growth_Rate", "Trend"]
+                formatted_output += "\n" + self.formatter.create_banded_table(table_data, headers, max_rows=10)
+        
+        # 4. AI-generated insights
+        if insights_text and insights_text != 'No insights generated':
+            # Parse insights if they contain structured data
+            insights_lines = insights_text.split('\n')
+            clean_insights = []
+            recommendations = []
+            
+            for line in insights_lines:
+                line = line.strip()
+                if not line or line.startswith('**') or line.startswith('#'):
+                    continue
+                    
+                # Clean up formatting
+                clean_line = line.replace('🎯', '').replace('💡', '').replace('📊', '').replace('**', '').strip()
+                
+                if any(keyword in clean_line.lower() for keyword in ['recommend', 'suggest', 'should', 'consider']):
+                    recommendations.append(clean_line)
+                elif clean_line and not clean_line.startswith('•'):
+                    clean_insights.append(clean_line)
+            
+            # If we couldn't parse structured insights, use the full text
+            if not clean_insights and not recommendations:
+                clean_insights = [insights_text]
+            
+            formatted_output += "\n\n" + self.formatter.create_insights_section(clean_insights, recommendations)
+        
+        # 5. Analysis warnings
+        if self.warnings:
+            formatted_output += "\n\n⚠️ **ANALYSIS NOTES:**\n"
+            for warning in self.warnings:
+                formatted_output += f"• {warning}\n"
+        
+        return formatted_output

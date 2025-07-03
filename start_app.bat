@@ -1,5 +1,5 @@
 @echo off
-echo 💼 VariancePro Financial Chat App - Fresh Start
+echo 💼 Quant Commander Financial Chat App - Fresh Start
 echo ================================================
 
 cd /d "%~dp0"
@@ -29,7 +29,7 @@ if %errorlevel% neq 0 (
 )
 
 echo 🚀 Starting the app...
-python app.py
+python app_new.py
 
 echo 👋 App finished
 pause

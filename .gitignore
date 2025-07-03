@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.conda/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+~$*.xlsx
+~$*.docx
+
+# Application specific
+*.log
+test_logs/
+test_reports/
+test_results/
+debug_*.py
+temp_*.py
+*_backup.py
+*_old.py
+
+# Data files (keep samples in proper folders)
+!sample_data/
+!tests/data/
+*.csv
+*.xlsx
+!sample_data/*.csv
+!sample_data/*.xlsx
+!tests/data/*.csv
+!tests/data/*.xlsx
+
+# Temporary files in root (should be moved to sample_data/)
+sample_variance_data.csv
+sample_variance_data.xlsx
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/

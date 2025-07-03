@@ -1,8 +1,8 @@
-# 📊 VariancePro - AI-Powered Financial Data Analysis
+# 📊 Quant Commander - AI-Powered Financial Data Analysis
 
-**VariancePro** is an intelligent financial analysis chat application that combines the power of **Gemma3 LLM**, **LlamaIndex**, and advanced **contribution analysis** to provide comprehensive insights from your CSV data. Built with **Gradio** for an intuitive web interface.
+**Quant Commander** (formerly VariancePro) is an intelligent financial analysis chat application that combines the power of **Gemma3 LLM**, **LlamaIndex**, and advanced **contribution analysis** to provide comprehensive insights from your CSV data. Built with **Gradio** for an intuitive web interface.
 
-![VariancePro Dashboard](https://img.shields.io/badge/VariancePro-Financial%20Analysis-blue?style=for-the-badge&logo=chart-dot-js)
+![Quant Commander](https://img.shields.io/badge/Quant%20Commander-Financial%20Analysis-blue?style=for-the-badge&logo=chart-dot-js)
 
 ## 🎯 **Key Features**
 
@@ -57,19 +57,19 @@ ollama pull gemma3:latest
 ollama serve
 ```
 
-4. **Launch VariancePro**
+4. **Launch Quant Commander**
 ```bash
-python app.py
+python app_new.py
 ```
 
 5. **Access the Application**
-- Open your browser to `http://localhost:7860`
+- Open your browser to `http://localhost:7862`
 - Upload a CSV file
 - Start asking financial questions!
 
 Run the Gradio app:
 ```bash
-python app.py
+python app_new.py
 ```
 
 ## 📊 **Use Cases**
@@ -93,16 +93,16 @@ python app.py
 ### **Basic Analysis**
 ```
 👤 User: "Analyze this sales data"
-🤖 VariancePro: Provides comprehensive overview with key metrics, trends, and insights
+🤖 Quant Commander: Provides comprehensive overview with key metrics, trends, and insights
 
 👤 User: "What are the top contributors to revenue?"
-🤖 VariancePro: Performs 80/20 analysis showing key customers/products driving performance
+🤖 Quant Commander: Performs 80/20 analysis showing key customers/products driving performance
 ```
 
 ### **Advanced Insights**
 ```
 👤 User: "Perform contribution analysis"
-🤖 VariancePro: 
+🤖 Quant Commander: 
 📊 CONTRIBUTION ANALYSIS RESULTS (80/20 Pareto Principle)
 🎯 Top 3 customers drive 78% of total revenue
 📈 Shows detailed breakdown with visual charts
@@ -111,65 +111,94 @@ python app.py
 
 ## 🏗️ **Project Structure**
 ```
-📁 VariancePro/ (Clean Architecture)
-├── 🎯 app.py                    # Main application (to be refactored)
-├── 🧠 utils/
-│   ├── chat_handler.py          # LLM integration & chat logic  
-│   ├── llm_handler.py           # Ollama/Gemma3 interface
+📁 Quant Commander/ (Clean Architecture)
+├── 🎯 app_new.py                # Main Quant Commander application
+├── 📁 ai/                       # AI Integration Components
+│   ├── llm_interpreter.py       # Ollama/Gemma3 interface
 │   └── narrative_generator.py   # Aria Sterling persona
-├── 📊 llamaindex_integration.py # LlamaIndex enhanced analysis
-├── 🧪 tests/
-│   ├── data/
-│   │   ├── sample_financial_data.csv    # Test dataset
-│   │   └── sales_budget_actuals.csv     # Budget vs actual data
-│   └── (test files to be organized)
+├── � analyzers/                # Analysis Modules
+│   ├── contributor_analyzer.py  # 80/20 Pareto analysis
+│   ├── financial_analyzer.py    # Variance & trend analysis
+│   ├── news_analyzer_v2.py      # Business context news
+│   └── timescale_analyzer.py    # Multi-period analysis
+├── 📁 config/                   # Configuration
+│   └── settings.py              # Application settings
+├── 📁 data/                     # CSV Processing
+│   └── csv_loader.py            # Enhanced CSV loading
+├── 📁 tests/                    # Test Suite
+│   └── data/                    # Test datasets
+├── 📁 sample_data/              # Example datasets
 ├── 🔧 requirements.txt          # Python dependencies
 ├── 📚 README.md                 # This documentation
 ├── 🤝 CONTRIBUTING.md           # Contribution guidelines
-└── 📄 LICENSE                   # MIT license
+├── 📄 LICENSE                   # MIT license
+├── 🖼️ logo.png                 # Quant Commander logo
+└── 🚀 start_app.bat             # Windows launcher
 ```
 
 ## 🔧 **Configuration**
 
 ### **Model Selection**
 ```python
-# Default configuration (in app.py)
-self.model_name = "gemma3:latest"  # Primary LLM
+# Default configuration (in config/settings.py)
+llm_model = "gemma3:latest"  # Primary LLM
+ollama_host = "http://localhost:11434"
 ```
 
-### **LlamaIndex Setup** (Optional)
+### **Environment Variables** (Optional)
 ```bash
-pip install llama-index llama-index-llms-ollama
+export VARIANCEPRO_LLM_MODEL=gemma3:latest
+export OLLAMA_HOST=http://localhost:11434
+export GRADIO_SERVER_PORT=7862
 ```
 
 ## 🧪 **Testing**
 
-### **Run Test Suite**
+### **Sample Data**
 ```bash
-# Test files are being reorganized for the new modular architecture
-# Current test data available in tests/data/
+# Sample datasets available in sample_data/
+sample_data/sample_variance_data.csv     # Financial variance analysis
+sample_data/sample_variance_data.xlsx    # Excel format sample
+sample_data/comprehensive_sales_data.csv # Sales analysis example
+sample_data/sales_budget_actuals.csv     # Budget vs actual example
 
-# Available test datasets:
-# - tests/data/sample_financial_data.csv
-# - tests/data/sales_budget_actuals.csv
+# Test datasets in tests/data/
+# Various test scenarios for validation
+```
+
+### **Manual Testing**
+```bash
+# Start the application
+python app_new.py
+
+# Upload sample_data/sample_variance_data.csv
+# Test various analysis commands
+```
+
+### **File Organization**
+```bash
+# If sample files are in the root directory, organize them:
+python organize_files.py
+
+# This will move sample data files to sample_data/ folder
 ```
 
 ## 🛠️ **Deployment**
 
 ### **Local Development**
 ```bash
-python app.py
-# Access: http://localhost:7860
+python app_new.py
+# Access: http://localhost:7862
 ```
 
 ### **Production Deployment**
 ```bash
 # Set environment variables
 export OLLAMA_HOST=your-ollama-server
-export GRADIO_SERVER_PORT=7860
+export GRADIO_SERVER_PORT=7862
 
 # Launch with production settings
-python app.py
+python app_new.py
 ```
 
 ## 📚 **Documentation**
@@ -203,9 +232,17 @@ ollama serve
 ollama pull gemma3:latest
 ```
 
-## 📞 **Public Repository**
+## 📞 **Repository Information**
 
 **🔗 GitHub Repository**: [https://github.com/yourusername/variancepro](https://github.com/yourusername/variancepro)
+
+### **Clean Project Structure**
+This repository maintains a clean, production-ready structure:
+- **Core Application**: `app_new.py` (main entry point)
+- **Modular Components**: Organized in `ai/`, `analyzers/`, `config/`, `data/` folders
+- **Documentation**: README.md, CONTRIBUTING.md, LICENSE
+- **Sample Data**: Available in `sample_data/` for testing
+- **Tests**: Organized test suite in `tests/` folder
 
 For the latest updates, documentation, and community contributions, visit our public repository.
 
@@ -213,5 +250,5 @@ For the latest updates, documentation, and community contributions, visit our pu
 
 - **Ollama Team**: For local LLM hosting infrastructure
 - **Gradio Team**: For the excellent web UI framework
-- **LlamaIndex**: For enhanced document processing capabilities
 - **Google**: For the powerful Gemma3 language model
+- **Community**: For feedback and contributions to make Quant Commander better

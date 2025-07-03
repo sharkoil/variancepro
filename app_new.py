@@ -700,16 +700,22 @@ Provide a helpful, contextual response as Aria Sterling.
         
         with gr.Blocks(title="Quant Commander - AI Financial Analysis", theme=gr.themes.Soft()) as interface:
             
-            gr.HTML("""
-            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
-                <img src="https://i.imgur.com/HCqkkDM.png" alt="Quant Commander Logo" style="height: 120px; margin-right: 20px;">
-                <h1 style="text-align: center; color: #043B4A; margin: 0;">Quant Commander</h1>
-            </div>
-            <h2 style="text-align: center; color: #043B4A;">AI-Powered Financial Data Analysis</h2>
-            <p style="text-align: center; font-size: 18px;">
-                Upload your financial data and chat with Aria Sterling for comprehensive insights and analysis
-            </p>
-            """)
+            # Add the logo image using the Image component
+            with gr.Row():
+                with gr.Column():
+                    gr.Image("logo.png", show_label=False, height=120, width=None)
+                    
+            with gr.Row():
+                with gr.Column():
+                    gr.HTML("""
+                    <div style="text-align: center; margin-top: -20px;">
+                        <h1 style="color: #043B4A; margin: 0;">Quant Commander</h1>
+                        <h2 style="color: #043B4A;">AI-Powered Financial Data Analysis</h2>
+                        <p style="font-size: 18px;">
+                            Upload your financial data and chat with Aria Sterling for comprehensive insights and analysis
+                        </p>
+                    </div>
+                    """)
             
             with gr.Row():
                 with gr.Column(scale=1):
