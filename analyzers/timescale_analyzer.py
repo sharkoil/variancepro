@@ -234,12 +234,16 @@ class TimescaleAnalyzer(BaseAnalyzer):
         return result
     
     def _generate_insights(self, pop_analysis: Dict) -> str:
-        """Generate natural language insights"""
+        """Generate natural language insights with proper bullet formatting"""
         insights = []
         
         # Add header
-        insights.append("[ANALYSIS] Automatic Timescale Analysis")
-        insights.append("Analysis generated based on time series patterns in your data")
+        insights.append("📈 **AUTOMATIC TIMESCALE ANALYSIS**")
+        insights.append("")
+        insights.append("🎯 **Analysis Overview**")
+        insights.append("   • Comprehensive time-series analysis across multiple periods")
+        insights.append("   • Period-over-period growth calculations")
+        insights.append("   • Trend identification and pattern analysis")
         insights.append("")
         
         # Process each time scale
@@ -249,12 +253,13 @@ class TimescaleAnalyzer(BaseAnalyzer):
                 
             # Add section header
             header_map = {
-                "yearly": "[YEARLY] Year-over-Year (YoY) Analysis",
-                "quarterly": "[QUARTERLY] Quarter-over-Quarter (QoQ) Analysis", 
-                "monthly": "[MONTHLY] Month-over-Month (MoM) Analysis",
-                "weekly": "[WEEKLY] Week-over-Week (WoW) Analysis"
+                "yearly": "📊 **YEARLY ANALYSIS** - Year-over-Year (YoY)",
+                "quarterly": "📊 **QUARTERLY ANALYSIS** - Quarter-over-Quarter (QoQ)", 
+                "monthly": "📊 **MONTHLY ANALYSIS** - Month-over-Month (MoM)",
+                "weekly": "📊 **WEEKLY ANALYSIS** - Week-over-Week (WoW)"
             }
             insights.append(header_map[time_scale])
+            insights.append("")
             
             # Process each metric
             for metric, data in pop_analysis[time_scale].items():
@@ -263,59 +268,93 @@ class TimescaleAnalyzer(BaseAnalyzer):
                 
                 # Only process if we have enough data
                 if summary["total_periods"] < 2:
-                    insights.append(f"Insufficient {time_scale} data for {metric} analysis")
+                    insights.append(f"   • {metric.replace('_', ' ').title()}: Insufficient {time_scale[:-2]} data for analysis")
                     insights.append("")
                     continue
                 
-                # Metric name
+                # Metric name and details
                 metric_name = metric.replace('_', ' ').title()
-                insights.append(f"{metric_name}")
+                insights.append(f"   • **{metric_name}**")
                 
                 # Latest period change
                 latest_period = periods[-1] if periods else "Unknown"
                 latest_change = summary["latest_change"]
                 if pd.notna(latest_change):
                     change_direction = "increased" if latest_change > 0 else "decreased"
-                    insights.append(f"Latest {time_scale[:-2]} ({latest_period}): {change_direction} by {abs(latest_change):.2f}%")
+                    direction_icon = "↗️" if latest_change > 0 else "↘️"
+                    insights.append(f"     • Latest {time_scale[:-2]} ({latest_period}): {direction_icon} {change_direction} by {abs(latest_change):.2f}%")
                 
                 # Overall trend
                 trend_ratio = summary["positive_periods"] / max(summary["total_periods"] - 1, 1)
                 if trend_ratio > 0.6:
-                    trend = "mostly increasing"
+                    trend = "📈 mostly increasing"
                 elif trend_ratio < 0.4:
-                    trend = "mostly decreasing"
+                    trend = "📉 mostly decreasing"
                 else:
-                    trend = "fluctuating"
+                    trend = "🔄 fluctuating"
                 
-                insights.append(f"Overall trend: {trend} over {summary['total_periods']} periods")
+                insights.append(f"     • Overall trend: {trend} over {summary['total_periods']} periods")
                 
                 # Extreme periods
                 if summary["max_pct_change"] > 0:
                     try:
                         max_idx = data["pct_changes"].index(summary["max_pct_change"])
                         max_period = periods[max_idx] if max_idx < len(periods) else "Unknown"
-                        insights.append(f"Largest increase: {summary['max_pct_change']:.2f}% in {max_period}")
+                        insights.append(f"     • Largest increase: +{summary['max_pct_change']:.2f}% in {max_period}")
                     except:
-                        insights.append(f"Largest increase: {summary['max_pct_change']:.2f}%")
+                        insights.append(f"     • Largest increase: +{summary['max_pct_change']:.2f}%")
                 
                 if summary["min_pct_change"] < 0:
                     try:
                         min_idx = data["pct_changes"].index(summary["min_pct_change"])
                         min_period = periods[min_idx] if min_idx < len(periods) else "Unknown"
-                        insights.append(f"Largest decrease: {summary['min_pct_change']:.2f}% in {min_period}")
+                        insights.append(f"     • Largest decrease: {summary['min_pct_change']:.2f}% in {min_period}")
                     except:
-                        insights.append(f"Largest decrease: {summary['min_pct_change']:.2f}%")
+                        insights.append(f"     • Largest decrease: {summary['min_pct_change']:.2f}%")
                 
                 # Average change
                 time_unit = time_scale[:-2] if time_scale.endswith('ly') else time_scale
-                insights.append(f"Average change: {summary['avg_pct_change']:.2f}% per {time_unit}")
+                avg_change = summary['avg_pct_change']
+                avg_icon = "📊" if abs(avg_change) < 5 else "⚡" if abs(avg_change) > 20 else "📈" if avg_change > 0 else "📉"
+                insights.append(f"     • Average change: {avg_icon} {avg_change:.2f}% per {time_unit}")
                 insights.append("")
         
         # Executive summary
-        insights.append("[SUMMARY] Executive Summary")
-        insights.append("Key takeaways from the automatic time series analysis:")
+        insights.append("🔍 **EXECUTIVE SUMMARY**")
         insights.append("")
-        insights.append("Insufficient time series data for executive insights")
+        insights.append("   • **Key Findings:**")
+        
+        # Generate dynamic summary based on available data
+        has_data = any(pop_analysis.get(ts) for ts in ["yearly", "quarterly", "monthly", "weekly"])
+        
+        if has_data:
+            # Find the most significant trends
+            significant_trends = []
+            
+            for time_scale in ["yearly", "quarterly", "monthly", "weekly"]:
+                if time_scale in pop_analysis and pop_analysis[time_scale]:
+                    for metric, data in pop_analysis[time_scale].items():
+                        summary = data["summary"]
+                        if summary.get("total_periods", 0) >= 2:
+                            latest_change = summary.get("latest_change")
+                            if latest_change and abs(latest_change) > 10:  # Significant change threshold
+                                trend_desc = f"{metric.replace('_', ' ').title()} {time_scale[:-2]} trend"
+                                significant_trends.append(f"     • {trend_desc}: {'Strong growth' if latest_change > 0 else 'Declining performance'} ({latest_change:+.1f}%)")
+            
+            if significant_trends:
+                insights.extend(significant_trends)
+            else:
+                insights.append("     • Overall performance shows stable patterns across time periods")
+                insights.append("     • No significant volatility detected in recent periods")
+        else:
+            insights.append("     • Insufficient time series data for comprehensive trend analysis")
+            insights.append("     • Consider collecting data over longer periods for better insights")
+        
+        insights.append("")
+        insights.append("   • **Recommendations:**")
+        insights.append("     • Monitor period-over-period changes for early trend detection")
+        insights.append("     • Focus on metrics showing consistent directional movement")
+        insights.append("     • Investigate periods with extreme positive or negative changes")
         
         return "\n".join(insights)
     
@@ -329,96 +368,41 @@ class TimescaleAnalyzer(BaseAnalyzer):
         if self.status != "completed" or not self.results:
             return "❌ **Analysis not completed or failed**"
         
-        # Extract results data
-        period_analysis = self.results.get('period_analysis', {})
-        summary = self.results.get('summary', {})
+        # Use the raw insights directly if available - they're already properly formatted
         insights_text = self.results.get('insights', '')
+        if insights_text:
+            return insights_text
         
-        # 1. Summary section
-        explanation = "Analyzes financial performance across multiple time periods (YoY, QoQ, MoM) to identify trends and patterns."
-        assumptions = [
-            f"Analysis performed on {summary.get('total_columns', 'N/A')} numeric columns",
-            f"Data period: {summary.get('date_range', 'N/A')}",
-            f"Total data points: {summary.get('total_periods', 'N/A')}",
-            "Growth rates calculated period-over-period",
-            "Trends identified using statistical analysis"
-        ]
+        # Fallback formatting if no insights are available
+        data = self.results.get('data', {})
+        parameters = self.results.get('parameters', {})
         
-        formatted_output = self.formatter.create_summary_section(
-            "Comprehensive Timescale Analysis",
-            explanation,
-            assumptions
-        )
+        output = []
+        output.append("📈 **TIMESCALE ANALYSIS**")
+        output.append("")
+        output.append("🎯 **Analysis Overview**")
+        output.append(f"   • Date Column: {parameters.get('date_col', 'N/A')}")
+        output.append(f"   • Value Columns: {', '.join(parameters.get('value_cols', []))}")
+        output.append(f"   • Data Range: {parameters.get('date_range', 'N/A')}")
+        output.append(f"   • Total Records: {parameters.get('data_rows', 'N/A'):,}")
+        output.append("")
         
-        # 2. Key metrics from summary
-        key_metrics = {}
-        if summary:
-            key_metrics.update({
-                "Time_Periods_Analyzed": summary.get('total_periods', 'N/A'),
-                "Numeric_Columns": summary.get('total_columns', 'N/A'),
-                "Date_Range": summary.get('date_range', 'N/A')
-            })
-            
-            # Add growth metrics if available
-            if 'yoy_growth' in summary:
-                key_metrics["YoY_Growth"] = f"{summary['yoy_growth']:.1f}%"
-            if 'qoq_growth' in summary:
-                key_metrics["QoQ_Growth"] = f"{summary['qoq_growth']:.1f}%"
-            if 'mom_growth' in summary:
-                key_metrics["MoM_Growth"] = f"{summary['mom_growth']:.1f}%"
-        
-        formatted_output += "\n\n" + self.formatter.create_metrics_grid(key_metrics, "Timescale Performance Summary")
-        
-        # 3. Period analysis table if available
-        if period_analysis:
-            formatted_output += "\n\n📊 **PERIOD ANALYSIS TABLE:**\n"
-            
-            # Convert period analysis to table format
-            table_data = []
-            for period_type, metrics in period_analysis.items():
-                if isinstance(metrics, dict):
-                    table_data.append({
-                        "Period_Type": period_type.upper(),
-                        "Current_Value": metrics.get('current_value', 'N/A'),
-                        "Previous_Value": metrics.get('previous_value', 'N/A'),
-                        "Growth_Rate": f"{metrics.get('growth_rate', 0):.1f}%",
-                        "Trend": metrics.get('trend', 'N/A').title()
-                    })
-            
-            if table_data:
-                headers = ["Period_Type", "Current_Value", "Previous_Value", "Growth_Rate", "Trend"]
-                formatted_output += "\n" + self.formatter.create_banded_table(table_data, headers, max_rows=10)
-        
-        # 4. AI-generated insights
-        if insights_text and insights_text != 'No insights generated':
-            # Parse insights if they contain structured data
-            insights_lines = insights_text.split('\n')
-            clean_insights = []
-            recommendations = []
-            
-            for line in insights_lines:
-                line = line.strip()
-                if not line or line.startswith('**') or line.startswith('#'):
-                    continue
-                    
-                # Clean up formatting
-                clean_line = line.replace('🎯', '').replace('💡', '').replace('📊', '').replace('**', '').strip()
+        # Add timescale summaries
+        for timescale in ["yearly", "quarterly", "monthly", "weekly"]:
+            if timescale in data and data[timescale]:
+                output.append(f"📊 **{timescale.upper()} ANALYSIS**")
                 
-                if any(keyword in clean_line.lower() for keyword in ['recommend', 'suggest', 'should', 'consider']):
-                    recommendations.append(clean_line)
-                elif clean_line and not clean_line.startswith('•'):
-                    clean_insights.append(clean_line)
-            
-            # If we couldn't parse structured insights, use the full text
-            if not clean_insights and not recommendations:
-                clean_insights = [insights_text]
-            
-            formatted_output += "\n\n" + self.formatter.create_insights_section(clean_insights, recommendations)
+                for metric, metric_data in data[timescale].items():
+                    summary = metric_data.get('summary', {})
+                    if summary:
+                        output.append(f"   • {metric.replace('_', ' ').title()}")
+                        output.append(f"     • Total Periods: {summary.get('total_periods', 'N/A')}")
+                        if summary.get('latest_change') is not None:
+                            change = summary['latest_change']
+                            direction = "↗️" if change > 0 else "↘️" if change < 0 else "→"
+                            output.append(f"     • Latest Change: {direction} {change:.1f}%")
+                        if summary.get('avg_pct_change') is not None:
+                            output.append(f"     • Average Change: {summary['avg_pct_change']:.1f}%")
+                output.append("")
         
-        # 5. Analysis warnings
-        if self.warnings:
-            formatted_output += "\n\n⚠️ **ANALYSIS NOTES:**\n"
-            for warning in self.warnings:
-                formatted_output += f"• {warning}\n"
-        
-        return formatted_output
+        return "\n".join(output)
