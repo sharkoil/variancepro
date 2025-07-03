@@ -108,6 +108,57 @@ variancepro/
 └── requirements.txt       # Dependencies
 ```
 
+### System Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Gradio as Gradio UI
+    participant App as QuantCommanderApp
+    participant CSV as CSVLoader
+    participant AI as LLMInterpreter
+    participant Analyzer as Analysis Engine
+    participant News as NewsAnalyzer
+    participant Format as AnalysisFormatter
+
+    User->>Gradio: Upload CSV File
+    Gradio->>App: handle_file_upload()
+    App->>CSV: load_and_validate()
+    CSV->>CSV: Auto-detect columns & types
+    CSV-->>App: Data + Column suggestions
+    
+    App->>News: analyze_data_context()
+    News->>News: Extract locations from data
+    News->>News: Fetch relevant business news
+    News-->>App: Business context results
+    
+    App->>Gradio: Display data preview + news
+    
+    User->>Gradio: Ask question via chat
+    Gradio->>App: chat_response()
+    
+    alt AI Available
+        App->>AI: classify_user_intent()
+        AI-->>App: Analysis type (contribution/variance/trend/top_n)
+    else AI Unavailable
+        App->>App: Keyword-based intent detection
+    end
+    
+    App->>Analyzer: perform_analysis()
+    Analyzer->>Analyzer: Process data & calculate metrics
+    Analyzer->>Format: create_professional_tables()
+    Format-->>Analyzer: Formatted results
+    Analyzer-->>App: Analysis results
+    
+    opt AI Insights Available
+        App->>AI: query_llm(analysis_context)
+        AI-->>App: Business insights & recommendations
+    end
+    
+    App->>Gradio: Return formatted response
+    Gradio->>User: Display analysis results
+```
+
 ### Core Components
 
 - **QuantCommanderApp**: Main application orchestrator
