@@ -334,7 +334,7 @@ class FinancialAnalyzer(BaseAnalyzer):
             current_growth = final_ttm_data.iloc[-1][f'{value_col}_growth']
             metrics.update({
                 'current_growth': float(current_growth),
-                'current_growth_formatted': self.format_percentage(current_growth / 100),
+                'current_growth_formatted': self.formatter.format_percentage(current_growth / 100),
                 'max_growth': float(final_ttm_data[f'{value_col}_growth'].max()),
                 'min_growth': float(final_ttm_data[f'{value_col}_growth'].min()),
                 'avg_growth': float(final_ttm_data[f'{value_col}_growth'].mean())
@@ -439,7 +439,7 @@ class FinancialAnalyzer(BaseAnalyzer):
             'total_variance': float(total_variance),
             'total_variance_formatted': self.formatter.format_currency(total_variance),
             'total_variance_pct': float(total_variance_pct),
-            'total_variance_pct_formatted': self.format_percentage(total_variance_pct / 100),
+            'total_variance_pct_formatted': self.formatter.format_percentage(total_variance_pct / 100),
             'periods_over_budget': int((grouped_data['variance'] > 0).sum()),
             'periods_under_budget': int((grouped_data['variance'] < 0).sum()),
             'variance_trend': 'improving' if grouped_data['variance_pct'].iloc[-3:].mean() > 
@@ -496,7 +496,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                     'variance': variance,
                     'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
-                    'variance_pct_formatted': self.format_percentage(variance_pct / 100),
+                    'variance_pct_formatted': self.formatter.format_percentage(variance_pct / 100),
                     'type': 'over_budget'
                 })
             else:
@@ -505,7 +505,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                     'variance': variance,
                     'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
-                    'variance_pct_formatted': self.format_percentage(variance_pct / 100),
+                    'variance_pct_formatted': self.formatter.format_percentage(variance_pct / 100),
                     'type': 'over_budget'
                 })
         
@@ -522,7 +522,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                     'variance': variance,
                     'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
-                    'variance_pct_formatted': self.format_percentage(variance_pct / 100),
+                    'variance_pct_formatted': self.formatter.format_percentage(variance_pct / 100),
                     'type': 'under_budget'
                 })
             else:
@@ -531,7 +531,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                     'variance': variance,
                     'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
-                    'variance_pct_formatted': self.format_percentage(variance_pct / 100),
+                    'variance_pct_formatted': self.formatter.format_percentage(variance_pct / 100),
                     'type': 'under_budget'
                 })
         
