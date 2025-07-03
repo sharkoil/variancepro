@@ -286,7 +286,7 @@ class ContributorAnalyzer(BaseAnalyzer):
         
         insights['summary'] = {
             'analysis_type': f"80/20 Contribution Analysis on {value_col} by {category_col}",
-            'total_value': self.format_currency(total_value),
+            'total_value': self.formatter.format_currency(total_value),
             'total_contributors': len(contribution_data),
             'top_contributor_count': top_contributors['count'],
             'concentration_ratio': f"{top_contributors['value_percentage']:.1f}%"
@@ -304,7 +304,7 @@ class ContributorAnalyzer(BaseAnalyzer):
             top_performer = contribution_data.iloc[0]
             insights['key_findings'].append(
                 f"🥇 **Top Performer**: {top_performer[category_col]} contributes "
-                f"{self.format_currency(top_performer['total_value'])} "
+                f"{self.formatter.format_currency(top_performer['total_value'])} "
                 f"({top_performer['value_percentage']:.1f}% of total)"
             )
         

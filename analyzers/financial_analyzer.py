@@ -323,7 +323,7 @@ class FinancialAnalyzer(BaseAnalyzer):
         
         metrics = {
             'current_ttm': float(current_ttm),
-            'current_ttm_formatted': self.format_currency(current_ttm),
+            'current_ttm_formatted': self.formatter.format_currency(current_ttm),
             'ttm_periods': len(final_ttm_data),
             'date_range': f"{min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}",
             'months_covered': months_in_data
@@ -433,11 +433,11 @@ class FinancialAnalyzer(BaseAnalyzer):
         
         metrics = {
             'total_actual': float(total_actual),
-            'total_actual_formatted': self.format_currency(total_actual),
+            'total_actual_formatted': self.formatter.format_currency(total_actual),
             'total_budget': float(total_budget),
-            'total_budget_formatted': self.format_currency(total_budget),
+            'total_budget_formatted': self.formatter.format_currency(total_budget),
             'total_variance': float(total_variance),
-            'total_variance_formatted': self.format_currency(total_variance),
+            'total_variance_formatted': self.formatter.format_currency(total_variance),
             'total_variance_pct': float(total_variance_pct),
             'total_variance_pct_formatted': self.format_percentage(total_variance_pct / 100),
             'periods_over_budget': int((grouped_data['variance'] > 0).sum()),
@@ -494,7 +494,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                     'period': period,
                     'category': category,
                     'variance': variance,
-                    'variance_formatted': self.format_currency(variance),
+                    'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
                     'variance_pct_formatted': self.format_percentage(variance_pct / 100),
                     'type': 'over_budget'
@@ -503,7 +503,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                 top_variances.append({
                     'period': period,
                     'variance': variance,
-                    'variance_formatted': self.format_currency(variance),
+                    'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
                     'variance_pct_formatted': self.format_percentage(variance_pct / 100),
                     'type': 'over_budget'
@@ -520,7 +520,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                     'period': period,
                     'category': category,
                     'variance': variance,
-                    'variance_formatted': self.format_currency(variance),
+                    'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
                     'variance_pct_formatted': self.format_percentage(variance_pct / 100),
                     'type': 'under_budget'
@@ -529,7 +529,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                 top_variances.append({
                     'period': period,
                     'variance': variance,
-                    'variance_formatted': self.format_currency(variance),
+                    'variance_formatted': self.formatter.format_currency(variance),
                     'variance_pct': variance_pct,
                     'variance_pct_formatted': self.format_percentage(variance_pct / 100),
                     'type': 'under_budget'
@@ -701,7 +701,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                 'recent_trend_pct': trend_data.get('recent_trend_pct', 0),
                 'volatility': trend_data.get('volatility', 0),
                 'current_value': trend_data.get('current_value', 0),
-                'current_value_formatted': self.format_currency(trend_data.get('current_value', 0)),
+                'current_value_formatted': self.formatter.format_currency(trend_data.get('current_value', 0)),
                 'date_range': f"{min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}",
                 'total_months': len(monthly_data['year_month'].unique())
             }
@@ -767,14 +767,14 @@ class FinancialAnalyzer(BaseAnalyzer):
                     top_category = categories[0]
                     insights['key_findings'].append(
                         f"🥇 **Top Performer**: {top_category['category']} is the highest "
-                        f"contributor with {self.format_currency(top_category['ttm_values'][-1])}"
+                        f"contributor with {self.formatter.format_currency(top_category['ttm_values'][-1])}"
                     )
                 
                 if len(categories) > 1:
                     bottom_category = categories[-1]
                     insights['key_findings'].append(
                         f"⚠️ **Attention Needed**: {bottom_category['category']} has the lowest "
-                        f"contribution with {self.format_currency(bottom_category['ttm_values'][-1])}"
+                        f"contribution with {self.formatter.format_currency(bottom_category['ttm_values'][-1])}"
                     )
             else:
                 # Analyze overall TTM trend
