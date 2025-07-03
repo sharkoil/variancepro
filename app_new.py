@@ -763,20 +763,74 @@ Provide a helpful, contextual response as Aria Sterling.
         }
         """) as interface:
             
-            # Add the logo image using the Image component
+            # Professional header with logo, title, and status indicators
             with gr.Row():
-                with gr.Column():
-                    gr.Image("logo.png", show_label=False, height=120, width=None)
-                    
-            with gr.Row():
-                with gr.Column():
+                with gr.Column(scale=2):
+                    # Logo left-aligned
+                    gr.Image("logo.png", show_label=False, height=80, width=None, container=False)
+                
+                with gr.Column(scale=6):
+                    # Centered title with more space
                     gr.HTML("""
-                    <div style="text-align: center; margin-top: -20px;">
-                        <h1 style="color: #043B4A; margin: 0;">AI-Powered Financial Data Analysis</h1>
-                        <p style="font-size: 18px;">
-                            Professional insights and analysis powered by artificial intelligence
+                    <div style="text-align: center; padding: 20px 0;">
+                        <h2 style="color: #043B4A; margin: 0; font-size: 24px; font-weight: 600;">
+                            Professional Financial Analysis Platform
+                        </h2>
+                        <p style="font-size: 16px; color: #666; margin: 8px 0 0 0;">
+                            AI-powered insights and analysis for data-driven decisions
                         </p>
                     </div>
+                    """)
+                
+                with gr.Column(scale=2):
+                    # Status indicators and help link
+                    gr.HTML("""
+                    <div style="text-align: right; padding: 15px 0;">
+                        <div style="margin-bottom: 8px;">
+                            <span id="ollama-status" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ff4444; margin-right: 5px;"></span>
+                            <span style="font-size: 12px; color: #666;">Ollama</span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <span id="app-status" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #44ff44; margin-right: 5px;"></span>
+                            <span style="font-size: 12px; color: #666;">App Server</span>
+                        </div>
+                        <div>
+                            <a href="https://github.com/sharkoil/variancepro" target="_blank" 
+                               style="color: #043B4A; text-decoration: none; font-size: 12px;">
+                                📚 Help & Docs
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        // Function to update status indicators
+                        function updateStatusIndicators() {
+                            fetch('/api/status')
+                                .then(response => response.json())
+                                .then(data => {
+                                    const ollamaStatus = document.getElementById('ollama-status');
+                                    const appStatus = document.getElementById('app-status');
+                                    
+                                    if (ollamaStatus) {
+                                        ollamaStatus.style.background = data.ollama_available ? '#44ff44' : '#ff4444';
+                                    }
+                                    if (appStatus) {
+                                        appStatus.style.background = '#44ff44'; // App is running if we can execute this
+                                    }
+                                })
+                                .catch(error => {
+                                    console.log('Status check failed:', error);
+                                    const ollamaStatus = document.getElementById('ollama-status');
+                                    if (ollamaStatus) {
+                                        ollamaStatus.style.background = '#ff4444';
+                                    }
+                                });
+                        }
+                        
+                        // Update status on page load and every 30 seconds
+                        updateStatusIndicators();
+                        setInterval(updateStatusIndicators, 30000);
+                    </script>
                     """)
             
             with gr.Row():
