@@ -1140,6 +1140,7 @@ RESPOND ONLY WITH VALID JSON (no explanation):
             
             # Parse the JSON response with better error handling
             try:
+                import json
                 print(f"[DEBUG] Raw LLM response: {param_response.content}")
                 
                 # Clean up the response (remove any extra text)
@@ -1155,7 +1156,6 @@ RESPOND ONLY WITH VALID JSON (no explanation):
                 json_text = response_text[start_idx:end_idx]
                 print(f"[DEBUG] Extracted JSON: {json_text}")
                 
-                import json
                 params = json.loads(json_text)
                 
                 n = params.get('n', 10)
