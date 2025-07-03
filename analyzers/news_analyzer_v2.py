@@ -412,7 +412,7 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
         
         formatted_output += "\n\n" + formatter.create_metrics_grid(context_metrics, "Context Analysis Summary")
         
-        # 3. News articles table
+        # 3. News articles table with integrated links
         if news_items:
             formatted_output += "\n\n📰 **BUSINESS HEADLINES TABLE:**\n"
             
@@ -424,8 +424,8 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
                 link = item.get('link', '')
                 
                 # Clean and truncate title
-                if len(title) > 60:
-                    title = title[:57] + "..."
+                if len(title) > 45:
+                    title = title[:42] + "..."
                 
                 # Format date
                 date_str = "Recent"
@@ -436,33 +436,20 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
                     except:
                         pass
                 
+                # Create clickable link or title
+                headline_display = f"[{title}]({link})" if link else title
+                
                 table_data.append({
                     "#": i,
-                    "Headline": title,
+                    "Headline": headline_display,
                     "Source": source,
-                    "Date": date_str,
-                    "Relevant_Link": "Yes" if link else "No"
+                    "Date": date_str
                 })
             
-            headers = ["#", "Headline", "Source", "Date", "Relevant_Link"]
+            headers = ["#", "Headline", "Source", "Date"]
             formatted_output += "\n" + formatter.create_banded_table(table_data, headers, max_rows=8)
         
-        # 4. Article links section (separate from table for better readability)
-        if news_items:
-            formatted_output += "\n\n🔗 **ARTICLE LINKS:**\n"
-            for i, item in enumerate(news_items[:5], 1):
-                title = item.get('title', 'No title').strip()
-                link = item.get('link', '')
-                
-                if len(title) > 80:
-                    title = title[:77] + "..."
-                
-                if link:
-                    formatted_output += f"{i}. [{title}]({link})\n"
-                else:
-                    formatted_output += f"{i}. {title} (No link available)\n"
-        
-        # 5. Business insights
+        # 4. Business insights
         insights = [
             "News context provides external factors that may influence your data patterns",
             "Look for correlations between news events and performance changes in your metrics",
