@@ -1138,6 +1138,21 @@ RESPOND ONLY WITH VALID JSON (no explanation):
             if not param_response.success:
                 return f"❌ **Parameter Extraction Error**: {param_response.error}"
             
+            # **CRITICAL**: Check if the AI response is being accidentally returned as analysis
+            raw_response = param_response.content.strip()
+            print(f"[DEBUG] AI Parameter Response: {raw_response}")
+            
+            # Make sure we're not accidentally returning the raw LLM response
+            if raw_response.startswith('{') and raw_response.endswith('}'):
+                print("[DEBUG] Response looks like pure JSON - proceeding with parameter extraction")
+            else:
+                print(f"[DEBUG] Response contains more than JSON: {len(raw_response)} chars")
+                # If the LLM gave us more than just JSON, extract just the JSON part
+                if '{' in raw_response and '}' in raw_response:
+                    print("[DEBUG] Found JSON within larger response")
+                else:
+                    return f"❌ **Invalid Parameter Response**: Expected JSON format but got: {raw_response[:200]}..."
+            
             # Parse the JSON response with better error handling
             try:
                 import json
