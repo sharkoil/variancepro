@@ -1384,11 +1384,11 @@ def main():
         print("✅ Gradio interface created")
         
         print("🌐 Starting web server...")
-        print("📝 Access the application at: http://localhost:7860")
+        print("📝 Access the application at: http://localhost:7871")
         
         interface.launch(
             server_name="0.0.0.0",
-            server_port=7862,
+            server_port=7871,
             share=False,
             debug=True,
             show_error=True

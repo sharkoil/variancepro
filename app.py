@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Tuple, Dict
 from pathlib import Path
 from utils.chat_handler import ChatHandler
+from analyzers.timescale_analyzer import TimescaleAnalyzer
+from analyzers.contributor_analyzer import ContributionAnalyzer
 
 # Import the narrative generator (optional)
 try:
@@ -680,8 +682,9 @@ Install with: `pip install llama-index llama-index-llms-ollama`"""
             return "No data available for timescale analysis. Please upload financial data."
         
         try:
-            # Use the timescale analyzer to generate insights
-            analysis_text = self.timescale_analyzer.generate_timescale_analysis(df)
+            # Use the proper TimescaleAnalyzer with professional formatting
+            self.timescale_analyzer.analyze(df)
+            analysis_text = self.timescale_analyzer.format_for_chat()
             
             # Add footer with guidance
             footer = """
@@ -768,8 +771,9 @@ Remember to use precise financial terminology, quantify insights with exact figu
             return "Please upload financial data for analysis."
         
         try:
-            # Generate automatic timescale analysis
-            auto_analysis = self.timescale_analyzer.generate_timescale_analysis(df)
+            # Generate automatic timescale analysis using proper analyzer
+            self.timescale_analyzer.analyze(df)
+            auto_analysis = self.timescale_analyzer.format_for_chat()
             
             # Create data summary
             data_summary = self.create_data_summary(df)
@@ -2086,8 +2090,9 @@ I'm **Aria Sterling**, your financial analyst. I've loaded your data and I'm rea
                     if not hasattr(chat_system, 'timescale_analyzer'):
                         chat_system.timescale_analyzer = TimescaleAnalyzer()
                     
-                    # Generate timescale analysis
-                    timescale_analysis = chat_system.timescale_analyzer.generate_timescale_analysis(df)
+                    # Generate timescale analysis using proper analyzer
+                    chat_system.timescale_analyzer.analyze(df)
+                    timescale_analysis = chat_system.timescale_analyzer.format_for_chat()
                     
                     if timescale_analysis and "No date column found" not in timescale_analysis:
                         initial_analysis += "\n\n" + "="*50
