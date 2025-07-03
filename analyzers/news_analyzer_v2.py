@@ -412,9 +412,9 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
         
         formatted_output += "\n\n" + formatter.create_metrics_grid(context_metrics, "Context Analysis Summary")
         
-        # 3. News articles table with integrated links
+        # 3. News articles table with integrated links ONLY
         if news_items:
-            formatted_output += "\n\n📰 **BUSINESS HEADLINES TABLE:**\n"
+            formatted_output += "\n\n📰 **BUSINESS HEADLINES:**\n"
             
             table_data = []
             for i, item in enumerate(news_items[:8], 1):  # Top 8 articles
@@ -424,8 +424,8 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
                 link = item.get('link', '')
                 
                 # Clean and truncate title
-                if len(title) > 45:
-                    title = title[:42] + "..."
+                if len(title) > 50:
+                    title = title[:47] + "..."
                 
                 # Format date
                 date_str = "Recent"
@@ -436,17 +436,17 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
                     except:
                         pass
                 
-                # Create clickable link or title
+                # Create clickable link - THIS IS THE ONLY PLACE LINKS APPEAR
                 headline_display = f"[{title}]({link})" if link else title
                 
                 table_data.append({
                     "#": i,
-                    "Headline": headline_display,
+                    "Article_Link": headline_display,
                     "Source": source,
                     "Date": date_str
                 })
             
-            headers = ["#", "Headline", "Source", "Date"]
+            headers = ["#", "Article_Link", "Source", "Date"]
             formatted_output += "\n" + formatter.create_banded_table(table_data, headers, max_rows=8)
         
         # 4. Business insights

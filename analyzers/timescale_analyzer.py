@@ -322,7 +322,8 @@ class TimescaleAnalyzer(BaseAnalyzer):
         # Executive summary
         insights.append("🔍 **EXECUTIVE SUMMARY**")
         insights.append("")
-        insights.append("   • **Key Findings:**")
+        insights.append("📋 **KEY FINDINGS:**")
+        insights.append("")
         
         # Generate dynamic summary based on available data
         has_data = any(pop_analysis.get(ts) for ts in ["yearly", "quarterly", "monthly", "weekly"])
@@ -338,23 +339,27 @@ class TimescaleAnalyzer(BaseAnalyzer):
                         if summary.get("total_periods", 0) >= 2:
                             latest_change = summary.get("latest_change")
                             if latest_change and abs(latest_change) > 10:  # Significant change threshold
-                                trend_desc = f"{metric.replace('_', ' ').title()} {time_scale[:-2]} trend"
-                                significant_trends.append(f"     • {trend_desc}: {'Strong growth' if latest_change > 0 else 'Declining performance'} ({latest_change:+.1f}%)")
+                                trend_desc = f"{metric.replace('_', ' ').title()}"
+                                time_period = time_scale[:-2].title()
+                                direction = "📈 Strong growth" if latest_change > 0 else "📉 Declining performance"
+                                significant_trends.append(f"   • **{trend_desc}** ({time_period}): {direction} ({latest_change:+.1f}%)")
             
             if significant_trends:
                 insights.extend(significant_trends)
             else:
-                insights.append("     • Overall performance shows stable patterns across time periods")
-                insights.append("     • No significant volatility detected in recent periods")
+                insights.append("   • **Performance Stability**: Overall patterns show consistent trends across time periods")
+                insights.append("   • **Volatility Assessment**: No significant fluctuations detected in recent periods")
         else:
-            insights.append("     • Insufficient time series data for comprehensive trend analysis")
-            insights.append("     • Consider collecting data over longer periods for better insights")
+            insights.append("   • **Data Limitation**: Insufficient time series data for comprehensive trend analysis")
+            insights.append("   • **Recommendation**: Consider collecting data over longer periods for better insights")
         
         insights.append("")
-        insights.append("   • **Recommendations:**")
-        insights.append("     • Monitor period-over-period changes for early trend detection")
-        insights.append("     • Focus on metrics showing consistent directional movement")
-        insights.append("     • Investigate periods with extreme positive or negative changes")
+        insights.append("💡 **RECOMMENDATIONS:**")
+        insights.append("")
+        insights.append("   • **Monitoring Strategy**: Track period-over-period changes for early trend detection")
+        insights.append("   • **Focus Areas**: Prioritize metrics showing consistent directional movement")
+        insights.append("   • **Investigation Targets**: Analyze periods with extreme positive or negative changes")
+        insights.append("   • **Strategic Planning**: Use trend patterns to inform forward-looking business decisions")
         
         return "\n".join(insights)
     
