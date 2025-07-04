@@ -365,14 +365,41 @@ class TimescaleAnalyzer(BaseAnalyzer):
     
     def format_for_chat(self) -> str:
         """
-        Format analysis results for chat display using standardized formatting
+        Format analysis results for chat display with AI summary and collapsible details
         
         Returns:
-            Formatted string for chat interface
+            Formatted string for chat interface with summary and expandable details
         """
         if self.status != "completed" or not self.results:
             return "❌ **Analysis not completed or failed**"
+
+        # Get the detailed analysis first
+        detailed_analysis = self._generate_detailed_analysis()
         
+        # Generate AI summary of the detailed analysis
+        ai_summary = self._generate_ai_summary(detailed_analysis)
+        
+        # Create collapsible output with summary first, then details
+        output = []
+        output.append("📈 **TIMESCALE ANALYSIS SUMMARY**")
+        output.append("")
+        output.append("🎯 **Key Findings:**")
+        output.append(ai_summary)
+        output.append("")
+        output.append("---")
+        output.append("📊 **DETAILED ANALYSIS** *(Click to expand below)*")
+        output.append("")
+        output.append(detailed_analysis)
+        
+        return "\n".join(output)
+    
+    def _generate_detailed_analysis(self) -> str:
+        """
+        Generate the detailed analysis (original format_for_chat logic)
+        
+        Returns:
+            Detailed formatted analysis
+        """
         # Use the raw insights directly if available - they're already properly formatted
         insights_text = self.results.get('insights', '')
         if insights_text:
@@ -383,7 +410,7 @@ class TimescaleAnalyzer(BaseAnalyzer):
         parameters = self.results.get('parameters', {})
         
         output = []
-        output.append("📈 **TIMESCALE ANALYSIS**")
+        output.append("📈 **DETAILED TIMESCALE ANALYSIS**")
         output.append("")
         output.append("🎯 **Analysis Overview**")
         output.append(f"   • Date Column: {parameters.get('date_col', 'N/A')}")
@@ -411,3 +438,99 @@ class TimescaleAnalyzer(BaseAnalyzer):
                 output.append("")
         
         return "\n".join(output)
+    
+    def _generate_ai_summary(self, detailed_analysis: str) -> str:
+        """
+        Generate AI summary of the detailed timescale analysis
+        
+        Args:
+            detailed_analysis: The full detailed analysis text
+            
+        Returns:
+            AI-generated summary paragraph
+        """
+        try:
+            # Import LLM interpreter
+            from ai.llm_interpreter import LLMInterpreter
+            from config.settings import Settings
+            
+            # Create LLM interpreter instance with proper settings
+            settings = Settings()
+            llm = LLMInterpreter(settings)
+            
+            # Create prompt for summary generation
+            summary_prompt = f"""
+            Analyze the following timescale analysis results and provide a concise summary paragraph. Write exactly 2 sentences for each time period analyzed (quarterly, monthly, weekly). Each sentence should combine commentary with specific numerical facts from the data. Format as a flowing paragraph with no bullets or lists. Be concise but comprehensive.
+
+            Guidelines:
+            - Include specific percentage changes, trends, and numerical data
+            - Provide business context and implications
+            - Write in paragraph format (no bullets, lists, or headers)
+            - Be factual and data-driven while maintaining readability
+            - Be concise but include all relevant numerical insights
+
+            Timescale Analysis Results:
+            {detailed_analysis}
+
+            Concise summary paragraph:
+            """
+            
+            # Query the LLM for summary
+            response = llm.query_llm(summary_prompt)
+            
+            if response.success and response.content:
+                # Clean up the response and format nicely
+                summary = response.content.strip()
+                # Remove any "Summary:" prefix if the LLM added it
+                if summary.lower().startswith('summary:'):
+                    summary = summary[8:].strip()
+                if summary.lower().startswith('summary paragraph:'):
+                    summary = summary[18:].strip()
+                
+                return summary
+            else:
+                # Fallback to basic summary if LLM fails
+                return self._generate_basic_summary()
+                
+        except Exception as e:
+            print(f"[TIMESCALE] AI summary generation failed: {str(e)}")
+            # Fallback to basic summary
+            return self._generate_basic_summary()
+    
+    def _generate_basic_summary(self) -> str:
+        """
+        Generate a basic summary when AI summary fails
+        
+        Returns:
+            Basic summary text with numerical facts
+        """
+        try:
+            data = self.results.get('data', {})
+            parameters = self.results.get('parameters', {})
+            
+            # Extract key metrics for basic summary
+            value_cols = parameters.get('value_cols', [])
+            summary_parts = []
+            
+            # Look for trends across different timescales
+            for timescale in ["quarterly", "monthly", "weekly"]:
+                if timescale in data:
+                    timescale_trends = []
+                    for metric, metric_data in data[timescale].items():
+                        summary = metric_data.get('summary', {})
+                        if summary.get('latest_change') is not None:
+                            change = summary['latest_change']
+                            direction = "increased" if change > 0 else "decreased" if change < 0 else "remained stable"
+                            timescale_trends.append(f"{metric.replace('_', ' ')} {direction} by {abs(change):.1f}%")
+                    
+                    if timescale_trends:
+                        trend_text = f"On a {timescale} basis, {' and '.join(timescale_trends[:2])}"
+                        summary_parts.append(trend_text)
+            
+            if summary_parts:
+                return f"{' '.join(summary_parts)}. These trends indicate significant volatility requiring management attention across multiple time horizons."
+            else:
+                return f"Analysis completed for {len(value_cols)} metrics showing various trend patterns across quarterly, monthly, and weekly timeframes with detailed breakdowns available for strategic planning."
+            
+        except Exception as e:
+            return "Timescale analysis completed with comprehensive trend insights and numerical data available in the detailed view below."

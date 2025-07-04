@@ -19,6 +19,9 @@ from analyzers.contributor_analyzer import ContributorAnalyzer
 from analyzers.financial_analyzer import FinancialAnalyzer
 from analyzers.timescale_analyzer import TimescaleAnalyzer
 from analyzers.news_analyzer_v2 import NewsAnalyzer
+from analyzers.sql_query_engine import SQLQueryEngine
+from analyzers.nl_to_sql_translator import NLToSQLTranslator
+from analyzers.query_router import QueryRouter
 from ai.llm_interpreter import LLMInterpreter
 from ai.narrative_generator import NarrativeGenerator
 
@@ -38,6 +41,11 @@ class QuantCommanderApp:
         self.financial_analyzer = FinancialAnalyzer(self.settings)
         self.timescale_analyzer = TimescaleAnalyzer(self.settings)
         self.news_analyzer = NewsAnalyzer(self.settings)
+        
+        # Initialize SQL components
+        self.sql_engine = SQLQueryEngine()
+        self.nl_to_sql = NLToSQLTranslator(self.settings)
+        self.query_router = QueryRouter(self.settings)
         
         # Initialize AI components
         self.llm_interpreter = LLMInterpreter(self.settings)
@@ -60,6 +68,15 @@ class QuantCommanderApp:
             # Load CSV using our improved CSV loader
             self.current_data = self.csv_loader.load_csv(file.name)
             print(f"[DEBUG] CSV loaded successfully. Shape: {self.current_data.shape}")
+            
+            # Load data into SQL engine for query capabilities
+            try:
+                self.sql_engine.load_dataframe_to_sql(self.current_data, table_name="data")
+                self._sql_data_loaded = True
+                print("[DEBUG] Data loaded into SQL engine successfully")
+            except Exception as e:
+                print(f"[DEBUG] Warning: Could not load data into SQL engine: {str(e)}")
+                self._sql_data_loaded = False
             
             # Get data summary and suggestions with error handling
             try:
@@ -250,19 +267,54 @@ class QuantCommanderApp:
             return history, ""
     
     def _process_user_query(self, query: str) -> str:
-        """Process user query using LLM-powered intent recognition"""
+        """Process user query using intelligent routing with SQL support"""
         try:
-            # First, try LLM-powered intent classification if available
+            # First, use our new intelligent query router
+            if self.current_data is not None:
+                route_result = self.query_router.route_query(
+                    query=query,
+                    data=self.current_data,
+                    column_info=self.csv_loader.column_info,
+                    column_suggestions=self.column_suggestions
+                )
+                
+                print(f"[DEBUG] Query router result: {route_result}")
+                
+                # Route to appropriate analyzer based on the result
+                if route_result.analyzer_type == "sql":
+                    return self._handle_sql_query(query, route_result)
+                elif route_result.analyzer_type == "contribution":
+                    return self._perform_contribution_analysis(query)
+                elif route_result.analyzer_type == "variance":
+                    return self._perform_variance_analysis(query)
+                elif route_result.analyzer_type == "trend":
+                    return self._perform_trend_analysis(query)
+                elif route_result.analyzer_type == "financial":
+                    return self._perform_financial_analysis(query)
+                elif route_result.analyzer_type == "news":
+                    return self._perform_news_analysis(query)
+                elif route_result.analyzer_type == "top_n":
+                    return self._perform_top_n_analysis(query, is_bottom=False)
+                elif route_result.analyzer_type == "bottom_n":
+                    return self._perform_top_n_analysis(query, is_bottom=True)
+                elif route_result.analyzer_type == "overview":
+                    return self._generate_data_overview()
+            
+            # Legacy LLM classification if router fails or no data
             if self.llm_interpreter.is_available:
                 intent_response = self._classify_user_intent(query)
                 if intent_response:
                     return intent_response
             
             # Fallback to keyword-based detection if LLM unavailable
-            print("[DEBUG] LLM unavailable, using keyword fallback")
+            print("[DEBUG] Using keyword fallback")
+            
+            # Check for SQL-like queries first
+            if any(word in query.lower() for word in ['select ', 'where ', 'group by', 'order by', 'count(', 'sum(', 'avg(']):
+                return self._handle_sql_query(query, None)
             
             # Quick analysis commands (fallback)
-            if any(word in query for word in ['contribution', 'pareto', '80/20', 'top contributors']):
+            elif any(word in query for word in ['contribution', 'pareto', '80/20', 'top contributors']):
                 return self._perform_contribution_analysis(query)
             
             elif any(word in query for word in ['variance', 'budget', 'actual', 'vs']):
@@ -1091,7 +1143,7 @@ Provide a helpful, contextual response as Aria Sterling.
 You are an AI assistant that classifies user queries about financial data analysis.
 
 AVAILABLE ANALYSIS TYPES:
-{', '.join(available_analyses)}
+{', '.join(available_analyses)}, sql_query
 
 USER QUERY: "{query}"
 
@@ -1101,15 +1153,22 @@ DATASET CONTEXT:
 - Available columns: {dict(self.csv_loader.column_info)}
 
 CLASSIFICATION RULES:
-1. contribution_analysis: Questions about top performers, pareto analysis, biggest contributors, 80/20 rule, ranking, market share
-2. variance_analysis: Questions about budget vs actual, variances, over/under budget, performance vs target
-3. trend_analysis: Questions about trends, time series, growth, patterns over time, seasonal analysis, forecasting
-4. top_n_analysis: Questions asking for top N, best N, highest N, largest N, most N (e.g., "top 10 products", "best 5 states")
-5. bottom_n_analysis: Questions asking for bottom N, worst N, lowest N, smallest N, least N (e.g., "bottom 5 performers", "worst 3 regions")
-6. data_overview: Questions asking for summary, overview, description of the data, capabilities, what can be analyzed
-7. general_question: All other questions that need contextual answers about the data
+1. sql_query: Direct SQL queries (starting with SELECT) or complex data questions requiring custom queries, aggregations, filtering, or calculations not covered by other analysis types
+2. contribution_analysis: Questions about top performers, pareto analysis, biggest contributors, 80/20 rule, ranking, market share
+3. variance_analysis: Questions about budget vs actual, variances, over/under budget, performance vs target
+4. trend_analysis: Questions about trends, time series, growth, patterns over time, seasonal analysis, forecasting
+5. top_n_analysis: Questions asking for top N, best N, highest N, largest N, most N (e.g., "top 10 products", "best 5 states")
+6. bottom_n_analysis: Questions asking for bottom N, worst N, lowest N, smallest N, least N (e.g., "bottom 5 performers", "worst 3 regions")
+7. data_overview: Questions asking for summary, overview, description of the data, capabilities, what can be analyzed
+8. general_question: All other questions that need contextual answers about the data
 
-RESPOND WITH ONLY ONE WORD - THE CLASSIFICATION TYPE (e.g., "contribution_analysis" or "top_n_analysis")
+PRIORITIZE sql_query for:
+- Complex filtering ("show me products with sales > 1000")
+- Custom calculations ("calculate profit margin by product")
+- Multiple conditions ("products in Q1 with revenue above average")
+- Aggregations not covered by other types ("average sales by region and quarter")
+
+RESPOND WITH ONLY ONE WORD - THE CLASSIFICATION TYPE (e.g., "sql_query" or "contribution_analysis")
 """
             
             # Query the LLM for intent classification
@@ -1125,7 +1184,11 @@ RESPOND WITH ONLY ONE WORD - THE CLASSIFICATION TYPE (e.g., "contribution_analys
             print(f"[DEBUG] LLM classified intent as: {classification}")
             
             # Route to appropriate analysis based on classification
-            if classification == "contribution_analysis":
+            if classification == "sql_query":
+                print("[DEBUG] Routing to SQL query")
+                return self._handle_sql_query(query, None)
+            
+            elif classification == "contribution_analysis":
                 if "contribution_analysis" in available_analyses:
                     print("[DEBUG] Routing to contribution analysis")
                     return self._perform_contribution_analysis(query)
@@ -1488,6 +1551,89 @@ RESPOND ONLY WITH VALID JSON (no explanation):
         except Exception as e:
             return f"❌ **Top/Bottom N Analysis Error**: {str(e)}"
 
+    def _handle_sql_query(self, query: str, route_result=None) -> str:
+        """Handle SQL queries using NL-to-SQL translation and execution"""
+        try:
+            # Ensure data is loaded into SQL engine
+            if self.current_data is None:
+                return "⚠️ **No data available for SQL queries**. Please upload a CSV file first."
+            
+            # Load data into SQL engine if not already done
+            if not hasattr(self, '_sql_data_loaded') or not self._sql_data_loaded:
+                self.sql_engine.load_dataframe_to_sql(self.current_data, table_name="data")
+                self._sql_data_loaded = True
+                print("[DEBUG] Data loaded into SQL engine")
+            
+            # Check if this is already a SQL query or needs translation
+            if query.strip().lower().startswith('select'):
+                # Direct SQL query
+                print(f"[DEBUG] Executing direct SQL: {query}")
+                result = self.sql_engine.execute_query(query)
+            else:
+                # Natural language query - translate to SQL
+                print(f"[DEBUG] Translating NL to SQL: {query}")
+                
+                # Get schema context
+                schema_context = {
+                    'table_name': 'data',
+                    'columns': list(self.current_data.columns),
+                    'sample_data': self.current_data.head(3).to_dict('records'),
+                    'column_info': self.csv_loader.column_info
+                }
+                
+                # Translate to SQL
+                sql_result = self.nl_to_sql.translate_to_sql(query, schema_context)
+                
+                if not sql_result.success:
+                    return f"❌ **SQL Translation Error**: {sql_result.error_message}"
+                
+                print(f"[DEBUG] Generated SQL: {sql_result.sql_query}")
+                
+                # Execute the translated SQL
+                result = self.sql_engine.execute_query(sql_result.sql_query)
+            
+            # Format and return results
+            if result.success:
+                if result.data is not None and len(result.data) > 0:
+                    # For translated queries, we need both the original and generated SQL
+                    if query.strip().lower().startswith('select'):
+                        # Direct SQL query
+                        formatted_results = self.sql_engine.format_sql_results(result.data, query, query)
+                    else:
+                        # NL query that was translated
+                        formatted_results = self.sql_engine.format_sql_results(result.data, sql_result.sql_query, query)
+                    
+                    # Add AI insights if available
+                    if self.llm_interpreter.is_available and len(result.data) <= 100:
+                        try:
+                            ai_response = self.llm_interpreter.query_llm(
+                                f"Provide insights on these SQL query results for: {query}",
+                                {
+                                    'query': query,
+                                    'results': result.data[:20],  # Limit context size
+                                    'row_count': len(result.data)
+                                }
+                            )
+                            
+                            if ai_response.success:
+                                ai_insights = self.narrative_generator.format_for_chat(
+                                    ai_response.content, 
+                                    "💡 AI Insights"
+                                )
+                                return f"{formatted_results}\n\n{ai_insights}"
+                        except Exception as e:
+                            print(f"[DEBUG] AI insights error: {e}")
+                    
+                    return formatted_results
+                else:
+                    return "✅ **Query executed successfully** but returned no results."
+            else:
+                return f"❌ **SQL Execution Error**: {result.error_message}"
+                
+        except Exception as e:
+            print(f"[DEBUG] SQL handling error: {str(e)}")
+            return f"❌ **SQL Query Error**: {str(e)}"
+    
     def _generate_field_picker_html(self, columns, column_type="field"):
         """Generate clickable HTML buttons for field names"""
         if not columns:

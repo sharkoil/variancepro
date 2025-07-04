@@ -304,7 +304,7 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
         return query
     
     def fetch_news(self, query: str, max_articles: int = 5) -> List[Dict]:
-        """Fetch news articles using RSS feeds (free alternative to paid APIs)"""
+        """Fetch news articles using RSS feeds and try to get article content"""
         try:
             # Use RSS feeds for free news access
             import feedparser
@@ -336,12 +336,15 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
                         relevance_score = sum(1 for word in query_words if word in title_text)
                         
                         if relevance_score > 0 or 'q=' in source_url:  # At least one query word matches or it's a search URL
+                            # Try to get article content
+                            article_content = self._extract_article_content(entry)
+                            
                             articles.append({
                                 'title': entry.title,
                                 'link': entry.link,
                                 'published': getattr(entry, 'published', ''),
                                 'source': source_url.split('/')[2],
-                                'summary': getattr(entry, 'summary', '')[:150] + '...' if hasattr(entry, 'summary') and len(getattr(entry, 'summary', '')) > 150 else getattr(entry, 'summary', '')
+                                'summary': article_content if article_content else getattr(entry, 'summary', '')[:200] + '...' if hasattr(entry, 'summary') and len(getattr(entry, 'summary', '')) > 200 else getattr(entry, 'summary', '')
                             })
                 except Exception as e:
                     print(f"[DEBUG] Error fetching from {source_url}: {str(e)}")
@@ -367,8 +370,42 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
             print(f"[DEBUG] Error fetching news: {str(e)}")
             return []
     
+    def _extract_article_content(self, entry) -> str:
+        """Try to extract meaningful content from article entry"""
+        try:
+            # First try the summary field
+            if hasattr(entry, 'summary') and entry.summary:
+                content = entry.summary
+                # Clean HTML tags if present
+                import re
+                content = re.sub(r'<[^>]+>', '', content)
+                if len(content) > 50:  # If we got meaningful content
+                    return content[:300] + '...' if len(content) > 300 else content
+            
+            # Try content field
+            if hasattr(entry, 'content') and entry.content:
+                for content_item in entry.content:
+                    if hasattr(content_item, 'value'):
+                        content = content_item.value
+                        import re
+                        content = re.sub(r'<[^>]+>', '', content)
+                        if len(content) > 50:
+                            return content[:300] + '...' if len(content) > 300 else content
+            
+            # Fallback to description
+            if hasattr(entry, 'description') and entry.description:
+                content = entry.description
+                import re
+                content = re.sub(r'<[^>]+>', '', content)
+                return content[:300] + '...' if len(content) > 300 else content
+                
+        except Exception as e:
+            print(f"[DEBUG] Error extracting article content: {str(e)}")
+        
+        return ""
+    
     def format_news_for_chat(self, results: Dict) -> str:
-        """Format news results for chat display using standardized formatting"""
+        """Format news results for chat display with useful business insights"""
         if not results or not isinstance(results, dict):
             return "📰 **BUSINESS CONTEXT ANALYSIS**\n\nUnable to generate business context analysis."
         
@@ -376,97 +413,160 @@ RESPOND WITH ONLY THE SEARCH QUERY (no quotes, no explanation):
         if not news_items:
             return "📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo relevant business news found for this dataset."
         
-        # Get context information
-        business_context = results.get('business_context', {})
-        industry = business_context.get('industry', 'business')
-        locations = results.get('top_locations', [])
-        search_queries = results.get('search_queries', [])
+        # Generate AI summary based on headlines and any available content
+        ai_summary = self._generate_actionable_news_summary(news_items, results)
         
-        # 1. Summary section
-        explanation = "Provides relevant business news and market context based on location data and industry patterns identified in your dataset."
-        assumptions = [
-            f"Industry context: {industry} sector analysis",
-            f"Geographic focus: {', '.join(locations[:3]) if locations else 'General business context'}",
-            f"News articles analyzed: {len(news_items)}",
-            "News relevance determined by location and business keywords",
-            "Headlines from past 30 days prioritized for current relevance"
-        ]
+        # Create simple table of news sources
+        news_table = self._create_simple_news_table(news_items)
         
-        # Use the AnalysisFormatter from base_analyzer (we need to create an instance)
-        from .base_analyzer import AnalysisFormatter
-        formatter = AnalysisFormatter()
+        # Create output with summary first, then table
+        output = []
+        output.append("📰 **BUSINESS CONTEXT ANALYSIS**")
+        output.append("")
+        output.append("🎯 **Market Intelligence Summary:**")
+        output.append(ai_summary)
+        output.append("")
+        output.append("---")
+        output.append("📊 **RELEVANT NEWS SOURCES** *(See details below)*")
+        output.append("")
+        output.append(news_table)
         
-        formatted_output = formatter.create_summary_section(
-            "Business Context Analysis",
-            explanation,
-            assumptions
-        )
-        
-        # 2. Key metrics about the news analysis
-        context_metrics = {
-            "News_Articles_Found": len(news_items),
-            "Key_Locations": ', '.join(locations[:3]) if locations else 'N/A',
-            "Industry_Context": industry.title(),
-            "Search_Queries_Used": len(search_queries)
-        }
-        
-        formatted_output += "\n\n" + formatter.create_metrics_grid(context_metrics, "Context Analysis Summary")
-        
-        # 3. News articles table with integrated links ONLY
-        if news_items:
-            formatted_output += "\n\n📰 **BUSINESS HEADLINES:**\n"
+        return "\n".join(output)
+    
+    def _generate_actionable_news_summary(self, news_items: List[Dict], context: Dict) -> str:
+        """Generate a meaningful summary that helps understand data influences"""
+        try:
+            # Import LLM interpreter
+            from ai.llm_interpreter import LLMInterpreter
+            from config.settings import Settings
             
-            table_data = []
-            for i, item in enumerate(news_items[:8], 1):  # Top 8 articles
-                source = item.get('source', 'Unknown').replace('.com', '').title()
-                title = item.get('title', 'No title').strip()
-                published = item.get('published', '')
-                link = item.get('link', '')
-                
-                # Clean and truncate title
-                if len(title) > 50:
-                    title = title[:47] + "..."
-                
-                # Format date
-                date_str = "Recent"
-                if published:
-                    try:
-                        date_obj = pd.to_datetime(published)
-                        date_str = date_obj.strftime("%b %d")
-                    except:
-                        pass
-                
-                # Create clickable link - THIS IS THE ONLY PLACE LINKS APPEAR
-                headline_display = f"[{title}]({link})" if link else title
-                
-                table_data.append({
-                    "#": i,
-                    "Article_Link": headline_display,
-                    "Source": source,
-                    "Date": date_str
-                })
+            # Create LLM interpreter instance
+            settings = Settings()
+            llm = LLMInterpreter(settings)
             
-            headers = ["#", "Article_Link", "Source", "Date"]
-            formatted_output += "\n" + formatter.create_banded_table(table_data, headers, max_rows=8)
+            # Prepare headlines and any content for analysis
+            news_content = []
+            for item in news_items[:5]:  # Focus on top 5 articles
+                title = item.get('title', 'No title')
+                summary = item.get('summary', '')
+                date = item.get('published', 'Recent')
+                
+                article_info = f"HEADLINE: {title}"
+                if summary and len(summary) > 10:
+                    article_info += f"\nSUMMARY: {summary}"
+                article_info += f"\nDATE: {date}"
+                news_content.append(article_info)
+            
+            # Get business context
+            business_context = context.get('business_context', {})
+            industry = business_context.get('industry', 'business')
+            locations = context.get('top_locations', [])
+            
+            # Create focused prompt for actionable insights
+            summary_prompt = f"""
+            You are a business analyst helping interpret how current news might influence financial data patterns.
+
+            BUSINESS CONTEXT:
+            - Industry: {industry}
+            - Key Locations: {', '.join(locations[:3]) if locations else 'General'}
+            - Data Analysis Focus: Understanding external factors affecting business performance
+
+            NEWS HEADLINES AND CONTENT:
+            {chr(10).join(news_content)}
+
+            TASK: Write a concise paragraph (3-4 sentences) that explains:
+            1. What key market/economic trends these headlines reveal
+            2. How these trends could specifically impact {industry} business performance
+            3. What data patterns an analyst should look for based on this news context
+
+            Focus on actionable insights that help explain data variations, not generic business advice.
+            Be specific about potential impacts on metrics like revenue, costs, regional performance, etc.
+
+            Market Intelligence Summary:
+            """
+            
+            # Query the LLM for summary
+            response = llm.query_llm(summary_prompt)
+            
+            if response.success and response.content:
+                summary = response.content.strip()
+                # Clean up any unwanted prefixes
+                prefixes = ['market intelligence summary:', 'summary:', 'analysis:']
+                for prefix in prefixes:
+                    if summary.lower().startswith(prefix):
+                        summary = summary[len(prefix):].strip()
+                return summary
+            else:
+                return self._generate_headline_based_summary(news_items, industry, locations)
+                
+        except Exception as e:
+            print(f"[NEWS] AI summary generation failed: {str(e)}")
+            return self._generate_headline_based_summary(news_items, industry, locations)
+    
+    def _generate_headline_based_summary(self, news_items: List[Dict], industry: str, locations: List[str]) -> str:
+        """Generate summary based on headlines when AI fails"""
+        if not news_items:
+            return f"No relevant news trends identified for {industry} sector analysis."
         
-        # 4. Business insights
-        insights = [
-            "News context provides external factors that may influence your data patterns",
-            "Look for correlations between news events and performance changes in your metrics",
-            "Consider timing of headlines when interpreting data anomalies or trends",
-            "Use this context to ask more informed questions about your business performance"
-        ]
+        # Extract key themes from headlines
+        headlines = [item.get('title', '') for item in news_items[:3]]
         
-        recommendations = [
-            "Review news headlines for events that coincide with data changes",
-            "Consider external market factors when analyzing variance or performance dips",
-            "Use geographic news context to understand regional performance differences",
-            "Integrate news insights with financial analysis for comprehensive business view"
-        ]
+        # Look for common business themes
+        themes = []
+        all_text = ' '.join(headlines).lower()
         
-        formatted_output += "\n\n" + formatter.create_insights_section(insights, recommendations)
+        if 'growth' in all_text or 'increase' in all_text:
+            themes.append('growth trends')
+        if 'decline' in all_text or 'drop' in all_text or 'fall' in all_text:
+            themes.append('market challenges')
+        if 'economic' in all_text or 'economy' in all_text:
+            themes.append('economic factors')
+        if 'earnings' in all_text or 'revenue' in all_text or 'profit' in all_text:
+            themes.append('financial performance')
         
-        return formatted_output
+        location_text = ', '.join(locations[:2]) if locations else 'regional markets'
+        theme_text = ', '.join(themes) if themes else 'business developments'
+        
+        return f"Recent headlines indicate {theme_text} affecting {industry} sector performance in {location_text}. Analysts should examine data patterns around these external market factors to identify correlations with performance metrics and regional variations."
+    
+    def _create_simple_news_table(self, news_items: List[Dict]) -> str:
+        """Create a simple table of news sources without complex formatting"""
+        if not news_items:
+            return "No news articles found."
+        
+        table_lines = []
+        table_lines.append("| # | Headline | Source | Date |")
+        table_lines.append("|---|----------|--------|------|")
+        
+        for i, item in enumerate(news_items[:8], 1):  # Top 8 articles
+            title = item.get('title', 'No title').strip()
+            source = item.get('source', 'Unknown').replace('.com', '').replace('www.', '').title()
+            
+            # Clean up title length
+            if len(title) > 60:
+                title = title[:57] + "..."
+            
+            # Format date
+            date_str = "Recent"
+            published = item.get('published', '')
+            if published:
+                try:
+                    import pandas as pd
+                    date_obj = pd.to_datetime(published)
+                    date_str = date_obj.strftime("%b %d")
+                except:
+                    pass
+            
+            # Create table row
+            link = item.get('link', '')
+            if link:
+                title_with_link = f"[{title}]({link})"
+            else:
+                title_with_link = title
+                
+            table_lines.append(f"| {i} | {title_with_link} | {source} | {date_str} |")
+        
+        return "\n".join(table_lines)
     
     def analyze(self, data: pd.DataFrame, column_info: Dict, llm_interpreter=None) -> Dict:
         """Main analysis method that returns news context"""
