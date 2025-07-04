@@ -1,0 +1,18 @@
+# VariancePro - Core Dependencies
+# Minimal installation for core functionality
+
+# Web Framework
+gradio>=4.0.0
+
+# Data Processing
+pandas>=1.5.0
+numpy>=1.21.0
+
+# HTTP Requests
+requests>=2.25.0
+
+# Optional: For enhanced news analysis
+feedparser>=6.0.0
+
+# Development and Testing
+pytest>=7.0.0

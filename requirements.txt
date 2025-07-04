@@ -1,14 +1,31 @@
+# VariancePro - Core Dependencies
+# Optimized for essential functionality
+
+# Web Framework
 gradio>=4.0.0
+
+# Data Processing
 pandas>=2.0.0
 numpy>=1.24.0
 openpyxl>=3.1.0
 xlrd>=2.0.1
 python-dateutil>=2.8.2
-# LLM Integration dependencies
-ollama>=0.3.0
-openai>=1.0.0
+
+# HTTP Requests & APIs
 requests>=2.31.0
-transformers>=4.35.0
-torch>=2.0.0
-accelerate>=0.24.0
+
+# LLM Integration (Core)
+ollama>=0.3.0
+
+# News Analysis
 feedparser>=6.0.0
+
+# Development and Testing
+pytest>=7.0.0
+
+# Optional heavy dependencies moved to requirements-full.txt
+# Install with: pip install -r requirements-full.txt
+# - transformers>=4.35.0 (500MB+)
+# - torch>=2.0.0 (1.9GB+) 
+# - accelerate>=0.24.0
+# - openai>=1.0.0

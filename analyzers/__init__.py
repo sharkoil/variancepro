@@ -10,6 +10,7 @@ from .timescale_analyzer import TimescaleAnalyzer
 from .news_analyzer_v2 import NewsAnalyzer
 from .sql_query_engine import SQLQueryEngine
 from .nl_to_sql_translator import NLToSQLTranslator
+from .enhanced_nl_to_sql_translator import EnhancedNLToSQLTranslator
 from .query_router import QueryRouter
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     'NewsAnalyzer',
     'SQLQueryEngine',
     'NLToSQLTranslator',
+    'EnhancedNLToSQLTranslator',
     'QueryRouter'
 ]

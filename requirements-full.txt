@@ -1,0 +1,33 @@
+# VariancePro - Full Dependencies  
+# Complete installation including optional ML components
+
+# Web Framework
+gradio>=4.0.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+python-dateutil>=2.8.2
+
+# HTTP Requests & APIs
+requests>=2.31.0
+
+# LLM Integration (Core)
+ollama>=0.3.0
+
+# Optional: OpenAI Integration
+openai>=1.0.0
+
+# Optional: Heavy ML Dependencies (Use only if needed)
+# Uncomment the following lines for transformer-based features:
+# transformers>=4.35.0
+# torch>=2.0.0  
+# accelerate>=0.24.0
+
+# News Analysis
+feedparser>=6.0.0
+
+# Development and Testing
+pytest>=7.0.0

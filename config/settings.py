@@ -43,20 +43,10 @@ class Settings:
     no_code_suggestions: bool = True
     csv_only_analysis: bool = True
     
-    # Function Calling Configuration
-    enable_function_calling: bool = False  # Start disabled for safety
-    function_calling_timeout: int = 30  # Timeout for function calling requests
-    function_calling_confidence_threshold: float = 0.7  # Minimum confidence for function calls
-    function_calling_query_types: List[str] = None  # Start empty, add progressively
-    function_calling_fallback_always: bool = True  # Always fall back to existing methods
-    function_calling_max_attempts: int = 3  # Max attempts for function calling
-    
     def __post_init__(self):
         """Initialize default values that need to be mutable"""
         if self.supported_formats is None:
             self.supported_formats = ['.csv']
-        if self.function_calling_query_types is None:
-            self.function_calling_query_types = []  # Start with no enabled query types
     
     @classmethod
     def from_env(cls) -> 'Settings':
@@ -73,8 +63,6 @@ class Settings:
             gradio_port=int(os.getenv('GRADIO_SERVER_PORT', '7860')),
             gradio_share=os.getenv('GRADIO_SHARE', 'false').lower() == 'true',
             contribution_threshold=float(os.getenv('VARIANCEPRO_CONTRIBUTION_THRESHOLD', '0.8')),
-            enable_function_calling=os.getenv('VARIANCEPRO_ENABLE_FUNCTION_CALLING', 'false').lower() == 'true',
-            function_calling_confidence_threshold=float(os.getenv('VARIANCEPRO_FUNCTION_CALLING_THRESHOLD', '0.7')),
         )
     
     def validate(self) -> bool:
@@ -137,39 +125,3 @@ class Settings:
             'show_error': True,
             'show_tips': True,
         }
-    
-    def get_function_calling_config(self) -> dict:
-        """
-        Get configuration dictionary for function calling
-        
-        Returns:
-            Dictionary with function calling configuration
-        """
-        return {
-            'enabled': self.enable_function_calling,
-            'timeout': self.function_calling_timeout,
-            'confidence_threshold': self.function_calling_confidence_threshold,
-            'query_types': self.function_calling_query_types,
-            'fallback_always': self.function_calling_fallback_always,
-            'max_attempts': self.function_calling_max_attempts
-        }
-    
-    def enable_function_calling_for_query_type(self, query_type: str):
-        """
-        Enable function calling for a specific query type
-        
-        Args:
-            query_type: Type of query to enable (e.g., 'time_variance', 'contribution')
-        """
-        if query_type not in self.function_calling_query_types:
-            self.function_calling_query_types.append(query_type)
-    
-    def disable_function_calling_for_query_type(self, query_type: str):
-        """
-        Disable function calling for a specific query type
-        
-        Args:
-            query_type: Type of query to disable
-        """
-        if query_type in self.function_calling_query_types:
-            self.function_calling_query_types.remove(query_type)
