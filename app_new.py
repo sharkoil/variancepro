@@ -1558,17 +1558,30 @@ RESPOND ONLY WITH VALID JSON (no explanation):
             if self.current_data is None:
                 return "⚠️ **No data available for SQL queries**. Please upload a CSV file first."
             
-            # Load data into SQL engine if not already done
-            if not hasattr(self, '_sql_data_loaded') or not self._sql_data_loaded:
-                self.sql_engine.load_dataframe_to_sql(self.current_data, table_name="data")
-                self._sql_data_loaded = True
-                print("[DEBUG] Data loaded into SQL engine")
+            # Load data into SQL engine if not already done or if connection is invalid
+            if (not hasattr(self, '_sql_data_loaded') or not self._sql_data_loaded or 
+                not self.sql_engine.is_connection_valid()):
+                
+                print("[DEBUG] Loading/reloading data into SQL engine...")
+                success = self.sql_engine.load_dataframe_to_sql(self.current_data, table_name="data")
+                if success:
+                    self._sql_data_loaded = True
+                    print("[DEBUG] Data loaded into SQL engine successfully")
+                else:
+                    return "❌ **SQL Setup Error**: Failed to load data into SQL engine. Please try again."
             
             # Check if this is already a SQL query or needs translation
             if query.strip().lower().startswith('select'):
                 # Direct SQL query
                 print(f"[DEBUG] Executing direct SQL: {query}")
                 result = self.sql_engine.execute_query(query)
+                
+                # Handle threading issues by retrying with fresh connection
+                if not result.success and "thread" in result.error_message.lower():
+                    print("[DEBUG] Threading issue detected, refreshing connection...")
+                    if self.sql_engine.refresh_connection(self.current_data):
+                        result = self.sql_engine.execute_query(query)
+                    
             else:
                 # Natural language query - translate to SQL
                 print(f"[DEBUG] Translating NL to SQL: {query}")
@@ -1591,6 +1604,12 @@ RESPOND ONLY WITH VALID JSON (no explanation):
                 
                 # Execute the translated SQL
                 result = self.sql_engine.execute_query(sql_result.sql_query)
+                
+                # Handle threading issues by retrying with fresh connection
+                if not result.success and "thread" in result.error_message.lower():
+                    print("[DEBUG] Threading issue detected in NL query, refreshing connection...")
+                    if self.sql_engine.refresh_connection(self.current_data):
+                        result = self.sql_engine.execute_query(sql_result.sql_query)
             
             # Format and return results
             if result.success:
