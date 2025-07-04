@@ -1,6 +1,7 @@
 """
 LLM Interpreter for VariancePro
 Handles LLM communication and response processing
+Enhanced with Gemma 3 function calling support
 """
 
 import requests
@@ -9,6 +10,8 @@ import time
 from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass
 from config.settings import Settings
+from ai.function_registry import function_registry
+from ai.function_call_parser import function_call_parser
 
 
 @dataclass
@@ -19,6 +22,7 @@ class LLMResponse:
     error: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     processing_time: float = 0.0
+    function_calls: Optional[List[Dict[str, Any]]] = None  # New field for function calls
 
 
 class LLMError(Exception):
