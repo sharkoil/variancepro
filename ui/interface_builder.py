@@ -354,8 +354,8 @@ class InterfaceBuilder:
             upload_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             print(f"[DEBUG] File upload starting: {file.name} at {upload_timestamp}")
             
-            preview, data_summary, analysis_message = self.app.upload_csv(file)
-            print(f"[DEBUG] Upload_csv returned: preview={len(preview) if preview else 0} chars, analysis_message={analysis_message is not None}")
+            preview, data_summary, analysis_message, timescale_message = self.app.upload_csv(file)
+            print(f"[DEBUG] Upload_csv returned: preview={len(preview) if preview else 0} chars, analysis_message={analysis_message is not None}, timescale_message={timescale_message is not None}")
             
             # Generate field picker HTML
             date_html = self._generate_field_picker_html(
@@ -398,7 +398,19 @@ class InterfaceBuilder:
                 ]
                 print(f"[DEBUG] Added basic message, chatbot length: {len(updated_chatbot)}")
             
-            # Add News Analysis as second message (simplified version)
+            # Add timescale analysis as a separate message if available
+            if timescale_message:
+                print(f"[DEBUG] Adding timescale analysis message to chat: {len(timescale_message['content'])} chars")
+                timescale_bot_message = self.app.chat_handler.session_manager.add_timestamp_to_message(
+                    timescale_message['content']
+                )
+                updated_chatbot = updated_chatbot + [
+                    {"role": "user", "content": "📈 Automatic Time-Phase Analysis"}, 
+                    {"role": "assistant", "content": timescale_bot_message}
+                ]
+                print(f"[DEBUG] Updated chatbot length after timescale: {len(updated_chatbot)}")
+            else:
+                print("[DEBUG] No timescale message generated (no date columns or analysis failed)")
             try:
                 print("[DEBUG] Starting news analysis...")
                 # Skip news analysis for now to isolate the issue

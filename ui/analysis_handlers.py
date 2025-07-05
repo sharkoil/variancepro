@@ -43,8 +43,8 @@ class AnalysisHandlers:
             # Analyze contribution using the contributor analyzer
             results = self.app.contributor_analyzer.analyze(
                 data=self.app.current_data,
-                category_column=category_col,
-                value_column=value_col
+                category_col=category_col,
+                value_col=value_col
             )
             
             # Generate AI narrative if available
@@ -77,22 +77,32 @@ class AnalysisHandlers:
         try:
             # Get suggested columns for variance analysis
             suggestions = self.app.column_suggestions
-            budget_actual_pairs = suggestions.get('budget_vs_actual', [])
+            budget_actual_pairs = suggestions.get('budget_vs_actual', {})
             
             if not budget_actual_pairs:
                 return "⚠️ **Variance analysis requires Budget and Actual columns**. Upload data with budget/plan and actual/result columns."
             
-            # Use first suggested pair
-            budget_col, actual_col = budget_actual_pairs[0]
+            # Use first suggested pair - budget_vs_actual is a dict like {'Budget': 'Actual'}
+            budget_col = list(budget_actual_pairs.keys())[0]
+            actual_col = budget_actual_pairs[budget_col]
             category_cols = suggestions.get('category_columns', [])
             category_col = category_cols[0] if category_cols else None
+            
+            # For variance analysis, we need a date column (use first available)
+            date_cols = self.app.csv_loader.column_info.get('date_columns', [])
+            date_col = date_cols[0] if date_cols else None
+            
+            if not date_col:
+                # Simple variance without time series
+                return self._perform_simple_variance_analysis(budget_col, actual_col, category_col)
             
             # Perform variance analysis using the financial analyzer
             results = self.app.financial_analyzer.analyze(
                 data=self.app.current_data,
-                budget_col=budget_col,
-                actual_col=actual_col,
+                date_col=date_col,
+                value_col=actual_col,  # Use actual as the main value
                 category_col=category_col,
+                budget_col=budget_col,
                 analysis_type="variance"
             )
             
@@ -145,7 +155,7 @@ class AnalysisHandlers:
             if any(word in query for word in ['ttm', 'trailing', 'twelve']):
                 analysis_type = "ttm"
             else:
-                analysis_type = "timescale"
+                analysis_type = "trend"
             
             # Perform analysis with FinancialAnalyzer
             results = self.app.financial_analyzer.analyze(
@@ -612,3 +622,50 @@ RESPOND ONLY WITH VALID JSON (no explanation):
         except Exception as e:
             print(f"[DEBUG] SQL handling error: {str(e)}")
             return f"❌ **SQL Query Error**: {str(e)}"
+    
+    def _perform_simple_variance_analysis(self, budget_col, actual_col, category_col=None):
+        """
+        Perform simple variance analysis without time series when no date column is available.
+        """
+        try:
+            data = self.app.current_data
+            
+            # Calculate variance
+            variance = data[actual_col] - data[budget_col]
+            variance_percent = (variance / data[budget_col]) * 100
+            
+            # Create summary
+            total_budget = data[budget_col].sum()
+            total_actual = data[actual_col].sum()
+            total_variance = total_actual - total_budget
+            total_variance_percent = (total_variance / total_budget) * 100
+            
+            results = f"""## 📊 Variance Analysis Results
+            
+**Overall Summary:**
+- Total Budget: ${total_budget:,.2f}
+- Total Actual: ${total_actual:,.2f}
+- Total Variance: ${total_variance:,.2f} ({total_variance_percent:.1f}%)
+
+**Key Insights:**
+- {'Above' if total_variance > 0 else 'Below'} budget by ${abs(total_variance):,.2f}
+- Variance represents {abs(total_variance_percent):.1f}% of budgeted amount
+"""
+            
+            if category_col:
+                # Category-level analysis
+                category_summary = data.groupby(category_col).agg({
+                    budget_col: 'sum',
+                    actual_col: 'sum'
+                })
+                category_summary['variance'] = category_summary[actual_col] - category_summary[budget_col]
+                category_summary['variance_pct'] = (category_summary['variance'] / category_summary[budget_col]) * 100
+                
+                results += "\n**By Category:**\n"
+                for category, row in category_summary.iterrows():
+                    results += f"- {category}: ${row['variance']:,.2f} ({row['variance_pct']:.1f}%)\n"
+            
+            return results
+            
+        except Exception as e:
+            return f"⚠️ Error in variance analysis: {str(e)}"

@@ -79,10 +79,10 @@ class QuantCommanderApp:
         
         print("✅ All components initialized successfully")
     
-    def upload_csv(self, file) -> Tuple[str, str, Optional[Dict]]:
+    def upload_csv(self, file) -> Tuple[str, str, Optional[Dict], Optional[Dict]]:
         """Handle CSV file upload with enhanced processing and timestamp logging"""
         if file is None:
-            return "No file uploaded", "No data available", None
+            return "No file uploaded", "No data available", None, None
         
         try:
             print(f"[DEBUG] Attempting to load CSV file: {file.name}")
@@ -160,24 +160,55 @@ class QuantCommanderApp:
                         'content': f"📊 **DATA LOADED SUCCESSFULLY**\n\n{self.data_summary}"
                     }
             
-            # Return preview text and analysis message
+            # Generate timescale analysis if data has date columns
+            timescale_message = None
+            date_cols = self.csv_loader.column_info.get('date_columns', [])
+            if date_cols and len(date_cols) > 0:
+                try:
+                    print(f"[DEBUG] Generating automatic timescale analysis for date columns: {date_cols}")
+                    # Perform timescale analysis
+                    value_cols = self.column_suggestions.get('value_columns', []) if self.column_suggestions else []
+                    if not value_cols:
+                        value_cols = self.csv_loader.column_info.get('numeric_columns', [])
+                    
+                    if value_cols:
+                        timescale_results = self.timescale_analyzer.analyze(
+                            data=self.current_data,
+                            date_col=date_cols[0],
+                            value_cols=value_cols[:3]  # Limit to first 3 columns for performance
+                        )
+                        
+                        timescale_content = self.timescale_analyzer.format_for_chat()
+                        timescale_message = {
+                            'role': 'assistant',
+                            'content': timescale_content
+                        }
+                        print(f"[DEBUG] Timescale analysis generated successfully")
+                    else:
+                        print(f"[DEBUG] No numeric columns found for timescale analysis")
+                except Exception as e:
+                    print(f"[DEBUG] Error generating timescale analysis: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # Return preview text and analysis messages
             preview_text = f"✅ **File uploaded successfully**\n\n{self.data_summary}"
             
             completion_time = self.session_manager.get_current_timestamp()
             print(f"[DEBUG] Upload completed at: {completion_time}")
             
-            return preview_text, self.data_summary, analysis_message
+            return preview_text, self.data_summary, analysis_message, timescale_message
             
         except CSVLoadError as e:
             error_msg = f"❌ **CSV Loading Error**: {str(e)}"
             print(f"[DEBUG] CSV loading error: {str(e)}")
-            return error_msg, "", None
+            return error_msg, "", None, None
             
         except Exception as e:
             error_msg = f"❌ **Unexpected Error**: {str(e)}"
             print(f"[DEBUG] Unexpected error during upload: {str(e)}")
             traceback.print_exc()
-            return error_msg, "", None
+            return error_msg, "", None, None
     
     def get_status(self) -> str:
         """Get comprehensive system status with session information"""
