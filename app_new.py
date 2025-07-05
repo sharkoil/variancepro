@@ -10,6 +10,8 @@ import json
 import io
 import time
 import traceback
+import uuid
+from datetime import datetime
 from typing import List, Tuple, Optional, Dict, Any
 
 # Import our modular components
@@ -30,6 +32,13 @@ class QuantCommanderApp:
     
     def __init__(self):
         """Initialize the application with all components"""
+        # Generate unique session ID for this app run
+        self.session_id = str(uuid.uuid4())[:8]  # Short UUID for display
+        self.session_start_time = datetime.now()
+        
+        print(f"🆔 Session ID: {self.session_id}")
+        print(f"⏰ Session started at: {self.session_start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        
         # Initialize settings
         self.settings = Settings()
         
@@ -239,29 +248,36 @@ class QuantCommanderApp:
 
     
     def chat_response(self, message: str, history: List[Dict]) -> Tuple[List[Dict], str]:
-        """Enhanced chat response with AI-powered analysis"""
+        """Enhanced chat response with AI-powered analysis and timestamp"""
         if not message.strip():
             return history, ""
         
         try:
+            # Generate timestamp for this response
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             # Check if data is loaded
             if self.current_data is None:
-                response = "⚠️ **No data loaded**. Please upload a CSV file first to start analysis."
+                response = f"⚠️ **No data loaded** - {timestamp}\n\nPlease upload a CSV file first to start analysis.\n\n🆔 Session: {self.session_id}"
                 history.append({"role": "user", "content": message})
                 history.append({"role": "assistant", "content": response})
                 return history, ""
             
             # Analyze the user's query to determine intent
-            response = self._process_user_query(message.lower().strip())
+            response_content = self._process_user_query(message.lower().strip())
+            
+            # Add timestamp and session info to response
+            timestamped_response = f"{response_content}\n\n---\n⏰ **Response Time**: {timestamp} | 🆔 **Session**: {self.session_id}"
             
             # Add to history
             history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": response})
+            history.append({"role": "assistant", "content": timestamped_response})
             
             return history, ""
             
         except Exception as e:
-            error_response = f"❌ **Error processing request**: {str(e)}"
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            error_response = f"❌ **Error processing request**: {str(e)}\n\n---\n⏰ **Error Time**: {timestamp} | 🆔 **Session**: {self.session_id}"
             history.append({"role": "user", "content": message})
             history.append({"role": "assistant", "content": error_response})
             return history, ""
@@ -702,9 +718,18 @@ Provide a helpful, contextual response as Aria Sterling.
             return f"❌ **AI Processing Error**: {str(e)}"
     
     def get_status(self) -> str:
-        """Get comprehensive system status"""
+        """Get comprehensive system status with session information"""
+        current_time = datetime.now()
+        session_duration = current_time - self.session_start_time
+        
         status_parts = [
             "🔍 **VARIANCEPRO SYSTEM STATUS**",
+            "",
+            "🆔 **Session Information:**",
+            f"• Session ID: {self.session_id}",
+            f"• Started: {self.session_start_time.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"• Duration: {str(session_duration).split('.')[0]}",  # Remove microseconds
+            f"• Current Time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}",
             ""
         ]
         
@@ -920,7 +945,7 @@ Provide a helpful, contextual response as Aria Sterling.
                         placeholder="Start by uploading a CSV file, then ask questions or request analysis...",
                         avatar_images=["👤", "🤖"],
                         type="messages",
-                        value=[{"role": "assistant", "content": "👋 Welcome! I'm Aria Sterling, your AI financial analyst. 📊 Upload your financial data and chat with me for comprehensive insights and analysis! 💼✨"}]
+                        value=[{"role": "assistant", "content": f"👋 **Welcome to VariancePro!** I'm Aria Sterling, your AI financial analyst.\n\n📊 Upload your financial data and chat with me for comprehensive insights and analysis!\n\n🆔 **Session ID**: {self.session_id if hasattr(self, 'session_id') else 'loading...'}\n⏰ **Started**: {self.session_start_time.strftime('%Y-%m-%d %H:%M:%S') if hasattr(self, 'session_start_time') else 'loading...'}\n\n💼✨ Ready to transform your data into strategic intelligence!"}]
                     )
                     
                     with gr.Row():
@@ -993,6 +1018,7 @@ Provide a helpful, contextual response as Aria Sterling.
                 if file is None:
                     return None, "No data available", chatbot, "<i>Upload data to see available fields</i>", "<i>Upload data to see available fields</i>", "<i>Upload data to see available fields</i>", "<i>Upload data to see available fields</i>"
                 
+                upload_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 preview, data_summary, analysis_message = self.upload_csv(file)
                 
                 # Generate field picker HTML
@@ -1016,8 +1042,8 @@ Provide a helpful, contextual response as Aria Sterling.
                 # Start with the primary analysis message if available
                 updated_chatbot = chatbot
                 if analysis_message:
-                    bot_message = analysis_message['content']
-                    updated_chatbot = updated_chatbot + [{"role": "user", "content": "CSV File Loaded"}, {"role": "assistant", "content": bot_message}]
+                    bot_message = f"{analysis_message['content']}\n\n---\n⏰ **Analysis Time**: {upload_timestamp} | 🆔 **Session**: {self.session_id}"
+                    updated_chatbot = updated_chatbot + [{"role": "user", "content": f"📁 CSV File Loaded - {upload_timestamp}"}, {"role": "assistant", "content": bot_message}]
                 
                 # Add News Analysis as second message
                 try:
@@ -1034,18 +1060,19 @@ Provide a helpful, contextual response as Aria Sterling.
                         if len(formatted_results.get('news_items', [])) > 6:
                             formatted_results['news_items'] = formatted_results['news_items'][:6]
                         news_content = self.news_analyzer.format_news_for_chat(formatted_results)
-                        updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": news_content}]
+                        news_timestamped = f"{news_content}\n\n---\n⏰ **News Analysis Time**: {upload_timestamp} | 🆔 **Session**: {self.session_id}"
+                        updated_chatbot = updated_chatbot + [{"role": "user", "content": f"📰 Business Context Analysis - {upload_timestamp}"}, {"role": "assistant", "content": news_timestamped}]
                         print(f"[DEBUG] News analysis added to chat")
                     else:
                         print("[DEBUG] No news results found or no location data detected")
-                        fallback_news_content = "📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo location data detected in your dataset for relevant business news analysis. Focus on core data metrics instead."
-                        updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": fallback_news_content}]
+                        fallback_news_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo location data detected in your dataset for relevant business news analysis. Focus on core data metrics instead.\n\n---\n⏰ **Analysis Time**: {upload_timestamp} | 🆔 **Session**: {self.session_id}"
+                        updated_chatbot = updated_chatbot + [{"role": "user", "content": f"📰 Business Context Analysis - {upload_timestamp}"}, {"role": "assistant", "content": fallback_news_content}]
                         
                 except Exception as e:
                     print(f"[DEBUG] News analysis error: {str(e)}")
                     # Add error message to chat as well
-                    error_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\n⚠️ Unable to fetch business context: {str(e)}\n\nContinuing with data analysis..."
-                    updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": error_content}]
+                    error_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\n⚠️ Unable to fetch business context: {str(e)}\n\nContinuing with data analysis...\n\n---\n⏰ **Error Time**: {upload_timestamp} | 🆔 **Session**: {self.session_id}"
+                    updated_chatbot = updated_chatbot + [{"role": "user", "content": f"📰 Business Context Analysis - {upload_timestamp}"}, {"role": "assistant", "content": error_content}]
                 
                 return preview, data_summary, updated_chatbot, date_html, numeric_html, category_html, value_html
             
