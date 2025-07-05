@@ -62,22 +62,86 @@ cd variancepro
 
 ### 2. Install Dependencies
 ```bash
+# Install core dependencies
 pip install -r requirements.txt
+
+# Alternative: Install minimal dependencies
+pip install -r requirements-minimal.txt
+
+# Alternative: Install full feature set
+pip install -r requirements-full.txt
 ```
 
 ### 3. Install and Setup Ollama
 ```bash
 # Install Ollama (visit https://ollama.ai for platform-specific instructions)
-# Pull the Gemma3 model
-ollama pull gemma3:latest
+
+# Pull recommended models
+ollama pull gemma3:latest      # Primary model for analysis
+ollama pull deepseek-r1:14b    # Advanced reasoning model
+ollama pull qwen3:8b           # Fast response model
+ollama pull llava:latest       # Multi-modal capabilities
+
+# Verify installation
+ollama list
 ```
 
-### 4. Run the Application
+### 4. Run the Main Application
 ```bash
+# Start the main VariancePro application
 python app_new.py
+
+# Alternative: Use the launcher script
+python app.py
+
+# Windows batch file launcher
+start_app.bat
 ```
 
-The application will start on `http://localhost:7871` by default.
+The main application will start on `http://localhost:7871` by default.
+
+### 5. Launch the Testing Framework (Optional)
+```bash
+# Start the Enhanced NL-to-SQL Testing Framework
+python test_enhanced_nl_to_sql_ui.py
+
+# Alternative: Direct launch
+python -c "from nl_to_sql_testing_ui_enhanced import EnhancedNLToSQLTestingUI; EnhancedNLToSQLTestingUI().launch()"
+```
+
+The testing framework will start on `http://localhost:7862` by default.
+
+### 🎯 Application Access Points
+
+| Component | URL | Purpose |
+|-----------|-----|---------|
+| **Main Application** | `http://localhost:7871` | Financial analysis with AI insights |
+| **Testing Framework** | `http://localhost:7862` | NL-to-SQL testing and validation |
+| **Ollama API** | `http://localhost:11434` | AI model management |
+
+### ⚙️ Configuration Options
+
+#### Environment Variables
+```bash
+# Set custom ports
+export VARIANCEPRO_PORT=7871
+export TESTING_FRAMEWORK_PORT=7862
+export OLLAMA_HOST=localhost:11434
+
+# Set default model
+export DEFAULT_MODEL=gemma3:latest
+```
+
+#### Startup Scripts
+```bash
+# Windows
+start_app.bat                    # Launch main application
+start_enhanced_demo.bat          # Launch with enhanced features
+
+# Python scripts
+python launch_testing.py         # Comprehensive test launcher
+python run_tests.py             # Run validation tests
+```
 
 ## 💡 Usage Guide
 
@@ -606,7 +670,327 @@ pytest tests/ -v --cov=./ --cov-report=html
 6. **Push** to the branch (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request with detailed description
 
-## 🔮 Roadmap
+## 🧪 Enhanced NL-to-SQL Testing Framework
+
+VariancePro includes a sophisticated testing framework specifically designed for evaluating Natural Language to SQL translation capabilities across multiple AI models. This framework allows you to compare different strategies and models to find the best approach for your specific use cases.
+
+### 🎯 Framework Overview
+
+The Enhanced NL-to-SQL Testing Framework provides:
+- **🤖 Multi-Model Support**: Test with any Ollama-deployed model
+- **🔄 Strategy Comparison**: Compare different translation approaches
+- **📊 Quality Scoring**: Automated assessment of translation accuracy
+- **📈 Performance Metrics**: Response time and success rate tracking
+- **🎨 Interactive UI**: Web-based interface for easy testing and evaluation
+
+### 🛠️ Testing Framework Components
+
+#### Core Files:
+- `nl_to_sql_testing_ui_enhanced.py` - Main testing interface with model selection
+- `test_enhanced_nl_to_sql_ui.py` - Launcher script for the testing framework
+- `analyzers/enhanced_nl_to_sql_translator.py` - Primary translation engine
+- `analyzers/strategy_1_llm_enhanced.py` - LLM-enhanced translation strategy
+- `analyzers/strategy_2_semantic_parsing.py` - Semantic parsing strategy
+- `analyzers/nl_to_sql_tester.py` - Core testing and validation logic
+
+### 🚀 Running the Testing Framework
+
+#### Prerequisites
+Ensure you have Ollama running with your desired models:
+```bash
+# Check available models
+ollama list
+
+# Pull additional models if needed
+ollama pull deepseek-r1:14b
+ollama pull qwen3:8b
+ollama pull llava:latest
+```
+
+#### Launch the Testing Interface
+```bash
+# Navigate to project directory
+cd f:\Projects\VARIANCEPRO
+
+# Launch the enhanced testing UI
+python test_enhanced_nl_to_sql_ui.py
+```
+
+The testing interface will be available at `http://localhost:7862`
+
+#### Alternative Launch Methods
+```bash
+# Direct launch of testing framework
+python -c "from nl_to_sql_testing_ui_enhanced import EnhancedNLToSQLTestingUI; EnhancedNLToSQLTestingUI().launch()"
+
+# Background launch
+python nl_to_sql_testing_ui_enhanced.py
+```
+
+### 📋 Testing Framework Usage Guide
+
+#### 1. Model Selection
+- **Available Models**: Dropdown shows all Ollama-deployed models
+- **Real-time Switching**: Change models without restarting the interface
+- **Auto-refresh**: Click "🔄 Refresh Models" to detect newly installed models
+- **Default Model**: Framework starts with `gemma3:latest` if available
+
+#### 2. Test Data Upload
+```bash
+# Supported formats: CSV, Excel (.xlsx, .xls)
+# Upload your dataset containing the data you want to query
+# Framework automatically detects column structure
+```
+
+#### 3. Natural Language Query Testing
+```
+Example queries to test:
+- "Show me the top 5 products by revenue"
+- "What are the sales figures for the last quarter?"
+- "Find customers with orders above $10,000"
+- "Compare revenue between regions"
+```
+
+#### 4. Strategy Comparison
+The framework tests multiple strategies simultaneously:
+- **LLM Enhanced**: Uses advanced AI reasoning for complex queries
+- **Semantic Parsing**: Rule-based approach for structured queries
+- **Hybrid Approach**: Combines multiple strategies for optimal results
+
+#### 5. Quality Assessment
+- **Syntax Validation**: Checks if generated SQL is valid
+- **Execution Testing**: Runs queries against your data
+- **Result Verification**: Validates query output makes sense
+- **Performance Scoring**: 0-100 quality score with detailed breakdown
+
+### 🔄 Testing Framework Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Testing UI
+    participant Ollama as Ollama API
+    participant Translator as NL-to-SQL Translator
+    participant Strategies as Translation Strategies
+    participant DB as Data Engine
+    participant Scorer as Quality Scorer
+
+    User->>UI: Upload dataset & enter NL query
+    UI->>UI: Validate inputs
+    UI->>Ollama: Get available models
+    Ollama-->>UI: Return model list
+    User->>UI: Select model & strategy
+    UI->>Translator: Initialize with selected model
+    
+    loop For each strategy
+        UI->>Strategies: Execute translation strategy
+        Strategies->>Ollama: Send NL query with context
+        Ollama-->>Strategies: Return SQL translation
+        Strategies->>DB: Validate SQL syntax
+        DB-->>Strategies: Syntax validation result
+        Strategies->>DB: Execute SQL query
+        DB-->>Strategies: Query results
+        Strategies->>Scorer: Calculate quality score
+        Scorer-->>Strategies: Quality metrics
+        Strategies-->>UI: Return strategy results
+    end
+    
+    UI->>UI: Compare strategy results
+    UI->>UI: Generate performance report
+    UI-->>User: Display comprehensive results
+```
+
+### 📊 Understanding Test Results
+
+#### Quality Score Components:
+- **Syntax Score (0-25)**: SQL syntax correctness
+- **Execution Score (0-25)**: Query runs without errors  
+- **Logic Score (0-25)**: Query logic matches intent
+- **Performance Score (0-25)**: Execution time and efficiency
+
+#### Result Interpretation:
+- **90-100**: Excellent - Production ready
+- **75-89**: Good - Minor refinements needed
+- **60-74**: Fair - Requires optimization
+- **Below 60**: Poor - Needs significant improvement
+
+### 🎛️ Advanced Configuration
+
+#### Custom Strategy Testing
+```python
+# Add custom translation strategies
+from analyzers.strategy_1_llm_enhanced import Strategy1LLMEnhanced
+
+# Test with specific parameters
+strategy = Strategy1LLMEnhanced(
+    model_name="your-model",
+    temperature=0.1,
+    max_tokens=1000
+)
+```
+
+#### Batch Testing
+```python
+# Run batch tests with multiple queries
+test_queries = [
+    "Show top customers",
+    "Monthly revenue trends", 
+    "Product performance analysis"
+]
+
+# Execute batch testing
+python -c "from nl_to_sql_tester import NLToSQLTester; tester = NLToSQLTester(); tester.run_batch_tests(test_queries)"
+```
+
+### 🔍 Troubleshooting Testing Framework
+
+#### Common Issues:
+1. **Model Not Found**: Ensure Ollama is running and model is installed
+2. **Connection Error**: Check Ollama API endpoint (default: http://localhost:11434)
+3. **Import Errors**: Verify all dependencies are installed: `pip install -r requirements.txt`
+4. **Port Conflicts**: Change port in launcher: `demo.launch(server_port=7863)`
+
+#### Validation Tools:
+```bash
+# Validate framework syntax
+python validate_nl_to_sql_syntax.py
+
+# Test basic functionality
+python test_framework_basic.py
+
+# Check Ollama connectivity
+curl http://localhost:11434/api/tags
+```
+
+### 🎯 Best Practices for Testing
+
+1. **Start Simple**: Begin with basic queries before testing complex scenarios
+2. **Use Representative Data**: Test with datasets similar to your production data
+3. **Compare Models**: Test multiple models to find the best fit for your use case
+4. **Document Results**: Keep track of which models/strategies work best for different query types
+5. **Iterative Testing**: Refine queries based on initial results
+
+## �️ General Troubleshooting
+
+### Common Issues and Solutions
+
+#### Application Won't Start
+```bash
+# Check Python version
+python --version  # Should be 3.8+
+
+# Verify dependencies
+pip install -r requirements.txt
+
+# Check for port conflicts
+netstat -an | findstr :7871  # Windows
+lsof -i :7871                # macOS/Linux
+
+# Try alternative port
+python app_new.py --port 7872
+```
+
+#### Ollama Connection Issues
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+
+# Start Ollama service
+ollama serve
+
+# Check available models
+ollama list
+
+# Pull missing models
+ollama pull gemma3:latest
+```
+
+#### Import and Dependency Errors
+```bash
+# Validate Python environment
+python -c "import gradio, pandas, requests; print('Dependencies OK')"
+
+# Reinstall dependencies
+pip uninstall -r requirements.txt -y
+pip install -r requirements.txt
+
+# Use virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+venv\Scripts\activate     # Windows
+pip install -r requirements.txt
+```
+
+#### Data Upload Issues
+- **Large Files**: Use CSV format for files >100MB
+- **Encoding**: Ensure UTF-8 encoding for international characters
+- **Column Names**: Avoid special characters in column headers
+- **Date Formats**: Use ISO format (YYYY-MM-DD) for best results
+
+#### Performance Optimization
+```bash
+# Monitor memory usage
+python -c "import psutil; print(f'RAM: {psutil.virtual_memory().percent}%')"
+
+# Use lightweight models for faster responses
+ollama pull qwen3:8b  # Faster alternative to gemma3
+
+# Reduce dataset size for testing
+head -1000 large_file.csv > test_sample.csv
+```
+
+### 🔧 Advanced Troubleshooting
+
+#### Debug Mode
+```bash
+# Enable verbose logging
+export DEBUG=1
+python app_new.py
+
+# Enable testing framework debug
+export NL_TO_SQL_DEBUG=1
+python test_enhanced_nl_to_sql_ui.py
+```
+
+#### Network Configuration
+```bash
+# Allow external access
+python app_new.py --host 0.0.0.0
+
+# Custom Ollama endpoint
+export OLLAMA_HOST=http://remote-server:11434
+```
+
+#### File Validation Tools
+```bash
+# Validate all syntax
+python validate_nl_to_sql_syntax.py
+
+# Test framework functionality
+python test_framework_basic.py
+
+# Check file organization
+python verify_cleanup.py
+```
+
+### 📞 Getting Help
+
+1. **📋 Check Issues**: [GitHub Issues](https://github.com/sharkoil/variancepro/issues)
+2. **📖 Documentation**: Review this README and inline code comments
+3. **🔍 Search**: Use GitHub's search to find similar problems
+4. **💬 Discussions**: [Community Q&A](https://github.com/sharkoil/variancepro/discussions)
+5. **🐛 Report Bugs**: Create detailed issue reports with logs and system info
+
+#### When Reporting Issues
+Please include:
+- Python version (`python --version`)
+- Operating system and version
+- Ollama version (`ollama --version`)
+- Error messages and stack traces
+- Steps to reproduce the problem
+- Sample data (if applicable and not sensitive)
+
+## �🔮 Roadmap
 
 ### Short-term (Q3 2025)
 - **📱 Mobile App**: Native iOS/Android apps for data access on-the-go

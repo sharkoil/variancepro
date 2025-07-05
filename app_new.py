@@ -1117,6 +1117,27 @@ Provide a helpful, contextual response as Aria Sterling.
                 outputs=[chatbot, chat_input]
             )
         
+        # Add NL-to-SQL Testing Framework
+        try:
+            from ui.nl_to_sql_testing_integration import add_testing_tab_to_app
+            
+            # Find data file for testing
+            data_file_path = None
+            if hasattr(self.csv_loader, 'file_path') and self.csv_loader.file_path:
+                data_file_path = self.csv_loader.file_path
+            elif hasattr(self, 'current_data') and self.current_data is not None:
+                # Use current data context
+                pass
+            
+            # Add testing tab
+            interface = add_testing_tab_to_app(interface, data_file_path, self.llm_interpreter)
+            print("✅ NL-to-SQL Testing Framework integrated successfully")
+            
+        except Exception as e:
+            print(f"⚠️ Could not add NL-to-SQL Testing Framework: {e}")
+            # Continue without testing framework
+            pass
+        
         return interface
 
     def _classify_user_intent(self, query: str) -> Optional[str]:
