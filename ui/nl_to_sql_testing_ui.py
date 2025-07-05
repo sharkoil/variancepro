@@ -98,27 +98,158 @@ class NLToSQLTestingUI:
         Returns:
             Gradio Blocks interface
         """
-        # Custom CSS to ensure black text
+        # Custom CSS to fix color scheme and improve readability
         custom_css = """
-        body, .gradio-container {
+        /* Global light theme override */
+        body, .gradio-container, .app, .main-wrap {
             color: #000000 !important;
             background-color: #ffffff !important;
         }
-        .gr-textbox, .gr-dropdown, .gr-button, .gr-html, .gr-markdown {
+        
+        /* All input elements */
+        .gr-textbox, .gr-dropdown, .gr-button, .gr-html, .gr-markdown, 
+        .gr-textbox input, .gr-dropdown select, input, textarea, select {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+            border: 1px solid #ddd !important;
+        }
+        
+        /* Buttons */
+        .gr-button {
+            background-color: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
             color: #000000 !important;
         }
-        .gr-html * {
-            color: inherit !important;
+        
+        .gr-button:hover {
+            background-color: #e9ecef !important;
+            color: #000000 !important;
         }
+        
+        .gr-button.primary {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: #ffffff !important;
+        }
+        
+        .gr-button.primary:hover {
+            background-color: #0056b3 !important;
+            border-color: #0056b3 !important;
+            color: #ffffff !important;
+        }
+        
+        /* HTML content and markdown */
+        .gr-html, .gr-html *, .gr-markdown, .gr-markdown * {
+            color: #000000 !important;
+            background-color: transparent !important;
+        }
+        
+        /* Tabs */
         .gr-tab-nav {
             background-color: #f8f9fa !important;
+            border-bottom: 1px solid #dee2e6 !important;
         }
+        
         .gr-tab-nav .gr-tab {
             color: #000000 !important;
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        .gr-tab-nav .gr-tab.selected {
+            background-color: #007bff !important;
+            color: #ffffff !important;
+        }
+        
+        /* Panels and containers */
+        .gr-panel, .gr-form, .gr-box {
+            background-color: #ffffff !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        
+        /* Dropdown options */
+        .gr-dropdown .choices__list {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        
+        .gr-dropdown .choices__item {
+            color: #000000 !important;
+            background-color: #ffffff !important;
+        }
+        
+        .gr-dropdown .choices__item--highlighted {
+            background-color: #007bff !important;
+            color: #ffffff !important;
+        }
+        
+        /* Text areas and inputs */
+        .gr-textbox textarea, .gr-textbox input {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #ced4da !important;
+        }
+        
+        .gr-textbox textarea:focus, .gr-textbox input:focus {
+            border-color: #007bff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+        
+        /* Labels */
+        .gr-form label, .gr-textbox label, .gr-dropdown label, .gr-button label {
+            color: #000000 !important;
+            font-weight: 500 !important;
+        }
+        
+        /* Success/Error messages styling */
+        .success-message {
+            color: #155724 !important;
+            background-color: #d4edda !important;
+            border: 1px solid #c3e6cb !important;
+            padding: 10px !important;
+            border-radius: 4px !important;
+            margin: 10px 0 !important;
+        }
+        
+        .error-message {
+            color: #721c24 !important;
+            background-color: #f8d7da !important;
+            border: 1px solid #f5c6cb !important;
+            padding: 10px !important;
+            border-radius: 4px !important;
+            margin: 10px 0 !important;
+        }
+        
+        .info-message {
+            color: #004085 !important;
+            background-color: #cce7ff !important;
+            border: 1px solid #80c7ff !important;
+            padding: 10px !important;
+            border-radius: 4px !important;
+            margin: 10px 0 !important;
+        }
+        
+        /* Fix for any remaining dark elements */
+        * {
+            color: inherit !important;
+        }
+        
+        /* Force light theme on all child elements */
+        .dark, .dark *, [data-theme="dark"], [data-theme="dark"] * {
+            color: #000000 !important;
+            background-color: #ffffff !important;
         }
         """
         
-        with gr.Blocks(title="NL-to-SQL Strategy Testing", theme=gr.themes.Default(), css=custom_css) as interface:
+        with gr.Blocks(
+            title="NL-to-SQL Strategy Testing", 
+            theme=gr.themes.Soft(
+                primary_hue="blue",
+                secondary_hue="gray",
+                neutral_hue="gray"
+            ), 
+            css=custom_css
+        ) as interface:
             gr.Markdown("# 🧪 **NL-to-SQL Strategy Testing Framework**")
             gr.Markdown("Test and compare different strategies for natural language to SQL translation")
             
