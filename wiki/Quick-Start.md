@@ -7,10 +7,10 @@ Get VariancePro running in minutes with this streamlined guide.
 ### Main Application
 ```bash
 # Start the main VariancePro application
-python app_new.py
+python app.py
 
 # Alternative methods
-python app.py
+python start_app.bat
 start_app.bat  # Windows batch launcher
 ```
 
@@ -117,7 +117,7 @@ python test_enhanced_nl_to_sql_ui.py
 ### Change Default Ports
 ```bash
 # Main application
-python app_new.py --port 7872
+python app.py --port 7872
 
 # Testing framework
 # Edit test_enhanced_nl_to_sql_ui.py line with server_port=7863

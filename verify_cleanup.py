@@ -11,8 +11,8 @@ def test_import(module_name, description):
     """Test importing a module and report results"""
     try:
         print(f"  ▶️ {description}... ", end="")
-        if module_name == "app_new":
-            from app_new import QuantCommanderApp
+        if module_name == "app":
+            from app import QuantCommanderApp
         elif module_name == "analyzers":
             from analyzers import (
                 BaseAnalyzer, ContributorAnalyzer, FinancialAnalyzer,
@@ -44,7 +44,7 @@ def main():
         ("data", "Data processing module"),
         ("ai", "AI components"),
         ("analyzers", "All analyzers (including enhanced translator)"),
-        ("app_new", "Main application")
+        ("app", "Main application")
     ]
     
     success_count = 0

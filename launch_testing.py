@@ -15,7 +15,7 @@ def main():
     print()
     
     # Check if we're in the right directory
-    if not os.path.exists("app_new.py"):
+    if not os.path.exists("app.py"):
         print("❌ Please run this from the VariancePro root directory")
         sys.exit(1)
     
@@ -33,7 +33,7 @@ def main():
         print("\n🚀 Launching full app with integrated testing...")
         print("📍 Look for the '🧪 NL-to-SQL Testing' tab in the interface")
         print("🌐 Opening at: http://localhost:7871")
-        subprocess.run([sys.executable, "app_new.py"])
+        subprocess.run([sys.executable, "app.py"])
     
     elif choice == "2":
         print("\n🧪 Launching standalone testing interface...")

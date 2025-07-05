@@ -108,10 +108,10 @@ class SessionManager:
     
     def create_welcome_message(self) -> str:
         """
-        Create a welcome message with session information
+        Create a welcome message with session information and expandable content
         
         Returns:
-            Formatted welcome message with session details
+            Formatted welcome message with read more/less functionality
         """
         info = self.get_session_info()
         
@@ -119,7 +119,69 @@ class SessionManager:
 
 📊 Upload your financial data and chat with me for comprehensive insights and analysis!
 
-🆔 **Session ID**: {info['session_id']}
+<div class="expandable-content" id="welcome-details">
+🆔 **Session ID**: {info['session_id']}<span class="dots">...</span><span class="more-text">
 ⏰ **Started**: {info['formatted_start']}
 
-💼✨ Ready to transform your data into strategic intelligence!"""
+## 🚀 What I Can Do For You:
+
+### 📈 **Analysis Types**
+• **Contribution Analysis**: 80/20 Pareto analysis to identify top performers
+• **Variance Analysis**: Budget vs Actual performance tracking
+• **Trend Analysis**: Time series patterns and trailing twelve months (TTM)
+• **Top/Bottom N**: Rankings and performance comparisons
+• **Custom SQL Queries**: Natural language to SQL translation
+
+### 🎯 **Smart Features**
+• **Auto-detect data patterns** in your CSV files
+• **Context-aware responses** based on your specific data
+• **Interactive field picker** for building queries
+• **Real-time insights** with AI-powered analysis
+• **Professional reporting** with charts and tables
+
+### 💡 **How to Get Started**
+1. **Upload** your CSV file using the upload button
+2. **Explore** the auto-generated data summary
+3. **Ask questions** like "analyze contribution" or "show trends"
+4. **Use quick buttons** for instant analysis
+5. **Click field names** to build custom queries
+
+### 🔧 **Advanced Capabilities**
+• Multi-threaded SQL processing for large datasets
+• Intelligent column detection (dates, categories, financials)
+• Business context integration with news analysis
+• Session management with full history tracking
+• Export-ready formatted reports
+
+💼✨ Ready to transform your data into strategic intelligence!</span>
+</div>
+
+<script>
+function toggleWelcomeContent() {{
+    const container = document.getElementById('welcome-details');
+    const btn = document.getElementById('welcome-toggle-btn');
+    
+    if (container && btn) {{
+        if (container.classList.contains('expanded')) {{
+            container.classList.remove('expanded');
+            btn.textContent = 'Read More';
+        }} else {{
+            container.classList.add('expanded');
+            btn.textContent = 'Read Less';
+        }}
+    }}
+}}
+
+// Auto-run when content loads
+setTimeout(() => {{
+    const container = document.getElementById('welcome-details');
+    if (container && !document.getElementById('welcome-toggle-btn')) {{
+        const toggleBtn = document.createElement('span');
+        toggleBtn.id = 'welcome-toggle-btn';
+        toggleBtn.className = 'read-more-btn';
+        toggleBtn.textContent = 'Read More';
+        toggleBtn.onclick = toggleWelcomeContent;
+        container.parentNode.appendChild(toggleBtn);
+    }}
+}}, 500);
+</script>"""

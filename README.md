@@ -89,10 +89,10 @@ ollama list
 ### 4. Run the Main Application
 ```bash
 # Start the main VariancePro application
-python app_new.py
-
-# Alternative: Use the launcher script
 python app.py
+
+# Alternative: Use the launcher script (if available)
+python start_app.bat
 
 # Windows batch file launcher
 start_app.bat
@@ -337,7 +337,7 @@ variancepro/
 │   └── llm_handler.py         # LLM communication utilities
 ├── tests/                      # Comprehensive unit tests
 ├── sample_data/               # Example datasets for testing
-├── app_new.py                 # Main application orchestrator
+├── app.py                     # Main application orchestrator
 └── requirements.txt           # Python dependencies
 ```
 
@@ -887,7 +887,7 @@ netstat -an | findstr :7871  # Windows
 lsof -i :7871                # macOS/Linux
 
 # Try alternative port
-python app_new.py --port 7872
+python app.py --port 7872
 ```
 
 #### Ollama Connection Issues
@@ -945,7 +945,7 @@ head -1000 large_file.csv > test_sample.csv
 ```bash
 # Enable verbose logging
 export DEBUG=1
-python app_new.py
+python app.py
 
 # Enable testing framework debug
 export NL_TO_SQL_DEBUG=1
@@ -955,7 +955,7 @@ python test_enhanced_nl_to_sql_ui.py
 #### Network Configuration
 ```bash
 # Allow external access
-python app_new.py --host 0.0.0.0
+python app.py --host 0.0.0.0
 
 # Custom Ollama endpoint
 export OLLAMA_HOST=http://remote-server:11434

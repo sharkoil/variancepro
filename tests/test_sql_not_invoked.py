@@ -16,7 +16,7 @@ def test_sql_not_invoked_for_analyzers():
     try:
         print("🔄 Testing that SQL is NOT invoked for existing analyzer queries...")
         
-        from app_new import QuantCommanderApp
+        from app import QuantCommanderApp
         app = QuantCommanderApp()
         
         # Create test data

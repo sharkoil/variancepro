@@ -28,7 +28,8 @@ class ChatHandler:
             app_instance: Reference to the main QuantCommanderApp instance
         """
         self.app = app_instance
-        self.session_manager = SessionManager()
+        # Use the app's session manager instead of creating a new one
+        self.session_manager = app_instance.session_manager
         
     def chat_response(self, message: str, history: List[Dict]) -> Tuple[List[Dict], str]:
         """

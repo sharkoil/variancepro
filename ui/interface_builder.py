@@ -56,12 +56,6 @@ class InterfaceBuilder:
                 status_display, refresh_btn, file_input, data_preview, data_summary_state,
                 chatbot, chat_input, send_btn, quick_buttons, field_components
             )
-            
-            # Try to add NL-to-SQL Testing Framework
-            try:
-                interface = self._add_testing_framework(interface)
-            except Exception as e:
-                print(f"⚠️ Could not add NL-to-SQL Testing Framework: {e}")
         
         return interface
     
@@ -126,6 +120,48 @@ class InterfaceBuilder:
             background: rgba(248, 249, 250, 0.95) !important;
             border: 1px solid #e9ecef !important;
             color: #495057 !important;
+        }
+        
+        /* Read More/Less functionality styling */
+        .expandable-content .more-text {
+            display: none !important;
+        }
+        
+        .expandable-content .dots {
+            display: inline !important;
+        }
+        
+        .expandable-content.expanded .more-text {
+            display: inline !important;
+        }
+        
+        .expandable-content.expanded .dots {
+            display: none !important;
+        }
+        
+        .read-more-btn {
+            color: #2196f3 !important;
+            cursor: pointer !important;
+            text-decoration: underline !important;
+            font-weight: 600 !important;
+            margin-left: 5px !important;
+            user-select: none !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .read-more-btn:hover {
+            color: #1976d2 !important;
+            text-decoration: none !important;
+        }
+        
+        /* Override Gradio's link styling for read more button */
+        .message .read-more-btn {
+            color: #2196f3 !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            font-size: inherit !important;
+            text-decoration: underline !important;
         }
         """
     
@@ -316,7 +352,10 @@ class InterfaceBuilder:
                        "<i>Upload data to see available fields</i>"
             
             upload_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[DEBUG] File upload starting: {file.name} at {upload_timestamp}")
+            
             preview, data_summary, analysis_message = self.app.upload_csv(file)
+            print(f"[DEBUG] Upload_csv returned: preview={len(preview) if preview else 0} chars, analysis_message={analysis_message is not None}")
             
             # Generate field picker HTML
             date_html = self._generate_field_picker_html(
@@ -339,6 +378,7 @@ class InterfaceBuilder:
             # Start with the primary analysis message if available
             updated_chatbot = chatbot
             if analysis_message:
+                print(f"[DEBUG] Adding analysis message to chat: {len(analysis_message['content'])} chars")
                 bot_message = self.app.chat_handler.session_manager.add_timestamp_to_message(
                     analysis_message['content']
                 )
@@ -346,53 +386,37 @@ class InterfaceBuilder:
                     {"role": "user", "content": f"📁 CSV File Loaded - {upload_timestamp}"}, 
                     {"role": "assistant", "content": bot_message}
                 ]
+                print(f"[DEBUG] Updated chatbot length: {len(updated_chatbot)}")
+            else:
+                print("[DEBUG] No analysis message received from upload_csv")
+                # Add a basic message if no analysis message
+                basic_message = f"📊 **DATA LOADED SUCCESSFULLY**\n\n{data_summary if data_summary else 'File uploaded and processed.'}"
+                timestamped_basic = self.app.chat_handler.session_manager.add_timestamp_to_message(basic_message)
+                updated_chatbot = updated_chatbot + [
+                    {"role": "user", "content": f"📁 CSV File Loaded - {upload_timestamp}"}, 
+                    {"role": "assistant", "content": timestamped_basic}
+                ]
+                print(f"[DEBUG] Added basic message, chatbot length: {len(updated_chatbot)}")
             
-            # Add News Analysis as second message
+            # Add News Analysis as second message (simplified version)
             try:
                 print("[DEBUG] Starting news analysis...")
-                news_results = self.app.news_analyzer.analyze_data_context(
-                    data=self.app.current_data,
-                    column_info=self.app.csv_loader.column_info
-                )
-                
-                if news_results and isinstance(news_results, dict) and news_results.get('search_queries'):
-                    print(f"[DEBUG] News search queries: {news_results.get('search_queries')}")
-                    # Display up to 6 news items, 3 per location/query
-                    formatted_results = news_results.copy()
-                    if len(formatted_results.get('news_items', [])) > 6:
-                        formatted_results['news_items'] = formatted_results['news_items'][:6]
-                    news_content = self.app.news_analyzer.format_news_for_chat(formatted_results)
-                    timestamped_news = self.app.chat_handler.session_manager.add_timestamp_to_message(news_content)
-                    updated_chatbot = updated_chatbot + [
-                        {"role": "user", "content": f"📰 Business Context Analysis - {upload_timestamp}"}, 
-                        {"role": "assistant", "content": timestamped_news}
-                    ]
-                    print(f"[DEBUG] News analysis added to chat")
-                else:
-                    print("[DEBUG] No news results found or no location data detected")
-                    fallback_news_content = "📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo location data detected in your dataset for relevant business news analysis. Focus on core data metrics instead."
-                    timestamped_fallback = self.app.chat_handler.session_manager.add_timestamp_to_message(fallback_news_content)
-                    updated_chatbot = updated_chatbot + [
-                        {"role": "user", "content": f"📰 Business Context Analysis - {upload_timestamp}"}, 
-                        {"role": "assistant", "content": timestamped_fallback}
-                    ]
+                # Skip news analysis for now to isolate the issue
+                print("[DEBUG] Skipping news analysis to debug upload issue")
                     
             except Exception as e:
                 print(f"[DEBUG] News analysis error: {str(e)}")
-                # Add error message to chat as well
-                error_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\n⚠️ Unable to fetch business context: {str(e)}\n\nContinuing with data analysis..."
-                timestamped_error = self.app.chat_handler.session_manager.add_timestamp_to_message(error_content)
-                updated_chatbot = updated_chatbot + [
-                    {"role": "user", "content": f"📰 Business Context Analysis - {upload_timestamp}"}, 
-                    {"role": "assistant", "content": timestamped_error}
-                ]
             
+            print(f"[DEBUG] Final chatbot length: {len(updated_chatbot)}")
+            print(f"[DEBUG] Returning: preview, data_summary, updated_chatbot({len(updated_chatbot)}), field_htmls")
             return preview, data_summary, updated_chatbot, date_html, numeric_html, category_html, value_html
         
         file_input.change(
             fn=handle_file_upload,
             inputs=[file_input, chatbot],
-            outputs=[data_preview, data_summary_state, chatbot] + list(field_components.values())
+            outputs=[data_preview, data_summary_state, chatbot, 
+                    field_components['date'], field_components['numeric'], 
+                    field_components['category'], field_components['value']]
         )
         
         # Chat event handlers
@@ -515,27 +539,3 @@ class InterfaceBuilder:
             html_parts.append(f"<br><small style='color: #666; font-style: italic;'>... and {len(columns) - 8} more columns</small>")
         
         return ''.join(html_parts)
-    
-    def _add_testing_framework(self, interface):
-        """Add NL-to-SQL Testing Framework if available"""
-        try:
-            from ui.nl_to_sql_testing_integration import add_testing_tab_to_app
-            
-            # Find data file for testing
-            data_file_path = None
-            if hasattr(self.app.csv_loader, 'file_path') and self.app.csv_loader.file_path:
-                data_file_path = self.app.csv_loader.file_path
-            elif hasattr(self.app, 'current_data') and self.app.current_data is not None:
-                # Use current data context
-                pass
-            
-            # Add testing tab
-            interface = add_testing_tab_to_app(interface, data_file_path, self.app.llm_interpreter)
-            print("✅ NL-to-SQL Testing Framework integrated successfully")
-            
-        except Exception as e:
-            print(f"⚠️ Could not add NL-to-SQL Testing Framework: {e}")
-            # Continue without testing framework
-            pass
-        
-        return interface
