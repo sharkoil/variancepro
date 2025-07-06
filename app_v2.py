@@ -1,5 +1,5 @@
 """
-VariancePro v2.0 - Refactored Modular Architecture
+Quant Commander v2.0 - AI-Powered Financial Intelligence Platform
 Main application orchestrator - focuses on interface coordination only
 """
 
@@ -14,9 +14,9 @@ from handlers.quick_action_handler import QuickActionHandler
 from analyzers.variance_analyzer import VarianceAnalyzer
 
 
-class VarianceProApp:
+class QuantCommanderApp:
     """
-    Main application orchestrator for VariancePro v2.0
+    Main application orchestrator for Quant Commander v2.0
     
     This class has been refactored to follow modular design principles.
     It now focuses solely on coordinating components and creating the interface.
@@ -36,7 +36,7 @@ class VarianceProApp:
         # Initialize variance analyzer
         self.variance_analyzer = VarianceAnalyzer()
         
-        print("🚀 VariancePro v2.0 modular architecture initialized")
+        print("🚀 Quant Commander v2.0 modular architecture initialized")
     
     def upload_csv(self, file, history: List[Dict]) -> tuple[str, List[Dict]]:
         """
@@ -84,10 +84,14 @@ class VarianceProApp:
         Returns:
             gr.Blocks: The complete Gradio interface
         """
-        with gr.Blocks(title="VariancePro v2.0", theme=gr.themes.Soft()) as interface:
-            # Header
-            gr.Markdown("# 📊 VariancePro v2.0")
-            gr.Markdown("*AI-Powered Financial Data Analysis with Modular Architecture*")
+        with gr.Blocks(title="Quant Commander v2.0", theme=gr.themes.Soft()) as interface:
+            # Header with logo
+            with gr.Row():
+                with gr.Column(scale=1):
+                    gr.Image("static/squarelogo.png", height=120, width=120, container=False, show_label=False)
+                with gr.Column(scale=4):
+                    gr.Markdown("# 📊 Quant Commander v2.0")
+                    gr.Markdown("*AI-Powered Financial Intelligence Platform*")
             
             with gr.Row():
                 with gr.Column(scale=1):
@@ -117,7 +121,7 @@ class VarianceProApp:
                         type="messages",
                         value=[{
                             "role": "assistant", 
-                            "content": "👋 Welcome to VariancePro v2.0 with modular architecture! Upload your CSV file and I'll analyze it for you."
+                            "content": "👋 Welcome to Quant Commander v2.0! Upload your financial data and I'll provide comprehensive analysis with AI-powered insights."
                         }]
                     )
                     
@@ -147,7 +151,7 @@ class VarianceProApp:
             # Footer with status
             with gr.Row():
                 gr.Markdown(f"""
-**Session**: `{self.app_core.session_id}` | **Ollama**: {self.app_core.ollama_status} | **Status**: {self.app_core.gradio_status} | **Architecture**: Modular v2.0
+**Session**: `{self.app_core.session_id}` | **Ollama**: {self.app_core.ollama_status} | **Status**: {self.app_core.gradio_status} | **Quant Commander**: v2.0
                 """)
             
             # Event bindings - connecting UI to handlers
@@ -217,10 +221,10 @@ class VarianceProApp:
 
 
 def main():
-    """Main entry point for VariancePro v2.0"""
-    print("🚀 Starting VariancePro v2.0 with Modular Architecture...")
+    """Main entry point for Quant Commander v2.0"""
+    print("🚀 Starting Quant Commander v2.0 with Modular Architecture...")
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     interface = app.create_interface()
     
     print("✅ Modular application ready")

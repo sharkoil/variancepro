@@ -1,7 +1,7 @@
-# VariancePro v2.0 - AI-Powered Financial Intelligence Platform
+# Quant Commander v2.0 - AI-Powered Financial Intelligence Platform
 
 <div align="center">
-  <img src="logo.png" alt="VariancePro Logo" width="250"/>
+  <img src="static/squarelogo.png" alt="Quant Commander Logo" width="250"/>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -12,7 +12,7 @@
 
 ## 🚀 Introduction
 
-VariancePro v2.0 is a completely refactored, AI-powered financial intelligence platform that transforms your CSV data into comprehensive business insights. Built with a modular architecture following industry best practices, it features advanced variance analysis capabilities and an intuitive chat interface.
+Quant Commander v2.0 is a completely refactored, AI-powered financial intelligence platform that transforms your CSV data into comprehensive business insights. Built with a modular architecture following industry best practices, it features advanced variance analysis capabilities and an intuitive chat interface.
 
 **Key Features:**
 - 🤖 **AI Chat Interface**: Natural language queries with intelligent responses
@@ -26,7 +26,7 @@ VariancePro v2.0 is a completely refactored, AI-powered financial intelligence p
 
 ## 🏗️ Architecture v2.0
 
-VariancePro v2.0 features a completely refactored modular architecture:
+Quant Commander v2.0 features a completely refactored modular architecture:
 
 ```
 app_v2.py (Main Orchestrator - 231 lines, down from 905)
@@ -55,7 +55,7 @@ app_v2.py (Main Orchestrator - 231 lines, down from 905)
 
 ## 📊 Variance Analysis Features
 
-VariancePro v2.0 introduces comprehensive variance analysis capabilities that automatically detect and analyze comparison patterns in your data:
+Quant Commander v2.0 introduces comprehensive variance analysis capabilities that automatically detect and analyze comparison patterns in your data:
 
 ### Supported Variance Types
 - **Actual vs Planned**: Performance against targets and forecasts
@@ -138,10 +138,10 @@ ollama list
 
 ### Main Application
 ```bash
-# Start VariancePro
-python app_new.py
+# Start Quant Commander
+python app_v2.py
 ```
-Access at: `http://localhost:7871`
+Access at: `http://localhost:7873`
 
 ### Testing Framework
 ```bash
@@ -315,7 +315,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
   <h3>🚀 Transform Your Financial Data Into Strategic Intelligence</h3>
-  <p><em>Where Artificial Intelligence Meets Business Insight</em></p>
+  <p><em>Where Artificial Intelligence Meets Financial Excellence</em></p>
   
   **🎯 Professional Analysis • 🧠 AI-Powered Insights • 🔒 Privacy-First Architecture**
   
