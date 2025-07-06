@@ -385,6 +385,150 @@ class BaseAnalyzer(ABC):
         
         return cleaned_data
     
+    def perform_top_n_analysis(self, data: pd.DataFrame, n: int = 5, 
+                              exclude_date_cols: bool = True) -> Dict[str, Any]:
+        """
+        Perform Top N analysis across all numeric columns
+        
+        Args:
+            data: Input DataFrame
+            n: Number of top records to return
+            exclude_date_cols: Whether to exclude date columns from ranking
+            
+        Returns:
+            Dictionary with top N analysis results
+        """
+        results = {}
+        
+        # Identify numeric columns for analysis
+        numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
+        
+        # Identify date columns to handle specially
+        date_cols = []
+        for col in data.columns:
+            if any(date_word in col.lower() for date_word in ['date', 'time', 'timestamp', 'created', 'updated', 'day', 'month', 'year']):
+                date_cols.append(col)
+        
+        # Remove date columns from numeric analysis if requested
+        if exclude_date_cols:
+            numeric_cols = [col for col in numeric_cols if col not in date_cols]
+        
+        # Perform Top N analysis for each numeric column
+        for col in numeric_cols:
+            if col in data.columns:
+                top_n_data = data.nlargest(n, col)
+                results[f'top_{n}_{col}'] = {
+                    'column': col,
+                    'type': 'top',
+                    'n': n,
+                    'data': top_n_data.to_dict('records'),
+                    'total_sum': float(top_n_data[col].sum()),
+                    'percentage_of_total': float(top_n_data[col].sum() / data[col].sum() * 100) if data[col].sum() != 0 else 0
+                }
+        
+        # Add date-based analysis if date columns exist
+        if date_cols:
+            results['date_analysis'] = self._analyze_by_date_dimension(data, date_cols[0], n)
+        
+        return results
+
+    def perform_bottom_n_analysis(self, data: pd.DataFrame, n: int = 5,
+                                 exclude_date_cols: bool = True) -> Dict[str, Any]:
+        """
+        Perform Bottom N analysis across all numeric columns
+        
+        Args:
+            data: Input DataFrame  
+            n: Number of bottom records to return
+            exclude_date_cols: Whether to exclude date columns from ranking
+            
+        Returns:
+            Dictionary with bottom N analysis results
+        """
+        results = {}
+        
+        # Identify numeric columns for analysis
+        numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
+        
+        # Identify date columns to handle specially  
+        date_cols = []
+        for col in data.columns:
+            if any(date_word in col.lower() for date_word in ['date', 'time', 'timestamp', 'created', 'updated', 'day', 'month', 'year']):
+                date_cols.append(col)
+        
+        # Remove date columns from numeric analysis if requested
+        if exclude_date_cols:
+            numeric_cols = [col for col in numeric_cols if col not in date_cols]
+        
+        # Perform Bottom N analysis for each numeric column
+        for col in numeric_cols:
+            if col in data.columns:
+                bottom_n_data = data.nsmallest(n, col)
+                results[f'bottom_{n}_{col}'] = {
+                    'column': col,
+                    'type': 'bottom', 
+                    'n': n,
+                    'data': bottom_n_data.to_dict('records'),
+                    'total_sum': float(bottom_n_data[col].sum()),
+                    'percentage_of_total': float(bottom_n_data[col].sum() / data[col].sum() * 100) if data[col].sum() != 0 else 0
+                }
+        
+        # Add date-based analysis if date columns exist
+        if date_cols:
+            results['date_analysis'] = self._analyze_by_date_dimension(data, date_cols[0], n, analysis_type='bottom')
+        
+        return results
+
+    def _analyze_by_date_dimension(self, data: pd.DataFrame, date_col: str, n: int = 5, 
+                                  analysis_type: str = 'top') -> Dict[str, Any]:
+        """
+        Special handling for date dimension analysis
+        
+        Args:
+            data: Input DataFrame
+            date_col: Date column name
+            n: Number of records to return
+            analysis_type: 'top' or 'bottom'
+            
+        Returns:
+            Dictionary with date-based analysis
+        """
+        try:
+            # Convert date column
+            data_copy = data.copy()
+            data_copy[date_col] = pd.to_datetime(data_copy[date_col], errors='coerce')
+            
+            # Remove rows with invalid dates
+            data_copy = data_copy.dropna(subset=[date_col])
+            
+            # Find numeric columns for aggregation
+            numeric_cols = data_copy.select_dtypes(include=[np.number]).columns.tolist()
+            
+            if not numeric_cols:
+                return {'error': 'No numeric columns found for date analysis'}
+            
+            # Group by date and sum numeric columns
+            date_summary = data_copy.groupby(date_col)[numeric_cols].sum().reset_index()
+            
+            # Get most recent dates (for top) or oldest dates (for bottom)
+            if analysis_type == 'top':
+                date_analysis = date_summary.nlargest(n, date_col)
+            else:
+                date_analysis = date_summary.nsmallest(n, date_col)
+            
+            return {
+                'analysis_type': f'{analysis_type}_by_date',
+                'date_column': date_col,
+                'n': n,
+                'data': date_analysis.to_dict('records'),
+                'date_range': {
+                    'start': str(date_analysis[date_col].min()),
+                    'end': str(date_analysis[date_col].max())
+                }
+            }
+        except Exception as e:
+            return {'error': f'Date analysis failed: {str(e)}'}
+    
     def calculate_summary_stats(self, data: pd.DataFrame, column: str) -> Dict[str, float]:
         """
         Calculate summary statistics for a numeric column

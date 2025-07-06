@@ -31,7 +31,6 @@ from ai.llm_interpreter import LLMInterpreter
 from ai.narrative_generator import NarrativeGenerator
 from ui.event_handlers import UIEventHandlers
 from ui.chat_interface_enhancer import ChatInterfaceEnhancer
-from ui.advanced_interface_components import FieldPicker, DataVisualizer, ExportManager
 
 class QuantCommanderApp:
     """Main financial analysis application class with modular architecture"""
@@ -67,11 +66,6 @@ class QuantCommanderApp:
         # Initialize UI event handlers and enhancers
         self.event_handlers = UIEventHandlers(self)
         self.chat_enhancer = ChatInterfaceEnhancer(character_threshold=150)
-        
-        # Initialize advanced interface components
-        self.field_picker = FieldPicker(self)
-        self.data_visualizer = DataVisualizer(self)
-        self.export_manager = ExportManager(self)
         
         # Application state
         self.current_data = None
@@ -150,193 +144,84 @@ class QuantCommanderApp:
             return history, ""
     
     def create_interface(self):
-        """Create the Gradio interface with advanced features"""
+        """Create the Gradio interface"""
         with gr.Blocks(title="AI Financial Analysis", theme=gr.themes.Soft()) as interface:
             # Header
             gr.Markdown("# 🏦 AI-Powered Financial Analysis")
             gr.Markdown("*Upload your financial data and chat with AI for comprehensive insights*")
             
-            # Main interface with tabs
-            with gr.Tabs():
-                with gr.TabItem("💬 Chat Analysis"):
-                    self._create_chat_tab()
+            with gr.Row():
+                with gr.Column(scale=1):
+                    # File upload section
+                    gr.Markdown("### 📊 Upload Data")
+                    file_input = gr.File(
+                        label="CSV File",
+                        file_types=[".csv"],
+                        type="filepath"
+                    )
+                    
+                    # Data preview
+                    data_preview = gr.Textbox(
+                        label="Data Summary",
+                        value="Upload a CSV file to get started with AI-powered analysis",
+                        lines=12,
+                        interactive=False
+                    )
                 
-                with gr.TabItem("🎯 Query Builder"):
-                    self._create_query_builder_tab()
-                
-                with gr.TabItem("📊 Visualizations"):
-                    self._create_visualization_tab()
-                
-                with gr.TabItem("💾 Export & Reports"):
-                    self._create_export_tab()
+                with gr.Column(scale=2):
+                    # Chat interface
+                    gr.Markdown("### 💬 Chat Interface")
+                    
+                    chatbot = gr.Chatbot(
+                        label="Financial Analysis Chat",
+                        height=400,
+                        type="messages",
+                        value=[{"role": "assistant", "content": "👋 Welcome! Upload your CSV file and I'll help you analyze your financial data."}]
+                    )
+                    
+                    with gr.Row():
+                        chat_input = gr.Textbox(
+                            placeholder="Ask about your data: 'analyze contribution', 'summary', etc.",
+                            label="Your Message",
+                            scale=4
+                        )
+                        send_btn = gr.Button("Send 📤", scale=1, variant="primary")
+                    
+                    # Quick action buttons
+                    gr.Markdown("**Quick Actions:**")
+                    with gr.Row():
+                        contrib_btn = gr.Button("📈 Contribution", size="sm")
+                        variance_btn = gr.Button("💰 Variance", size="sm")
+                        trend_btn = gr.Button("📊 Trends", size="sm")
+                        summary_btn = gr.Button("📋 Summary", size="sm")
+                    
+                    # Advanced actions
+                    gr.Markdown("**Advanced Features:**")
+                    with gr.Row():
+                        sql_test_btn = gr.Button("🧪 Test SQL", size="sm", variant="secondary")
+                        news_btn = gr.Button("📰 News Context", size="sm", variant="secondary")
+                        export_btn = gr.Button("💾 Export", size="sm", variant="secondary")
+            
+            # Collect components for event binding
+            components = {
+                'file_input': file_input,
+                'data_preview': data_preview,
+                'chatbot': chatbot,
+                'chat_input': chat_input,
+                'send_btn': send_btn,
+                'contrib_btn': contrib_btn,
+                'variance_btn': variance_btn,
+                'trend_btn': trend_btn,
+                'summary_btn': summary_btn,
+                'sql_test_btn': sql_test_btn,
+                'news_btn': news_btn,
+                'export_btn': export_btn
+            }
+            
+            # Bind all events using the event handlers
+            self.event_handlers.bind_events(components)
         
         return interface
-    
-    def _create_chat_tab(self):
-        """Create the main chat interface tab"""
-        with gr.Row():
-            with gr.Column(scale=1):
-                # File upload section
-                gr.Markdown("### 📊 Upload Data")
-                file_input = gr.File(
-                    label="CSV File",
-                    file_types=[".csv"],
-                    type="filepath"
-                )
-                
-                # Data preview
-                data_preview = gr.Textbox(
-                    label="Data Summary",
-                    value="Upload a CSV file to get started with AI-powered analysis",
-                    lines=12,
-                    interactive=False
-                )
-            
-            with gr.Column(scale=2):
-                # Chat interface
-                gr.Markdown("### 💬 Chat Interface")
-                
-                chatbot = gr.Chatbot(
-                    label="Financial Analysis Chat",
-                    height=400,
-                    type="messages",
-                    value=[{"role": "assistant", "content": "👋 Welcome! Upload your CSV file and I'll help you analyze your financial data."}]
-                )
-                
-                with gr.Row():
-                    chat_input = gr.Textbox(
-                        placeholder="Ask about your data: 'analyze contribution', 'summary', etc.",
-                        label="Your Message",
-                        scale=4
-                    )
-                    send_btn = gr.Button("Send 📤", scale=1, variant="primary")
-                
-                # Quick action buttons
-                gr.Markdown("**Quick Actions:**")
-                with gr.Row():
-                    contrib_btn = gr.Button("📈 Contribution", size="sm")
-                    variance_btn = gr.Button("💰 Variance", size="sm")
-                    trend_btn = gr.Button("📊 Trends", size="sm")
-                    summary_btn = gr.Button("📋 Summary", size="sm")
-                
-                # Advanced actions
-                gr.Markdown("**Advanced Features:**")
-                with gr.Row():
-                    sql_test_btn = gr.Button("🧪 Test SQL", size="sm", variant="secondary")
-                    news_btn = gr.Button("📰 News Context", size="sm", variant="secondary")
-                    export_btn = gr.Button("💾 Export", size="sm", variant="secondary")
-        
-        # Store components for event binding
-        self.chat_components = {
-            'file_input': file_input,
-            'data_preview': data_preview,
-            'chatbot': chatbot,
-            'chat_input': chat_input,
-            'send_btn': send_btn,
-            'contrib_btn': contrib_btn,
-            'variance_btn': variance_btn,
-            'trend_btn': trend_btn,
-            'summary_btn': summary_btn,
-            'sql_test_btn': sql_test_btn,
-            'news_btn': news_btn,
-            'export_btn': export_btn
-        }
-        
-        # Bind events
-        self.event_handlers.bind_events(self.chat_components)
-    
-    def _create_query_builder_tab(self):
-        """Create the advanced query builder tab"""
-        gr.Markdown("### 🎯 Advanced Query Builder")
-        gr.Markdown("*Build complex queries using visual field selection and filters*")
-        
-        # Field picker interface
-        picker_components = self.field_picker.create_field_picker_interface()
-        
-        # Store components for later use
-        self.picker_components = picker_components
-        
-        # Bind field picker events
-        self._bind_field_picker_events()
-    
-    def _create_visualization_tab(self):
-        """Create the data visualization tab"""
-        gr.Markdown("### 📊 Data Visualizations")
-        gr.Markdown("*Create interactive charts and graphs from your data*")
-        
-        # Visualization interface
-        viz_components = self.data_visualizer.create_visualization_interface()
-        
-        # Store components
-        self.viz_components = viz_components
-        
-        # Bind visualization events
-        self._bind_visualization_events()
-    
-    def _create_export_tab(self):
-        """Create the export and reports tab"""
-        gr.Markdown("### 💾 Export & Reports")
-        gr.Markdown("*Export your data and generate comprehensive analysis reports*")
-        
-        # Export interface
-        export_components = self.export_manager.create_export_interface()
-        
-        # Store components
-        self.export_components = export_components
-        
-        # Bind export events
-        self._bind_export_events()
-    
-    def _bind_field_picker_events(self):
-        """Bind events for field picker components"""
-        try:
-            # Update field choices when data is loaded
-            def update_picker_on_data_load():
-                return self.field_picker.update_field_choices()
-            
-            # Update query preview when selections change
-            def update_query_preview(selected_fields, aggregation, group_by, filters_text):
-                return self.field_picker.update_query_preview(selected_fields, aggregation, group_by, filters_text)
-            
-            # Add filter
-            def add_filter(field, operator, value, current_filters):
-                return self.field_picker.add_filter(field, operator, value, current_filters)
-            
-            # Execute query
-            def execute_field_query(query_text):
-                if self.current_data is None:
-                    return [{"role": "assistant", "content": "⚠️ Please upload a CSV file first."}]
-                return self.chat_response(query_text, [])
-            
-            # Bind the events (simplified - would need proper gradio event binding)
-            
-        except Exception as e:
-            print(f"Error binding field picker events: {e}")
-    
-    def _bind_visualization_events(self):
-        """Bind events for visualization components"""
-        try:
-            # Create chart
-            def create_chart(chart_type, x_field, y_field):
-                return self.data_visualizer.generate_chart(chart_type, x_field, y_field)
-            
-            # Update field choices for visualization
-            def update_viz_fields():
-                fields = self.field_picker.get_available_fields()
-                return gr.Dropdown(choices=fields), gr.Dropdown(choices=fields)
-            
-        except Exception as e:
-            print(f"Error binding visualization events: {e}")
-    
-    def _bind_export_events(self):
-        """Bind events for export components"""
-        try:
-            # Export data
-            def export_data(export_format, include_filters):
-                return self.export_manager.export_data(export_format, include_filters)
-            
-        except Exception as e:
-            print(f"Error binding export events: {e}")
 
     def _initialize_sql_translators(self):
         """Initialize enhanced SQL translators with current data schema"""
