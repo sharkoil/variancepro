@@ -934,3 +934,77 @@ Format your response with clear sections and actionable bullet points. Focus on 
             
         except Exception as e:
             return f"### 📊 **Statistical Summary**\n• Advanced analysis completed\n• Detailed insights unavailable: {str(e)}"
+    def format_comprehensive_analysis(self, results: Dict[str, Any]) -> str:
+        """
+        Format comprehensive variance analysis results for display.
+        
+        Args:
+            results (Dict[str, Any]): Results from comprehensive_variance_analysis
+            
+        Returns:
+            str: Formatted analysis report
+        """
+        try:
+            if 'error' in results:
+                return f"❌ **Variance Analysis Error**: {results['error']}"
+            
+            # Start with summary
+            summary = results.get('summary', {})
+            analysis_lines = [
+                "📊 **Comprehensive Variance Analysis**",
+                "",
+                f"**Analysis Type**: {summary.get('analysis_type', 'Actual vs Planned')}",
+                f"**Total Records**: {summary.get('record_count', 0):,}",
+                ""
+            ]
+            
+            # Overall variance metrics
+            if summary:
+                total_variance = summary.get('variance_absolute', 0)
+                percentage_variance = summary.get('variance_percentage', 0)
+                favorable = summary.get('is_favorable', False)
+                
+                analysis_lines.extend([
+                    "### 🎯 **Overall Performance**",
+                    f"• **Total Variance**: ${total_variance:,.2f}",
+                    f"• **Percentage Variance**: {percentage_variance:.1f}%",
+                    f"• **Performance**: {'✅ Favorable' if favorable else '⚠️ Unfavorable'}",
+                    ""
+                ])
+            
+            # Key statistics
+            stats = results.get('statistical_analysis', {})
+            if stats:
+                analysis_lines.extend([
+                    "### 📈 **Statistical Summary**",
+                    f"• **Mean Variance**: ${stats.get('variance_mean', 0):,.2f}",
+                    f"• **Standard Deviation**: ${stats.get('variance_std', 0):,.2f}",
+                    f"• **Range**: ${stats.get('variance_min', 0):,.2f} to ${stats.get('variance_max', 0):,.2f}",
+                    ""
+                ])
+            
+            # Insights
+            insights = results.get('insights', [])
+            if insights:
+                analysis_lines.extend([
+                    "### 💡 **Key Insights**"
+                ])
+                
+                for insight in insights[:5]:  # Show top 5 insights
+                    analysis_lines.append(f"• {insight}")
+                
+                analysis_lines.append("")
+            
+            # LLM insights if available
+            llm_insights = results.get('llm_insights', '')
+            if llm_insights and llm_insights != 'LLM insights unavailable':
+                analysis_lines.extend([
+                    "### 🤖 **AI Analysis**",
+                    llm_insights,
+                    ""
+                ])
+            
+            return "\n".join(analysis_lines)
+            
+        except Exception as e:
+            return f"❌ **Formatting Error**: Unable to format analysis results - {str(e)}"
