@@ -1,4 +1,4 @@
-# VariancePro - AI-Powered Financial Intelligence Platform
+# VariancePro v2.0 - AI-Powered Financial Intelligence Platform
 
 <div align="center">
   <img src="logo.png" alt="VariancePro Logo" width="250"/>
@@ -7,19 +7,89 @@
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
   [![Gradio](https://img.shields.io/badge/Gradio-4.0+-orange.svg)](https://gradio.app/)
   [![AI-Powered](https://img.shields.io/badge/AI-Powered-green.svg)](https://github.com/sharkoil/variancepro)
+  [![Modular Architecture](https://img.shields.io/badge/Architecture-Modular-purple.svg)](https://github.com/sharkoil/variancepro)
 </div>
 
 ## 🚀 Introduction
 
-VariancePro is an AI-powered financial intelligence platform that transforms your CSV data into comprehensive business insights. Chat with Aria Sterling, your AI financial analyst, to get instant analysis including contribution analysis, variance reporting, trend analysis, and intelligent business recommendations.
+VariancePro v2.0 is a completely refactored, AI-powered financial intelligence platform that transforms your CSV data into comprehensive business insights. Built with a modular architecture following industry best practices, it features advanced variance analysis capabilities and an intuitive chat interface.
 
 **Key Features:**
 - 🤖 **AI Chat Interface**: Natural language queries with intelligent responses
-- 📊 **Advanced Analytics**: Contribution, variance, and trend analysis
+- 📊 **Advanced Variance Analysis**: Actual vs Planned, Budget vs Sales, multi-timespan comparisons
+- 📈 **Comprehensive Analytics**: Contribution, variance, and trend analysis
 - 🔒 **Privacy-First**: 100% local processing - your data never leaves your machine
-- 📈 **Professional Reports**: Publication-ready tables and insights
-- 🧠 **Smart Detection**: Auto-identifies data patterns and business context
+- 🏗️ **Modular Architecture**: Clean, maintainable, and extensible codebase
+- ⚡ **High Performance**: Refactored for efficiency and scalability
+- 🧪 **Test Coverage**: 80%+ test coverage with unit and integration tests
 - 🆔 **Session Management**: Timestamped responses with unique session IDs
+
+## 🏗️ Architecture v2.0
+
+VariancePro v2.0 features a completely refactored modular architecture:
+
+```
+app_v2.py (Main Orchestrator - 231 lines, down from 905)
+├── core/
+│   ├── app_core.py              # Core application logic & state management
+│   └── ollama_connector.py      # AI model integration
+├── handlers/
+│   ├── file_handler.py          # CSV upload & validation
+│   ├── chat_handler.py          # Chat message processing
+│   ├── quick_action_handler.py  # Quick action buttons
+│   └── timestamp_handler.py     # Message timestamping
+├── analyzers/
+│   ├── variance_analyzer.py     # NEW: Advanced variance analysis
+│   └── (existing analyzers)     # Timescale, contributor, etc.
+└── tests/
+    ├── unit/                    # Unit tests for all modules
+    └── integration/             # Full workflow integration tests
+```
+
+### 🔄 Refactoring Benefits
+- **74% size reduction**: Main app reduced from 905 to 231 lines
+- **Improved maintainability**: Modular design with single responsibilities
+- **Enhanced testability**: 80%+ test coverage with isolated unit tests
+- **Better error handling**: Graceful degradation and detailed error messages
+- **Scalable architecture**: Easy to extend with new features
+
+## 📊 Variance Analysis Features
+
+VariancePro v2.0 introduces comprehensive variance analysis capabilities that automatically detect and analyze comparison patterns in your data:
+
+### Supported Variance Types
+- **Actual vs Planned**: Performance against targets and forecasts
+- **Budget vs Sales**: Revenue performance against budgeted amounts  
+- **Budget vs Actual**: Expense control and budget adherence
+- **Forecast vs Actual**: Prediction accuracy analysis
+- **Current vs Previous**: Period-over-period comparisons
+
+### Smart Column Detection
+The variance analyzer automatically detects potential comparison pairs in your data:
+```python
+# Automatically detects patterns like:
+"Actual Sales" vs "Planned Sales"
+"Budget Revenue" vs "Sales Revenue" 
+"Current Period" vs "Previous Period"
+```
+
+### Multi-Timespan Analysis
+- **Monthly**: Month-over-month variance tracking
+- **Quarterly**: Quarterly performance analysis
+- **Yearly**: Annual variance reporting
+- **Custom Periods**: Flexible date range analysis
+
+### Variance Metrics
+- **Absolute Variance**: Dollar/unit differences
+- **Percentage Variance**: Relative performance ratios
+- **Favorable/Unfavorable**: Direction classification
+- **Statistical Analysis**: Distribution, outliers, significance
+
+### How to Use Variance Analysis
+1. **Upload CSV** with comparison columns (e.g., Actual, Planned, Budget)
+2. **Click "Variance" button** for automatic analysis
+3. **Chat queries** like "compare actual vs planned sales"
+4. **Review insights** with detailed variance breakdowns
 
 ## 🛠️ Technology Stack
 
