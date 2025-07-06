@@ -139,7 +139,7 @@ Docker support is planned for future releases.
 
 ### Test Main Application
 ```bash
-python app.py
+python app_new.py
 # Should start on http://localhost:7871
 ```
 
@@ -197,7 +197,7 @@ netstat -an | findstr :7871
 lsof -i :7871
 
 # Use alternative port
-python app.py --port 7872
+python app_new.py --port 7872
 ```
 
 ### Performance Optimization
