@@ -24,6 +24,46 @@ Quant Commander v2.0 is a completely refactored, AI-powered financial intelligen
 - 🧪 **Test Coverage**: 80%+ test coverage with unit and integration tests
 - 🆔 **Session Management**: Timestamped responses with unique session IDs
 
+## 🎨 User Interface v2.0
+
+Quant Commander v2.0 features a completely redesigned interface optimized for efficiency and usability:
+
+### New Header Layout
+- **200x200 Logo**: Prominent branding with increased visual presence
+- **Integrated File Upload**: CSV uploader moved to header for quick access
+- **Real-time Status**: Upload status and progress displayed in header
+
+### Full-Width Chat Interface
+- **Maximized Chat Area**: Chat interface now spans the full width of the application
+- **No Sidebar**: Removed left sidebar to provide more space for conversations
+- **Responsive Design**: Optimal viewing on all screen sizes
+
+### Header Layout: [LOGO] [FILE UPLOADER] [UPLOAD STATUS]
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ [200x200 Logo] │ [📁 Upload CSV Data] │ [📊 Upload Status]     │
+│ Quant Commander │                      │ Ready to upload...      │
+│ v2.0            │                      │                         │
+└─────────────────────────────────────────────────────────────────┘
+│                     Full-Width Chat Interface                    │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ AI Assistant Chat                                           │ │
+│ │ ┌─────────────────────────────────────────────────────────┐ │ │
+│ │ │ Welcome to Quant Commander v2.0! Upload your data...   │ │ │
+│ │ └─────────────────────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│ [Your Message Input Field]                            [Send 📤] │
+│ [📋 Summary] [📈 Trends] [📊 Variance]                          │
+│ [🔝 Top 5] [🔻 Bottom 5] [📊 Top 10] [📉 Bottom 10]           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### UI Improvements
+- **Better Space Utilization**: More room for chat conversations and data analysis
+- **Streamlined Workflow**: File upload and status monitoring in one place
+- **Enhanced Visual Hierarchy**: Clear separation between controls and content
+- **Improved Accessibility**: Larger touch targets and better contrast
+
 ## 🏗️ Architecture v2.0
 
 Quant Commander v2.0 features a completely refactored modular architecture:

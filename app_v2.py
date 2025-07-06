@@ -85,68 +85,67 @@ class QuantCommanderApp:
             gr.Blocks: The complete Gradio interface
         """
         with gr.Blocks(title="Quant Commander v2.0", theme=gr.themes.Soft()) as interface:
-            # Header with logo
+            # Header with logo, file uploader, and upload status
             with gr.Row():
-                with gr.Column(scale=1):
-                    gr.Image("static/squarelogo.png", height=120, width=120, container=False, show_label=False)
-                with gr.Column(scale=4):
+                with gr.Column(scale=1, min_width=200):
+                    gr.Image("static/squarelogo.png", height=200, width=200, container=False, show_label=False)
+                
+                with gr.Column(scale=2, min_width=300):
                     gr.Markdown("# 📊 Quant Commander v2.0")
                     gr.Markdown("*AI-Powered Financial Intelligence Platform*")
-            
-            with gr.Row():
-                with gr.Column(scale=1):
-                    # File upload section
-                    gr.Markdown("### 📁 Upload Data")
+                    
+                    # File upload section in header
                     file_input = gr.File(
-                        label="CSV File",
+                        label="📁 Upload CSV Data",
                         file_types=[".csv"],
                         type="filepath"
                     )
-                    
-                    # Upload status
+                
+                with gr.Column(scale=2, min_width=300):
+                    gr.Markdown("### 📊 Upload Status")
+                    # Upload status in header
                     upload_status = gr.Textbox(
-                        label="Upload Status",
+                        label="Status",
                         value="Ready to upload CSV file...",
-                        lines=8,
+                        lines=4,
                         interactive=False
                     )
+            
+            # Full-width chat interface
+            gr.Markdown("### 💬 Analysis Chat")
+            
+            chatbot = gr.Chatbot(
+                label="AI Assistant",
+                height=400,
+                type="messages",
+                value=[{
+                    "role": "assistant", 
+                    "content": "👋 Welcome to Quant Commander v2.0! Upload your financial data and I'll provide comprehensive analysis with AI-powered insights."
+                }]
+            )
+            
+            with gr.Row():
+                chat_input = gr.Textbox(
+                    placeholder="Ask about your data...",
+                    label="Your Message",
+                    scale=4
+                )
+                send_btn = gr.Button("Send 📤", scale=1, variant="primary")
+            
+            # Quick Analysis Buttons
+            gr.Markdown("**Quick Analysis:**")
+            with gr.Row():
+                summary_btn = gr.Button("📋 Summary", size="sm")
+                trends_btn = gr.Button("📈 Trends", size="sm")
+                variance_btn = gr.Button("📊 Variance", size="sm", variant="secondary")
                 
-                with gr.Column(scale=2):
-                    # Chat interface
-                    gr.Markdown("### 💬 Analysis Chat")
-                    
-                    chatbot = gr.Chatbot(
-                        label="AI Assistant",
-                        height=400,
-                        type="messages",
-                        value=[{
-                            "role": "assistant", 
-                            "content": "👋 Welcome to Quant Commander v2.0! Upload your financial data and I'll provide comprehensive analysis with AI-powered insights."
-                        }]
-                    )
-                    
-                    with gr.Row():
-                        chat_input = gr.Textbox(
-                            placeholder="Ask about your data...",
-                            label="Your Message",
-                            scale=4
-                        )
-                        send_btn = gr.Button("Send 📤", scale=1, variant="primary")
-                    
-                    # Quick Analysis Buttons
-                    gr.Markdown("**Quick Analysis:**")
-                    with gr.Row():
-                        summary_btn = gr.Button("📋 Summary", size="sm")
-                        trends_btn = gr.Button("📈 Trends", size="sm")
-                        variance_btn = gr.Button("📊 Variance", size="sm", variant="secondary")
-                        
-                    # Top N / Bottom N Buttons
-                    gr.Markdown("**Top/Bottom Analysis:**")
-                    with gr.Row():
-                        top5_btn = gr.Button("🔝 Top 5", size="sm", variant="secondary")
-                        bottom5_btn = gr.Button("🔻 Bottom 5", size="sm", variant="secondary")
-                        top10_btn = gr.Button("📊 Top 10", size="sm", variant="secondary")
-                        bottom10_btn = gr.Button("📉 Bottom 10", size="sm", variant="secondary")
+            # Top N / Bottom N Buttons
+            gr.Markdown("**Top/Bottom Analysis:**")
+            with gr.Row():
+                top5_btn = gr.Button("🔝 Top 5", size="sm", variant="secondary")
+                bottom5_btn = gr.Button("🔻 Bottom 5", size="sm", variant="secondary")
+                top10_btn = gr.Button("📊 Top 10", size="sm", variant="secondary")
+                bottom10_btn = gr.Button("📉 Bottom 10", size="sm", variant="secondary")
             
             # Footer with status
             with gr.Row():
