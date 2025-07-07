@@ -1,25 +1,135 @@
-# VariancePro - AI-Powered Financial Intelligence Platform
+# Quant Commander v2.0 - AI-Powered Financial Intelligence Platform
 
 <div align="center">
-  <img src="logo.png" alt="VariancePro Logo" width="250"/>
+  <img src="static/squarelogo.png" alt="Quant Commander Logo" width="250"/>
   
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
   [![Gradio](https://img.shields.io/badge/Gradio-4.0+-orange.svg)](https://gradio.app/)
   [![AI-Powered](https://img.shields.io/badge/AI-Powered-green.svg)](https://github.com/sharkoil/variancepro)
+  [![Modular Architecture](https://img.shields.io/badge/Architecture-Modular-purple.svg)](https://github.com/sharkoil/variancepro)
 </div>
 
 ## 🚀 Introduction
 
-VariancePro is an AI-powered financial intelligence platform that transforms your CSV data into comprehensive business insights. Chat with Aria Sterling, your AI financial analyst, to get instant analysis including contribution analysis, variance reporting, trend analysis, and intelligent business recommendations.
+Quant Commander v2.0 is a completely refactored, AI-powered financial intelligence platform that transforms your CSV data into comprehensive business insights. Built with a modular architecture following industry best practices, it features advanced variance analysis capabilities and an intuitive chat interface.
 
 **Key Features:**
 - 🤖 **AI Chat Interface**: Natural language queries with intelligent responses
-- 📊 **Advanced Analytics**: Contribution, variance, and trend analysis
+- 📊 **Advanced Variance Analysis**: Actual vs Planned, Budget vs Sales, multi-timespan comparisons
+- 📈 **Comprehensive Analytics**: Contribution, variance, and trend analysis
 - 🔒 **Privacy-First**: 100% local processing - your data never leaves your machine
-- 📈 **Professional Reports**: Publication-ready tables and insights
-- 🧠 **Smart Detection**: Auto-identifies data patterns and business context
+- 🏗️ **Modular Architecture**: Clean, maintainable, and extensible codebase
+- ⚡ **High Performance**: Refactored for efficiency and scalability
+- 🧪 **Test Coverage**: 80%+ test coverage with unit and integration tests
 - 🆔 **Session Management**: Timestamped responses with unique session IDs
+
+## 🎨 User Interface v2.0
+
+Quant Commander v2.0 features a completely redesigned interface optimized for efficiency and usability:
+
+### New Header Layout
+- **200x200 Logo**: Prominent branding with increased visual presence
+- **Integrated File Upload**: CSV uploader moved to header for quick access
+- **Real-time Status**: Upload status and progress displayed in header
+
+### Full-Width Chat Interface
+- **Maximized Chat Area**: Chat interface now spans the full width of the application
+- **No Sidebar**: Removed left sidebar to provide more space for conversations
+- **Responsive Design**: Optimal viewing on all screen sizes
+
+### Header Layout: [LOGO] [FILE UPLOADER] [UPLOAD STATUS]
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ [200x200 Logo] │ [📁 Upload CSV Data] │ [📊 Upload Status]     │
+│ Quant Commander │                      │ Ready to upload...      │
+│ v2.0            │                      │                         │
+└─────────────────────────────────────────────────────────────────┘
+│                     Full-Width Chat Interface                    │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ AI Assistant Chat                                           │ │
+│ │ ┌─────────────────────────────────────────────────────────┐ │ │
+│ │ │ Welcome to Quant Commander v2.0! Upload your data...   │ │ │
+│ │ └─────────────────────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│ [Your Message Input Field]                            [Send 📤] │
+│ [📋 Summary] [📈 Trends] [📊 Variance]                          │
+│ [🔝 Top 5] [🔻 Bottom 5] [📊 Top 10] [📉 Bottom 10]           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### UI Improvements
+- **Better Space Utilization**: More room for chat conversations and data analysis
+- **Streamlined Workflow**: File upload and status monitoring in one place
+- **Enhanced Visual Hierarchy**: Clear separation between controls and content
+- **Improved Accessibility**: Larger touch targets and better contrast
+
+## 🏗️ Architecture v2.0
+
+Quant Commander v2.0 features a completely refactored modular architecture:
+
+```
+app_v2.py (Main Orchestrator - 231 lines, down from 905)
+├── core/
+│   ├── app_core.py              # Core application logic & state management
+│   └── ollama_connector.py      # AI model integration
+├── handlers/
+│   ├── file_handler.py          # CSV upload & validation
+│   ├── chat_handler.py          # Chat message processing
+│   ├── quick_action_handler.py  # Quick action buttons
+│   └── timestamp_handler.py     # Message timestamping
+├── analyzers/
+│   ├── variance_analyzer.py     # NEW: Advanced variance analysis
+│   └── (existing analyzers)     # Timescale, contributor, etc.
+└── tests/
+    ├── unit/                    # Unit tests for all modules
+    └── integration/             # Full workflow integration tests
+```
+
+### 🔄 Refactoring Benefits
+- **74% size reduction**: Main app reduced from 905 to 231 lines
+- **Improved maintainability**: Modular design with single responsibilities
+- **Enhanced testability**: 80%+ test coverage with isolated unit tests
+- **Better error handling**: Graceful degradation and detailed error messages
+- **Scalable architecture**: Easy to extend with new features
+
+## 📊 Variance Analysis Features
+
+Quant Commander v2.0 introduces comprehensive variance analysis capabilities that automatically detect and analyze comparison patterns in your data:
+
+### Supported Variance Types
+- **Actual vs Planned**: Performance against targets and forecasts
+- **Budget vs Sales**: Revenue performance against budgeted amounts  
+- **Budget vs Actual**: Expense control and budget adherence
+- **Forecast vs Actual**: Prediction accuracy analysis
+- **Current vs Previous**: Period-over-period comparisons
+
+### Smart Column Detection
+The variance analyzer automatically detects potential comparison pairs in your data:
+```python
+# Automatically detects patterns like:
+"Actual Sales" vs "Planned Sales"
+"Budget Revenue" vs "Sales Revenue" 
+"Current Period" vs "Previous Period"
+```
+
+### Multi-Timespan Analysis
+- **Monthly**: Month-over-month variance tracking
+- **Quarterly**: Quarterly performance analysis
+- **Yearly**: Annual variance reporting
+- **Custom Periods**: Flexible date range analysis
+
+### Variance Metrics
+- **Absolute Variance**: Dollar/unit differences
+- **Percentage Variance**: Relative performance ratios
+- **Favorable/Unfavorable**: Direction classification
+- **Statistical Analysis**: Distribution, outliers, significance
+
+### How to Use Variance Analysis
+1. **Upload CSV** with comparison columns (e.g., Actual, Planned, Budget)
+2. **Click "Variance" button** for automatic analysis
+3. **Chat queries** like "compare actual vs planned sales"
+4. **Review insights** with detailed variance breakdowns
 
 ## 🛠️ Technology Stack
 
@@ -68,10 +178,10 @@ ollama list
 
 ### Main Application
 ```bash
-# Start VariancePro
-python app_new.py
+# Start Quant Commander
+python app_v2.py
 ```
-Access at: `http://localhost:7871`
+Access at: `http://localhost:7873`
 
 ### Testing Framework
 ```bash
@@ -245,7 +355,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
   <h3>🚀 Transform Your Financial Data Into Strategic Intelligence</h3>
-  <p><em>Where Artificial Intelligence Meets Business Insight</em></p>
+  <p><em>Where Artificial Intelligence Meets Financial Excellence</em></p>
   
   **🎯 Professional Analysis • 🧠 AI-Powered Insights • 🔒 Privacy-First Architecture**
   

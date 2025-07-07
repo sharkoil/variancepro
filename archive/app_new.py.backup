@@ -241,31 +241,67 @@ class QuantCommanderApp:
 
     
     def chat_response(self, message: str, history: List[Dict]) -> Tuple[List[Dict], str]:
-        """Enhanced chat response with AI-powered analysis"""
+        """Enhanced chat response with AI-powered analysis and timestamps"""
         if not message.strip():
             return history, ""
         
         try:
+            # Generate timestamp for browser local time
+            current_timestamp = datetime.now().strftime("%H:%M:%S")
+            
             # Check if data is loaded
             if self.current_data is None:
                 response = "⚠️ **No data loaded**. Please upload a CSV file first to start analysis."
-                history.append({"role": "user", "content": message})
-                history.append({"role": "assistant", "content": response})
+                
+                # Add timestamped messages to history
+                user_message = {
+                    "role": "user", 
+                    "content": self._add_timestamp_to_message(message, current_timestamp)
+                }
+                assistant_message = {
+                    "role": "assistant", 
+                    "content": self._add_timestamp_to_message(response, current_timestamp)
+                }
+                
+                history.append(user_message)
+                history.append(assistant_message)
                 return history, ""
             
             # Analyze the user's query to determine intent
             response = self._process_user_query(message.lower().strip())
             
-            # Add to history
-            history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": response})
+            # Add timestamped messages to history
+            user_message = {
+                "role": "user", 
+                "content": self._add_timestamp_to_message(message, current_timestamp)
+            }
+            assistant_message = {
+                "role": "assistant", 
+                "content": self._add_timestamp_to_message(response, current_timestamp)
+            }
+            
+            history.append(user_message)
+            history.append(assistant_message)
             
             return history, ""
             
         except Exception as e:
+            # Generate timestamp for error response
+            error_timestamp = datetime.now().strftime("%H:%M:%S")
             error_response = f"❌ **Error processing request**: {str(e)}"
-            history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": error_response})
+            
+            # Add timestamped error messages
+            user_message = {
+                "role": "user", 
+                "content": self._add_timestamp_to_message(message, error_timestamp)
+            }
+            assistant_message = {
+                "role": "assistant", 
+                "content": self._add_timestamp_to_message(error_response, error_timestamp)
+            }
+            
+            history.append(user_message)
+            history.append(assistant_message)
             return history, ""
     
     def _process_user_query(self, query: str) -> str:
@@ -815,6 +851,48 @@ Provide a helpful, contextual response as Aria Sterling.
             border: 1px solid #e9ecef !important;
             color: #495057 !important;
         }
+        
+        /* Read More/Less functionality styling */
+        .expandable-content .more-text {
+            display: none !important;
+        }
+        
+        .expandable-content .dots {
+            display: inline !important;
+        }
+        
+        .expandable-content.expanded .more-text {
+            display: inline !important;
+        }
+        
+        .expandable-content.expanded .dots {
+            display: none !important;
+        }
+        
+        .read-more-btn {
+            color: #2196f3 !important;
+            cursor: pointer !important;
+            text-decoration: underline !important;
+            font-weight: 600 !important;
+            margin-left: 5px !important;
+            user-select: none !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .read-more-btn:hover {
+            color: #1976d2 !important;
+            text-decoration: none !important;
+        }
+        
+        /* Override Gradio's link styling for read more button */
+        .message .read-more-btn {
+            color: #2196f3 !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            font-size: inherit !important;
+            text-decoration: underline !important;
+        }
         """) as interface:
             
             # Professional header with logo, title, and status indicators
@@ -880,7 +958,17 @@ Provide a helpful, contextual response as Aria Sterling.
             font-size: inherit !important;
             text-decoration: underline !important;
         }
-        """) as interface:L("""
+        """) as interface:
+            
+            # Professional header with logo, title, and status indicators
+            with gr.Row():
+                with gr.Column(scale=2):
+                    # Logo left-aligned
+                    gr.Image("logo.png", show_label=False, height=80, width=None, container=False)
+                
+                with gr.Column(scale=6):
+                    # Centered title with more space
+                    gr.HTML("""
                     <div style="text-align: right; padding: 15px 0;">
                         <div style="margin-bottom: 8px;">
                             <span id="ollama-status" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ff4444; margin-right: 5px;"></span>
@@ -938,7 +1026,13 @@ Provide a helpful, contextual response as Aria Sterling.
                     # File upload
                     gr.Markdown("### 📊 Upload Financial Data")
                     file_input = gr.File(
-                    chatbot = gr.Chatbot(
+                        label="Choose CSV File",
+                        file_types=[".csv"],
+                        type="filepath"
+                    )
+                    
+                    # Data preview area
+                    data_preview = gr.Textbox(
                         label="Financial Analysis Chat",
                         height=450,
                         show_label=True,
@@ -1266,9 +1360,13 @@ setTimeout(() => {{
                 
                 # Start with the primary analysis message if available
                 updated_chatbot = chatbot
+                current_timestamp = datetime.now().strftime("%H:%M:%S")
+                
                 if analysis_message:
                     bot_message = analysis_message['content']
-                    updated_chatbot = updated_chatbot + [{"role": "user", "content": "CSV File Loaded"}, {"role": "assistant", "content": bot_message}]
+                    user_msg = {"role": "user", "content": self._add_timestamp_to_message("CSV File Loaded", current_timestamp)}
+                    assistant_msg = {"role": "assistant", "content": self._add_timestamp_to_message(bot_message, current_timestamp)}
+                    updated_chatbot = updated_chatbot + [user_msg, assistant_msg]
                 
                 # Add News Analysis as second message
                 try:
@@ -1278,6 +1376,8 @@ setTimeout(() => {{
                         column_info=self.csv_loader.column_info
                     )
                     
+                    news_timestamp = datetime.now().strftime("%H:%M:%S")
+                    
                     if news_results and isinstance(news_results, dict) and news_results.get('search_queries'):
                         print(f"[DEBUG] News search queries: {news_results.get('search_queries')}")
                         # Display up to 6 news items, 3 per location/query
@@ -1285,18 +1385,28 @@ setTimeout(() => {{
                         if len(formatted_results.get('news_items', [])) > 6:
                             formatted_results['news_items'] = formatted_results['news_items'][:6]
                         news_content = self.news_analyzer.format_news_for_chat(formatted_results)
-                        updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": news_content}]
+                        
+                        user_msg = {"role": "user", "content": self._add_timestamp_to_message("Business Context Analysis", news_timestamp)}
+                        assistant_msg = {"role": "assistant", "content": self._add_timestamp_to_message(news_content, news_timestamp)}
+                        updated_chatbot = updated_chatbot + [user_msg, assistant_msg]
                         print(f"[DEBUG] News analysis added to chat")
                     else:
                         print("[DEBUG] No news results found or no location data detected")
                         fallback_news_content = "📰 **BUSINESS CONTEXT ANALYSIS**\n\nNo location data detected in your dataset for relevant business news analysis. Focus on core data metrics instead."
-                        updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": fallback_news_content}]
+                        
+                        user_msg = {"role": "user", "content": self._add_timestamp_to_message("Business Context Analysis", news_timestamp)}
+                        assistant_msg = {"role": "assistant", "content": self._add_timestamp_to_message(fallback_news_content, news_timestamp)}
+                        updated_chatbot = updated_chatbot + [user_msg, assistant_msg]
                         
                 except Exception as e:
                     print(f"[DEBUG] News analysis error: {str(e)}")
                     # Add error message to chat as well
                     error_content = f"📰 **BUSINESS CONTEXT ANALYSIS**\n\n⚠️ Unable to fetch business context: {str(e)}\n\nContinuing with data analysis..."
-                    updated_chatbot = updated_chatbot + [{"role": "user", "content": "Business Context Analysis"}, {"role": "assistant", "content": error_content}]
+                    error_timestamp = datetime.now().strftime("%H:%M:%S")
+                    
+                    user_msg = {"role": "user", "content": self._add_timestamp_to_message("Business Context Analysis", error_timestamp)}
+                    assistant_msg = {"role": "assistant", "content": self._add_timestamp_to_message(error_content, error_timestamp)}
+                    updated_chatbot = updated_chatbot + [user_msg, assistant_msg]
                 
                 return preview, data_summary, updated_chatbot, date_html, numeric_html, category_html, value_html
             
@@ -1392,7 +1502,7 @@ setTimeout(() => {{
         return interface
 
     def _classify_user_intent(self, query: str) -> Optional[str]:
-        """Use LLM to classify user intent and route to appropriate analysis"""
+        """Use LLM to classify user query intent and route to appropriate analysis"""
         try:
             # Build context about available analysis types based on data
             available_analyses = []
@@ -1982,6 +2092,21 @@ RESPOND ONLY WITH VALID JSON (no explanation):
             html_parts.append(f"<br><small style='color: #666; font-style: italic;'>... and {len(columns) - 8} more columns</small>")
         
         return ''.join(html_parts)
+
+    def _add_timestamp_to_message(self, message: str, timestamp: str) -> str:
+        """
+        Add a timestamp to a chat message in a subtle, professional format.
+        
+        Args:
+            message (str): The original message content
+            timestamp (str): The timestamp in HH:MM:SS format
+            
+        Returns:
+            str: Message with timestamp prefix
+        """
+        # Add timestamp as a subtle prefix with light styling
+        timestamp_prefix = f"<span style='color: #888; font-size: 0.85em; opacity: 0.7;'>[{timestamp}]</span> "
+        return timestamp_prefix + message
 
 def main():
     """Main entry point for AI-Powered Financial Analysis"""
