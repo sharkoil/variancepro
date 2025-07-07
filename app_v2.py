@@ -1,5 +1,5 @@
 """
-VariancePro v2.0 - Refactored Modular Architecture
+VariancePro v2.0 - Refactored Modular Archit        print("🚀 VariancePro v2.0 modular architecture initialized (RAG temporarily disabled)")cture
 Main application orchestrator - focuses on interface coordination only
 """
 
@@ -41,13 +41,22 @@ class VarianceProApp:
         self.variance_analyzer = VarianceAnalyzer()
         
         # Initialize RAG components for document enhancement
-        self.rag_manager = RAGDocumentManager()
-        self.rag_analyzer = RAGEnhancedAnalyzer(self.rag_manager)
+        try:
+            self.rag_manager = RAGDocumentManager()
+            self.rag_analyzer = RAGEnhancedAnalyzer(self.rag_manager)
+            print("✅ RAG components initialized successfully")
+        except Exception as e:
+            print(f"⚠️ RAG initialization failed: {e}")
+            self.rag_manager = None
+            self.rag_analyzer = None
         
         # Initialize quick action handler with RAG components
         self.quick_action_handler = QuickActionHandler(self.app_core, self.rag_manager, self.rag_analyzer)
         
-        print("🚀 VariancePro v2.0 modular architecture initialized with RAG")
+        if self.rag_manager is not None:
+            print("🚀 VariancePro v2.0 modular architecture initialized with RAG")
+        else:
+            print("🚀 VariancePro v2.0 modular architecture initialized (RAG disabled due to errors)")
     
     def upload_csv(self, file, history: List[Dict]) -> tuple[str, List[Dict]]:
         """
@@ -77,7 +86,9 @@ class VarianceProApp:
         updated_history, clear_input = self.chat_handler.process_message(message, history)
         
         # If we have documents and this looks like an analysis request, enhance with RAG
-        if (self.rag_manager.has_documents() and 
+        if (self.rag_manager is not None and 
+            self.rag_analyzer is not None and
+            self.rag_manager.has_documents() and 
             any(keyword in message.lower() for keyword in ['variance', 'trend', 'analysis', 'summary', 'contribution'])):
             
             try:
@@ -138,6 +149,10 @@ class VarianceProApp:
         Returns:
             str: Upload status message
         """
+        # Check if RAG is available
+        if self.rag_manager is None:
+            return "⚠️ Document upload temporarily disabled - RAG components not available"
+        
         if not files:
             return "⚠️ No files selected"
         
@@ -172,6 +187,10 @@ class VarianceProApp:
     
     def clear_documents(self) -> str:
         """Clear all uploaded documents"""
+        # Check if RAG is available
+        if self.rag_manager is None:
+            return "⚠️ Document management temporarily disabled - RAG components not available"
+        
         try:
             self.rag_manager.clear_all_documents()
             return "✅ All documents cleared"
@@ -180,6 +199,10 @@ class VarianceProApp:
     
     def search_documents(self, query: str) -> str:
         """Search through uploaded documents"""
+        # Check if RAG is available
+        if self.rag_manager is None:
+            return "⚠️ Document search temporarily disabled - RAG components not available"
+        
         if not query.strip():
             return "Please enter a search query"
         
@@ -247,7 +270,7 @@ class VarianceProApp:
                     
                     doc_status = gr.Textbox(
                         label="Document Status",
-                        value="No documents uploaded",
+                        value="Ready to upload PDF/text documents for enhanced analysis",
                         lines=3,
                         interactive=False
                     )

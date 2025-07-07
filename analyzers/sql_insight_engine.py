@@ -162,7 +162,7 @@ class SQLInsightEngine:
             response = requests.post(
                 "http://localhost:11434/api/generate",
                 json={
-                    "model": "gemma2:latest",
+                    "model": "gemma3:latest",
                     "prompt": prompt,
                     "stream": False
                 },
@@ -581,7 +581,7 @@ class SQLInsightEngine:
             response = requests.post(
                 "http://localhost:11434/api/generate",
                 json={
-                    "model": "gemma2:latest",
+                    "model": "gemma3:latest",
                     "prompt": prompt,
                     "stream": False
                 },

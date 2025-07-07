@@ -29,7 +29,7 @@ class RAGEnhancedAnalyzer:
         """
         self.rag_manager = rag_manager
         self.ollama_url = "http://localhost:11434/api/generate"
-        self.model_name = "gemma2:latest"
+        self.model_name = "gemma3:latest"  # Updated to available model
         print("🤖 RAG Enhanced Analyzer initialized")
     
     def enhance_variance_analysis(
