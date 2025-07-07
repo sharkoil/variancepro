@@ -27,6 +27,8 @@ from analyzers.enhanced_nl_to_sql_translator import EnhancedNLToSQLTranslator
 from analyzers.strategy_1_llm_enhanced import LLMEnhancedNLToSQL
 from analyzers.query_router import QueryRouter
 from analyzers.analysis_coordinator import AnalysisCoordinator
+from analyzers.rag_document_manager import RAGDocumentManager
+from analyzers.rag_enhanced_analyzer import RAGEnhancedAnalyzer
 from ai.llm_interpreter import LLMInterpreter
 from ai.narrative_generator import NarrativeGenerator
 from ui.event_handlers import UIEventHandlers
@@ -63,6 +65,10 @@ class QuantCommanderApp:
         
         # Initialize analysis coordinator
         self.analysis_coordinator = AnalysisCoordinator(self)
+        
+        # Initialize RAG components
+        self.rag_manager = RAGDocumentManager()
+        self.rag_analyzer = RAGEnhancedAnalyzer(self.rag_manager)
         
         # Initialize UI event handlers and enhancers
         self.event_handlers = UIEventHandlers(self)
@@ -161,6 +167,9 @@ class QuantCommanderApp:
                 with gr.TabItem("💬 Chat Analysis"):
                     self._create_chat_tab()
                 
+                with gr.TabItem("📚 Documents"):
+                    self._create_documents_tab()
+                
                 with gr.TabItem("🎯 Query Builder"):
                     self._create_query_builder_tab()
                 
@@ -244,6 +253,77 @@ class QuantCommanderApp:
         
         # Bind events
         self.event_handlers.bind_events(self.chat_components)
+    
+    def _create_documents_tab(self):
+        """Create the RAG documents upload and management tab"""
+        gr.Markdown("### 📚 Document Upload & Management")
+        gr.Markdown("*Upload PDFs or text documents to enhance analysis with additional context*")
+        
+        with gr.Row():
+            with gr.Column(scale=1):
+                # Document upload section
+                gr.Markdown("#### 📄 Upload Documents")
+                
+                doc_file_input = gr.File(
+                    label="Upload PDF or Text Files",
+                    file_types=[".pdf", ".txt"],
+                    type="filepath",
+                    file_count="multiple"
+                )
+                
+                upload_btn = gr.Button("📤 Upload Documents", variant="primary")
+                
+                # Document status
+                upload_status = gr.Textbox(
+                    label="Upload Status",
+                    value="No documents uploaded yet",
+                    lines=3,
+                    interactive=False
+                )
+                
+                # Clear documents
+                clear_docs_btn = gr.Button("🗑️ Clear All Documents", variant="secondary")
+                
+            with gr.Column(scale=2):
+                # Document management
+                gr.Markdown("#### 📋 Uploaded Documents")
+                
+                docs_list = gr.Textbox(
+                    label="Document List",
+                    value="No documents uploaded",
+                    lines=8,
+                    interactive=False
+                )
+                
+                # Document search/preview
+                gr.Markdown("#### 🔍 Search Documents")
+                search_input = gr.Textbox(
+                    label="Search Query",
+                    placeholder="Enter keywords to search in uploaded documents..."
+                )
+                search_btn = gr.Button("🔍 Search", variant="secondary")
+                
+                search_results = gr.Textbox(
+                    label="Search Results",
+                    value="Upload documents and search for relevant content",
+                    lines=6,
+                    interactive=False
+                )
+        
+        # Store document components
+        self.doc_components = {
+            'doc_file_input': doc_file_input,
+            'upload_btn': upload_btn,
+            'upload_status': upload_status,
+            'clear_docs_btn': clear_docs_btn,
+            'docs_list': docs_list,
+            'search_input': search_input,
+            'search_btn': search_btn,
+            'search_results': search_results
+        }
+        
+        # Bind document events
+        self._bind_document_events()
     
     def _create_query_builder_tab(self):
         """Create the advanced query builder tab"""
@@ -337,6 +417,124 @@ class QuantCommanderApp:
             
         except Exception as e:
             print(f"Error binding export events: {e}")
+    
+    def _bind_document_events(self):
+        """Bind events for document upload and management"""
+        # Upload documents
+        def upload_documents(files):
+            return self.handle_document_upload(files)
+        
+        # Clear all documents
+        def clear_documents():
+            return self.handle_clear_documents()
+        
+        # Search documents
+        def search_documents(query):
+            return self.handle_document_search(query)
+        
+        # Bind the events
+        self.doc_components['upload_btn'].click(
+            fn=upload_documents,
+            inputs=[self.doc_components['doc_file_input']],
+            outputs=[
+                self.doc_components['upload_status'],
+                self.doc_components['docs_list']
+            ]
+        )
+        
+        self.doc_components['clear_docs_btn'].click(
+            fn=clear_documents,
+            inputs=[],
+            outputs=[
+                self.doc_components['upload_status'],
+                self.doc_components['docs_list']
+            ]
+        )
+        
+        self.doc_components['search_btn'].click(
+            fn=search_documents,
+            inputs=[self.doc_components['search_input']],
+            outputs=[self.doc_components['search_results']]
+        )
+
+    def handle_document_upload(self, files) -> Tuple[str, str]:
+        """Handle document upload and processing"""
+        if not files:
+            return "⚠️ No files selected", "No documents uploaded"
+        
+        try:
+            upload_results = []
+            for file in files:
+                if file is None:
+                    continue
+                    
+                result = self.rag_manager.upload_document(file.name)
+                if result.get('success'):
+                    upload_results.append(f"✅ {result['filename']}: {result['chunks_created']} chunks")
+                else:
+                    upload_results.append(f"❌ {result['filename']}: {result.get('error', 'Unknown error')}")
+            
+            status = "\n".join(upload_results)
+            docs_list = self.get_documents_list()
+            
+            return status, docs_list
+            
+        except Exception as e:
+            return f"❌ Error uploading documents: {str(e)}", "No documents uploaded"
+    
+    def handle_clear_documents(self) -> Tuple[str, str]:
+        """Clear all uploaded documents"""
+        try:
+            self.rag_manager.clear_all_documents()
+            return "✅ All documents cleared", "No documents uploaded"
+        except Exception as e:
+            return f"❌ Error clearing documents: {str(e)}", "Error loading documents list"
+    
+    def handle_document_search(self, query: str) -> str:
+        """Search through uploaded documents"""
+        if not query.strip():
+            return "Please enter a search query"
+        
+        try:
+            results = self.rag_manager.retrieve_relevant_chunks(query, max_chunks=5)
+            
+            if not results:
+                return "No relevant content found in uploaded documents"
+            
+            formatted_results = []
+            for i, chunk in enumerate(results, 1):
+                formatted_results.append(
+                    f"**Result {i}** (Score: {chunk.get('score', 0):.2f})\n"
+                    f"Document: {chunk.get('document_name', 'Unknown')}\n"
+                    f"Content: {chunk.get('content', '')[:300]}...\n"
+                )
+            
+            return "\n".join(formatted_results)
+            
+        except Exception as e:
+            return f"❌ Error searching documents: {str(e)}"
+    
+    def get_documents_list(self) -> str:
+        """Get formatted list of uploaded documents"""
+        try:
+            docs = self.rag_manager.get_document_summary()
+            
+            if not docs:
+                return "No documents uploaded"
+            
+            formatted_docs = []
+            for doc_id, doc_info in docs.items():
+                formatted_docs.append(
+                    f"📄 {doc_info.get('filename', 'Unknown')}\n"
+                    f"   Type: {doc_info.get('type', 'Unknown')}\n"
+                    f"   Chunks: {doc_info.get('chunks', 0)}\n"
+                    f"   Uploaded: {doc_info.get('timestamp', 'Unknown')}\n"
+                )
+            
+            return "\n".join(formatted_docs)
+            
+        except Exception as e:
+            return f"Error loading documents: {str(e)}"
 
     def _initialize_sql_translators(self):
         """Initialize enhanced SQL translators with current data schema"""

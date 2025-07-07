@@ -934,77 +934,178 @@ Format your response with clear sections and actionable bullet points. Focus on 
             
         except Exception as e:
             return f"### 📊 **Statistical Summary**\n• Advanced analysis completed\n• Detailed insights unavailable: {str(e)}"
-    def format_comprehensive_analysis(self, results: Dict[str, Any]) -> str:
+    
+    def format_comprehensive_analysis(self, analysis_result: Dict[str, Any]) -> str:
         """
         Format comprehensive variance analysis results for display.
         
         Args:
-            results (Dict[str, Any]): Results from comprehensive_variance_analysis
+            analysis_result (Dict[str, Any]): Results from comprehensive_variance_analysis
             
         Returns:
             str: Formatted analysis report
         """
         try:
-            if 'error' in results:
-                return f"❌ **Variance Analysis Error**: {results['error']}"
+            if 'error' in analysis_result:
+                return f"❌ **Variance Analysis Error**: {analysis_result['error']}"
             
-            # Start with summary
-            summary = results.get('summary', {})
-            analysis_lines = [
-                "📊 **Comprehensive Variance Analysis**",
-                "",
-                f"**Analysis Type**: {summary.get('analysis_type', 'Actual vs Planned')}",
-                f"**Total Records**: {summary.get('record_count', 0):,}",
-                ""
-            ]
+            summary = analysis_result.get('summary', {})
+            time_periods = analysis_result.get('time_periods', {})
+            stats = analysis_result.get('statistical_analysis', {})
+            insights = analysis_result.get('insights', [])
             
-            # Overall variance metrics
-            if summary:
-                total_variance = summary.get('variance_absolute', 0)
-                percentage_variance = summary.get('variance_percentage', 0)
-                favorable = summary.get('is_favorable', False)
-                
-                analysis_lines.extend([
-                    "### 🎯 **Overall Performance**",
-                    f"• **Total Variance**: ${total_variance:,.2f}",
-                    f"• **Percentage Variance**: {percentage_variance:.1f}%",
-                    f"• **Performance**: {'✅ Favorable' if favorable else '⚠️ Unfavorable'}",
-                    ""
-                ])
+            # Build formatted output
+            output_lines = []
             
-            # Key statistics
-            stats = results.get('statistical_analysis', {})
+            # Header
+            output_lines.append("## 📊 **Comprehensive Variance Analysis**")
+            output_lines.append("")
+            
+            # Summary section
+            actual_total = summary.get('actual_total', 0)
+            planned_total = summary.get('planned_total', 0)
+            variance_absolute = summary.get('variance_absolute', 0)
+            variance_percentage = summary.get('variance_percentage', 0)
+            is_favorable = summary.get('is_favorable', False)
+            record_count = summary.get('record_count', 0)
+            
+            variance_symbol = "📈" if is_favorable else "📉"
+            variance_status = "**FAVORABLE**" if is_favorable else "**UNFAVORABLE**"
+            
+            output_lines.append("### 📋 **Executive Summary**")
+            output_lines.append(f"• **Total Actual**: ${actual_total:,.2f}")
+            output_lines.append(f"• **Total Planned**: ${planned_total:,.2f}")
+            output_lines.append(f"• **Variance**: ${variance_absolute:,.2f} ({variance_percentage:+.1f}%) {variance_symbol}")
+            output_lines.append(f"• **Status**: {variance_status}")
+            output_lines.append(f"• **Records Analyzed**: {record_count:,}")
+            output_lines.append("")
+            
+            # Statistical analysis
             if stats:
-                analysis_lines.extend([
-                    "### 📈 **Statistical Summary**",
-                    f"• **Mean Variance**: ${stats.get('variance_mean', 0):,.2f}",
-                    f"• **Standard Deviation**: ${stats.get('variance_std', 0):,.2f}",
-                    f"• **Range**: ${stats.get('variance_min', 0):,.2f} to ${stats.get('variance_max', 0):,.2f}",
-                    ""
-                ])
+                output_lines.append("### 📈 **Statistical Analysis**")
+                output_lines.append(f"• **Mean Variance**: ${stats.get('variance_mean', 0):,.2f}")
+                output_lines.append(f"• **Standard Deviation**: ${stats.get('variance_std', 0):,.2f}")
+                output_lines.append(f"• **Range**: ${stats.get('variance_min', 0):,.2f} to ${stats.get('variance_max', 0):,.2f}")
+                output_lines.append(f"• **Median Variance**: ${stats.get('variance_median', 0):,.2f}")
+                output_lines.append("")
+                
+                positive = stats.get('positive_variances', 0)
+                negative = stats.get('negative_variances', 0)
+                zero = stats.get('zero_variances', 0)
+                total = positive + negative + zero
+                
+                if total > 0:
+                    output_lines.append("### 📊 **Variance Distribution**")
+                    output_lines.append(f"• **Favorable Variances**: {positive} ({positive/total*100:.1f}%)")
+                    output_lines.append(f"• **Unfavorable Variances**: {negative} ({negative/total*100:.1f}%)")
+                    output_lines.append(f"• **On-Target**: {zero} ({zero/total*100:.1f}%)")
+                    output_lines.append("")
             
-            # Insights
-            insights = results.get('insights', [])
+            # Time period analysis
+            if time_periods:
+                output_lines.append("### 📅 **Time Period Analysis**")
+                
+                if 'monthly' in time_periods:
+                    monthly = time_periods['monthly']
+                    output_lines.append(f"• **Monthly Periods**: {monthly.get('periods', 0)}")
+                    output_lines.append(f"• **Best Month**: {monthly.get('best_variance', 0):+.1f}%")
+                    output_lines.append(f"• **Worst Month**: {monthly.get('worst_variance', 0):+.1f}%")
+                
+                if 'weekly' in time_periods:
+                    weekly = time_periods['weekly']
+                    output_lines.append(f"• **Weekly Periods**: {weekly.get('periods', 0)}")
+                    output_lines.append(f"• **Best Week**: {weekly.get('best_variance', 0):+.1f}%")
+                    output_lines.append(f"• **Worst Week**: {weekly.get('worst_variance', 0):+.1f}%")
+                
+                output_lines.append("")
+            
+            # Key insights
             if insights:
-                analysis_lines.extend([
-                    "### 💡 **Key Insights**"
-                ])
-                
-                for insight in insights[:5]:  # Show top 5 insights
-                    analysis_lines.append(f"• {insight}")
-                
-                analysis_lines.append("")
+                output_lines.append("### 💡 **Key Insights**")
+                for insight in insights:
+                    output_lines.append(f"• {insight}")
+                output_lines.append("")
             
-            # LLM insights if available
-            llm_insights = results.get('llm_insights', '')
-            if llm_insights and llm_insights != 'LLM insights unavailable':
-                analysis_lines.extend([
-                    "### 🤖 **AI Analysis**",
-                    llm_insights,
-                    ""
-                ])
+            # Recommendations
+            output_lines.append("### 🎯 **Recommendations**")
             
-            return "\n".join(analysis_lines)
+            if abs(variance_percentage) > 10:
+                output_lines.append("• **HIGH VARIANCE**: Review underlying drivers and adjust forecasting models")
+            
+            if stats and stats.get('variance_std', 0) > abs(stats.get('variance_mean', 0)):
+                output_lines.append("• **HIGH VOLATILITY**: Implement stronger variance controls and monitoring")
+            
+            if is_favorable and variance_percentage > 5:
+                output_lines.append("• **INVESTIGATE SUCCESS**: Document favorable variance drivers for replication")
+            elif not is_favorable and variance_percentage < -5:
+                output_lines.append("• **CORRECTIVE ACTION**: Develop action plan to address unfavorable variances")
+            
+            output_lines.append("• **REGULAR MONITORING**: Continue variance tracking for trend identification")
+            
+            return "\n".join(output_lines)
             
         except Exception as e:
-            return f"❌ **Formatting Error**: Unable to format analysis results - {str(e)}"
+            return f"❌ **Formatting Error**: {str(e)}"
+
+    def format_comprehensive_analysis(self) -> str:
+        """
+        Format the comprehensive variance analysis results for display
+        
+        Returns:
+            str: Formatted analysis results ready for chat display
+        """
+        if not self.analysis_results:
+            return "❌ **No variance analysis results available**. Please run analysis first."
+        
+        try:
+            results = self.analysis_results
+            output_lines = []
+            
+            # Header
+            output_lines.append("# 📊 **Comprehensive Variance Analysis**")
+            output_lines.append("")
+            
+            # Summary section
+            if 'summary' in results:
+                summary = results['summary']
+                output_lines.append("## 📋 **Executive Summary**")
+                output_lines.append(f"• **Total Variance**: ${summary.get('total_variance', 0):,.2f}")
+                output_lines.append(f"• **Variance %**: {summary.get('variance_percentage', 0):.1f}%")
+                output_lines.append(f"• **Status**: {'✅ Favorable' if summary.get('is_favorable', False) else '⚠️ Unfavorable'}")
+                output_lines.append("")
+            
+            # Detailed variance breakdown
+            if 'variance_breakdown' in results:
+                breakdown = results['variance_breakdown']
+                output_lines.append("## 📈 **Variance Breakdown**")
+                
+                for item in breakdown[:5]:  # Show top 5
+                    variance = item.get('variance', 0)
+                    percentage = item.get('variance_percentage', 0)
+                    name = item.get('category', 'Unknown')
+                    
+                    status = "✅" if variance >= 0 else "❌"
+                    output_lines.append(f"• **{name}**: {status} ${variance:,.2f} ({percentage:+.1f}%)")
+                
+                output_lines.append("")
+            
+            # Key insights
+            if 'insights' in results:
+                insights = results['insights']
+                output_lines.append("## 💡 **Key Insights**")
+                for insight in insights[:3]:  # Show top 3 insights
+                    output_lines.append(f"• {insight}")
+                output_lines.append("")
+            
+            # Recommendations
+            output_lines.append("## 🎯 **Recommendations**")
+            output_lines.append("• **Focus Areas**: Review items with highest absolute variance")
+            output_lines.append("• **Trend Monitoring**: Track variance patterns over time")
+            output_lines.append("• **Process Review**: Investigate root causes of significant variances")
+            
+            return "\n".join(output_lines)
+            
+        except Exception as e:
+            return f"❌ **Formatting Error**: {str(e)}"
+
+    # ...existing code...

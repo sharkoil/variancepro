@@ -29,5 +29,9 @@ openai>=1.0.0
 # News Analysis
 feedparser>=6.0.0
 
+# PDF Processing for RAG
+PyPDF2>=3.0.0
+PyMuPDF>=1.23.0
+
 # Development and Testing
 pytest>=7.0.0

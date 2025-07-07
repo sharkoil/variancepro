@@ -54,7 +54,7 @@ class AnalysisCoordinator:
             return f"❌ **Analysis Error**: {str(e)}"
     
     def perform_contribution_analysis(self, query: str) -> str:
-        """Perform contribution analysis"""
+        """Perform contribution analysis with RAG enhancement"""
         try:
             if not self.app.column_suggestions:
                 return "⚠️ **Data analysis not ready**. Please try uploading your file again."
@@ -65,20 +65,42 @@ class AnalysisCoordinator:
             if not category_cols or not value_cols:
                 return "⚠️ **Contribution analysis requires category and value columns**"
             
-            # Use the analyzers
+            # Perform standard contribution analysis
             results = self.app.contributor_analyzer.analyze(
                 data=self.app.current_data,
                 category_col=category_cols[0],
                 value_col=value_cols[0]
             )
             
-            return self.app.contributor_analyzer.format_for_chat()
+            # Get standard formatted response
+            standard_response = self.app.contributor_analyzer.format_for_chat()
+            
+            # Check if we have uploaded documents for RAG enhancement
+            if hasattr(self.app, 'rag_analyzer') and self.app.rag_manager.has_documents():
+                try:
+                    # Enhance with RAG context
+                    enhanced_result = self.app.rag_analyzer.enhance_top_n_analysis(
+                        top_n_data=results,
+                        analysis_context=f"User query: {query}\nStandard analysis: {standard_response}",
+                        analysis_type="contribution"
+                    )
+                    
+                    if enhanced_result.get('success'):
+                        return enhanced_result.get('enhanced_response', standard_response)
+                    else:
+                        return standard_response
+                        
+                except Exception as e:
+                    print(f"RAG enhancement error: {e}")
+                    return standard_response
+            else:
+                return standard_response
             
         except Exception as e:
             return f"❌ **Contribution Analysis Error**: {str(e)}"
     
     def perform_variance_analysis(self, query: str) -> str:
-        """Perform variance analysis"""
+        """Perform variance analysis with RAG enhancement"""
         try:
             budget_vs_actual = self.app.column_suggestions.get('budget_vs_actual', {})
             
@@ -88,19 +110,42 @@ class AnalysisCoordinator:
             budget_col = list(budget_vs_actual.keys())[0]
             actual_col = budget_vs_actual[budget_col]
             
+            # Perform standard variance analysis
             results = self.app.financial_analyzer.analyze(
                 data=self.app.current_data,
                 budget_col=budget_col,
                 actual_col=actual_col
             )
             
-            return self.app.financial_analyzer.format_for_chat()
+            # Get standard formatted response
+            standard_response = self.app.financial_analyzer.format_for_chat()
+            
+            # Check if we have uploaded documents for RAG enhancement
+            if hasattr(self.app, 'rag_analyzer') and self.app.rag_manager.has_documents():
+                try:
+                    # Enhance with RAG context
+                    enhanced_result = self.app.rag_analyzer.enhance_variance_analysis(
+                        variance_data=results,
+                        analysis_context=f"User query: {query}\nStandard analysis: {standard_response}"
+                    )
+                    
+                    if enhanced_result.get('success'):
+                        return enhanced_result.get('enhanced_response', standard_response)
+                    else:
+                        # Fallback to standard response if RAG enhancement fails
+                        return standard_response
+                        
+                except Exception as e:
+                    print(f"RAG enhancement error: {e}")
+                    return standard_response
+            else:
+                return standard_response
             
         except Exception as e:
             return f"❌ **Variance Analysis Error**: {str(e)}"
     
     def perform_trend_analysis(self, query: str) -> str:
-        """Perform trend analysis"""
+        """Perform trend analysis with RAG enhancement"""
         try:
             date_cols = self.app.csv_loader.column_info.get('date_columns', [])
             numeric_cols = self.app.csv_loader.column_info.get('numeric_columns', [])
@@ -108,13 +153,35 @@ class AnalysisCoordinator:
             if not date_cols or not numeric_cols:
                 return "⚠️ **Trend analysis requires date and numeric columns**"
             
+            # Perform standard trend analysis
             results = self.app.timescale_analyzer.analyze(
                 data=self.app.current_data,
                 date_col=date_cols[0],
                 value_cols=numeric_cols[:3]  # Limit to first 3 numeric columns
             )
             
-            return self.app.timescale_analyzer.format_for_chat()
+            # Get standard formatted response
+            standard_response = self.app.timescale_analyzer.format_for_chat()
+            
+            # Check if we have uploaded documents for RAG enhancement
+            if hasattr(self.app, 'rag_analyzer') and self.app.rag_manager.has_documents():
+                try:
+                    # Enhance with RAG context
+                    enhanced_result = self.app.rag_analyzer.enhance_trend_analysis(
+                        trend_data=results,
+                        analysis_context=f"User query: {query}\nStandard analysis: {standard_response}"
+                    )
+                    
+                    if enhanced_result.get('success'):
+                        return enhanced_result.get('enhanced_response', standard_response)
+                    else:
+                        return standard_response
+                        
+                except Exception as e:
+                    print(f"RAG enhancement error: {e}")
+                    return standard_response
+            else:
+                return standard_response
             
         except Exception as e:
             return f"❌ **Trend Analysis Error**: {str(e)}"

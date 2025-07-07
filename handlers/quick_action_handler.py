@@ -27,15 +27,21 @@ class QuickActionHandler:
     the main application code clean and focused.
     """
     
-    def __init__(self, app_core):
+    def __init__(self, app_core, rag_manager=None, rag_analyzer=None):
         """
         Initialize the quick action handler.
         
         Args:
             app_core: Reference to the main application core for data access
+            rag_manager: RAG Document Manager for document context (optional)
+            rag_analyzer: RAG Enhanced Analyzer for enhanced analysis (optional)
         """
         self.app_core = app_core
         self.timestamp_handler = TimestampHandler()
+        self.rag_manager = rag_manager
+        self.rag_analyzer = rag_analyzer
+        
+        print(f"🔧 QuickActionHandler initialized with RAG: {self.rag_manager is not None}")
     
     def handle_action(self, action: str, history: List[Dict]) -> List[Dict]:
         """
@@ -103,15 +109,15 @@ class QuickActionHandler:
     
     def _handle_summary_action(self) -> str:
         """
-        Handle summary quick action.
+        Handle summary quick action with RAG enhancement.
         
         Returns:
-            str: Summary analysis response
+            str: Summary analysis response with RAG context if available
         """
         current_data, data_summary = self.app_core.get_current_data()
         
         if data_summary:
-            return f"📊 **Data Summary**\n\n{data_summary}"
+            base_summary = f"📊 **Data Summary**\n\n{data_summary}"
         else:
             # Generate basic summary if no cached summary
             row_count = len(current_data)
@@ -120,7 +126,7 @@ class QuickActionHandler:
             if len(current_data.columns) > 5:
                 columns += "..."
             
-            return f"""📊 **Quick Summary**
+            base_summary = f"""📊 **Quick Summary**
 
 **Dataset Overview**: {row_count:,} rows × {col_count} columns
 
@@ -129,13 +135,57 @@ class QuickActionHandler:
 **Data Types**: {len(current_data.select_dtypes(include=['number']).columns)} numeric, {len(current_data.select_dtypes(include=['object']).columns)} text
 
 💡 **Next Steps**: Try trends analysis or ask specific questions about your data!"""
+        
+        # Enhance with RAG if available
+        if self.rag_manager and self.rag_analyzer and self.rag_manager.has_documents():
+            try:
+                print("🔍 Enhancing summary with RAG context...")
+                
+                # Create analysis context for RAG enhancement
+                analysis_context = f"""
+Data Summary Analysis:
+- Dataset: {row_count:,} rows × {col_count} columns
+- Key columns: {', '.join(current_data.columns[:10])}
+- Data types: {len(current_data.select_dtypes(include=['number']).columns)} numeric, {len(current_data.select_dtypes(include=['object']).columns)} categorical
+"""
+                
+                # Enhance with RAG
+                enhanced_result = self.rag_analyzer.enhance_general_analysis(
+                    analysis_data={'summary': base_summary, 'context': analysis_context},
+                    analysis_type='summary',
+                    query_context="dataset summary and overview analysis"
+                )
+                
+                if enhanced_result.get('success'):
+                    print(f"✅ RAG-enhanced summary generated with {enhanced_result.get('documents_used', 0)} document(s)")
+                    
+                    # Log the prompt being used for validation
+                    if 'prompt_used' in enhanced_result:
+                        print("📝 PROMPT USED FOR RAG ENHANCEMENT:")
+                        print("=" * 50)
+                        print(enhanced_result['prompt_used'])
+                        print("=" * 50)
+                    
+                    return f"""{base_summary}
+
+{enhanced_result['enhanced_analysis']}
+
+---
+🔍 **RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                else:
+                    print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
+                    
+            except Exception as e:
+                print(f"❌ RAG enhancement error: {str(e)}")
+        
+        return base_summary
     
     def _handle_trends_action(self) -> str:
         """
-        Handle trends quick action.
+        Handle trends quick action with RAG enhancement.
         
         Returns:
-            str: Trends analysis response
+            str: Trends analysis response with RAG context if available
         """
         if self.app_core.timescale_analyzer is None:
             return "⚠️ **Trends Analysis**: Timescale analyzer not available. Please check the system configuration."
@@ -163,7 +213,51 @@ class QuickActionHandler:
             )
             
             if self.app_core.timescale_analyzer.status == "completed":
-                return f"📈 **Trends Analysis**\n\n{self.app_core.timescale_analyzer.format_for_chat()}"
+                base_analysis = f"📈 **Trends Analysis**\n\n{self.app_core.timescale_analyzer.format_for_chat()}"
+                
+                # Enhance with RAG if available
+                if self.rag_manager and self.rag_analyzer and self.rag_manager.has_documents():
+                    try:
+                        print("🔍 Enhancing trends analysis with RAG context...")
+                        
+                        # Create analysis context for RAG enhancement
+                        analysis_context = f"""
+Trends Analysis Results:
+- Date column: {date_columns[0]}
+- Value columns analyzed: {', '.join(numeric_columns[:3])}
+- Dataset size: {len(current_data)} records
+- Analysis status: {self.app_core.timescale_analyzer.status}
+"""
+                        
+                        # Enhance with RAG
+                        enhanced_result = self.rag_analyzer.enhance_trend_analysis(
+                            trend_data={'analysis': base_analysis, 'context': analysis_context},
+                            analysis_context=analysis_context
+                        )
+                        
+                        if enhanced_result.get('success'):
+                            print(f"✅ RAG-enhanced trends analysis generated with {enhanced_result.get('documents_used', 0)} document(s)")
+                            
+                            # Log the prompt being used for validation
+                            if 'prompt_used' in enhanced_result:
+                                print("📝 PROMPT USED FOR RAG ENHANCEMENT:")
+                                print("=" * 50)
+                                print(enhanced_result['prompt_used'])
+                                print("=" * 50)
+                            
+                            return f"""{base_analysis}
+
+{enhanced_result['enhanced_analysis']}
+
+---
+🔍 **RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                        else:
+                            print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
+                            
+                    except Exception as e:
+                        print(f"❌ RAG enhancement error: {str(e)}")
+                
+                return base_analysis
             else:
                 return f"❌ **Trends Analysis Failed**: {self.app_core.timescale_analyzer.status}"
                 
@@ -172,10 +266,10 @@ class QuickActionHandler:
     
     def _handle_variance_action(self) -> str:
         """
-        Handle variance analysis quick action.
+        Handle variance analysis quick action with RAG enhancement.
         
         Returns:
-            str: Variance analysis response
+            str: Variance analysis response with RAG context if available
         """
         try:
             current_data, _ = self.app_core.get_current_data()
@@ -222,9 +316,56 @@ class QuickActionHandler:
                 return f"❌ **Variance Analysis Error**: {result['error']}"
             
             # Format the comprehensive analysis
-            formatted_result = variance_analyzer.format_comprehensive_analysis(result)
+            base_analysis = variance_analyzer.format_comprehensive_analysis(result)
             
-            return f"""{formatted_result}
+            # Enhance with RAG if available
+            if self.rag_manager and self.rag_analyzer and self.rag_manager.has_documents():
+                try:
+                    print("🔍 Enhancing variance analysis with RAG context...")
+                    
+                    # Create analysis context for RAG enhancement
+                    analysis_context = f"""
+Variance Analysis Results:
+- Actual column: {first_pair['actual']}
+- Planned column: {first_pair['planned']}
+- Date column: {date_col or 'None detected'}
+- Dataset size: {len(current_data)} records
+- Additional pairs available: {len(variance_pairs) - 1}
+"""
+                    
+                    # Enhance with RAG
+                    enhanced_result = self.rag_analyzer.enhance_variance_analysis(
+                        variance_data={'analysis': base_analysis, 'context': analysis_context},
+                        analysis_context=analysis_context
+                    )
+                    
+                    if enhanced_result.get('success'):
+                        print(f"✅ RAG-enhanced variance analysis generated with {enhanced_result.get('documents_used', 0)} document(s)")
+                        
+                        # Log the prompt being used for validation
+                        if 'prompt_used' in enhanced_result:
+                            print("📝 PROMPT USED FOR RAG ENHANCEMENT:")
+                            print("=" * 50)
+                            print(enhanced_result['prompt_used'])
+                            print("=" * 50)
+                        
+                        final_analysis = f"""{base_analysis}
+
+{enhanced_result['enhanced_analysis']}
+
+---
+🔍 **RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                    else:
+                        print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
+                        final_analysis = base_analysis
+                        
+                except Exception as e:
+                    print(f"❌ RAG enhancement error: {str(e)}")
+                    final_analysis = base_analysis
+            else:
+                final_analysis = base_analysis
+            
+            return f"""{final_analysis}
 
 💡 **Additional Pairs Available**: {len(variance_pairs) - 1} more variance comparison opportunities detected."""
             
@@ -485,7 +626,7 @@ Keep response under 150 words and focus on actionable business insights.
                                              value_col: str, full_data, category_col: str, 
                                              total_sum: float) -> str:
         """
-        Generate comprehensive analysis with LLM commentary and variance analysis across timeframes.
+        Generate comprehensive analysis with LLM commentary, variance analysis, and RAG enhancement.
         
         Args:
             result_data: The top/bottom N results
@@ -497,7 +638,7 @@ Keep response under 150 words and focus on actionable business insights.
             total_sum: Total sum of all values
             
         Returns:
-            str: Comprehensive analysis with LLM commentary
+            str: Comprehensive analysis with LLM commentary and RAG enhancement
         """
         try:
             # Basic statistical analysis
@@ -514,10 +655,71 @@ Keep response under 150 words and focus on actionable business insights.
             # Variance analysis across timeframes if date column exists
             variance_analysis = self._perform_multi_timeframe_analysis(full_data, value_col, category_col)
             
-            # Generate LLM commentary
-            llm_commentary = self._generate_llm_commentary_for_top_bottom(
+            # Generate base LLM commentary
+            base_llm_commentary = self._generate_llm_commentary_for_top_bottom(
                 result_data, direction, n, value_col, category_col, stats, total_sum, variance_analysis
             )
+            
+            # Enhance with RAG if available
+            enhanced_commentary = base_llm_commentary
+            if self.rag_manager and self.rag_analyzer and self.rag_manager.has_documents():
+                try:
+                    print(f"🔍 Enhancing {direction} {n} analysis with RAG context...")
+                    
+                    # Prepare top performers data for RAG context
+                    top_performers = []
+                    for _, row in result_data.iterrows():
+                        percentage = (row[value_col] / total_sum) * 100 if total_sum > 0 else 0
+                        top_performers.append(f"{row[category_col]}: ${row[value_col]:,.2f} ({percentage:.1f}%)")
+                    
+                    # Create analysis context for RAG enhancement
+                    analysis_context = f"""
+{direction.title()} {n} Analysis Results:
+- Category: {category_col}
+- Metric: {value_col}
+- Performers: {'; '.join(top_performers)}
+- Mean: ${stats['mean']:,.2f}
+- Range: ${stats['range']:,.2f}
+- Standard Deviation: ${stats['std']:,.2f}
+"""
+                    
+                    analysis_data = {
+                        'top_performers': top_performers,
+                        'stats': stats,
+                        'variance_analysis': variance_analysis,
+                        'base_commentary': base_llm_commentary
+                    }
+                    
+                    # Enhance with RAG
+                    enhanced_result = self.rag_analyzer.enhance_top_n_analysis(
+                        top_n_data=analysis_data,
+                        analysis_context=analysis_context,
+                        direction=direction,
+                        n=n
+                    )
+                    
+                    if enhanced_result.get('success'):
+                        print(f"✅ RAG-enhanced {direction} {n} analysis generated with {enhanced_result.get('documents_used', 0)} document(s)")
+                        
+                        # Log the prompt being used for validation
+                        if 'prompt_used' in enhanced_result:
+                            print("📝 PROMPT USED FOR RAG ENHANCEMENT:")
+                            print("=" * 50)
+                            print(enhanced_result['prompt_used'])
+                            print("=" * 50)
+                        
+                        enhanced_commentary = f"""{base_llm_commentary}
+
+### 🔍 **RAG-Enhanced Insights**
+{enhanced_result['enhanced_analysis']}
+
+---
+**RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                    else:
+                        print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
+                        
+                except Exception as e:
+                    print(f"❌ RAG enhancement error: {str(e)}")
             
             # Format comprehensive response
             analysis_lines = [
@@ -537,10 +739,10 @@ Keep response under 150 words and focus on actionable business insights.
                     ""
                 ])
             
-            # Add LLM commentary
+            # Add enhanced LLM commentary
             analysis_lines.extend([
                 "### 🤖 **AI Analysis & Insights**",
-                llm_commentary
+                enhanced_commentary
             ])
             
             return "\n".join(analysis_lines)
@@ -551,7 +753,7 @@ Keep response under 150 words and focus on actionable business insights.
     def _generate_enhanced_numeric_analysis(self, result_data, direction: str, n: int, 
                                           value_col: str, full_data) -> str:
         """
-        Generate enhanced analysis for numeric-only data without categorical grouping.
+        Generate enhanced analysis for numeric-only data without categorical grouping, with RAG enhancement.
         
         Args:
             result_data: The top/bottom N results
@@ -561,7 +763,7 @@ Keep response under 150 words and focus on actionable business insights.
             full_data: The complete dataset
             
         Returns:
-            str: Enhanced analysis with insights
+            str: Enhanced analysis with insights and RAG enhancement
         """
         try:
             # Format results with more detail
@@ -584,10 +786,66 @@ Keep response under 150 words and focus on actionable business insights.
             # Variance analysis
             variance_analysis = self._perform_numeric_variance_analysis(full_data, value_col)
             
-            # Generate LLM commentary
-            llm_commentary = self._generate_llm_commentary_for_numeric(
+            # Generate base LLM commentary
+            base_llm_commentary = self._generate_llm_commentary_for_numeric(
                 result_data, direction, n, value_col, stats, variance_analysis
             )
+            
+            # Enhance with RAG if available
+            enhanced_commentary = base_llm_commentary
+            if self.rag_manager and self.rag_analyzer and self.rag_manager.has_documents():
+                try:
+                    print(f"🔍 Enhancing numeric {direction} {n} analysis with RAG context...")
+                    
+                    values_list = [f"${val:,.2f}" for val in result_data[value_col].values]
+                    
+                    # Create analysis context for RAG enhancement
+                    analysis_context = f"""
+Numeric {direction.title()} {n} Analysis:
+- Column: {value_col}
+- Values: {', '.join(values_list)}
+- Mean: ${stats['mean']:,.2f}
+- Range: ${stats['range']:,.2f}
+- Standard Deviation: ${stats['std']:,.2f}
+"""
+                    
+                    analysis_data = {
+                        'values': values_list,
+                        'stats': stats,
+                        'variance_analysis': variance_analysis,
+                        'base_commentary': base_llm_commentary
+                    }
+                    
+                    # Enhance with RAG
+                    enhanced_result = self.rag_analyzer.enhance_top_n_analysis(
+                        top_n_data=analysis_data,
+                        analysis_context=analysis_context,
+                        direction=direction,
+                        n=n
+                    )
+                    
+                    if enhanced_result.get('success'):
+                        print(f"✅ RAG-enhanced numeric {direction} {n} analysis generated with {enhanced_result.get('documents_used', 0)} document(s)")
+                        
+                        # Log the prompt being used for validation
+                        if 'prompt_used' in enhanced_result:
+                            print("📝 PROMPT USED FOR RAG ENHANCEMENT:")
+                            print("=" * 50)
+                            print(enhanced_result['prompt_used'])
+                            print("=" * 50)
+                        
+                        enhanced_commentary = f"""{base_llm_commentary}
+
+### 🔍 **RAG-Enhanced Insights**
+{enhanced_result['enhanced_analysis']}
+
+---
+**RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                    else:
+                        print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
+                        
+                except Exception as e:
+                    print(f"❌ RAG enhancement error: {str(e)}")
             
             analysis_lines = [
                 result_text,
@@ -607,7 +865,7 @@ Keep response under 150 words and focus on actionable business insights.
             
             analysis_lines.extend([
                 "### 🤖 **AI Insights**",
-                llm_commentary
+                enhanced_commentary
             ])
             
             return "\n".join(analysis_lines)
