@@ -17,6 +17,9 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 from handlers.timestamp_handler import TimestampHandler
+from analyzers.forecast_analyzer import ForecastingAnalyzer
+from utils.cache_manager import get_cache_manager
+from utils.performance_monitor import get_performance_monitor, performance_monitor
 
 
 class QuickActionHandler:
@@ -41,7 +44,16 @@ class QuickActionHandler:
         self.rag_manager = rag_manager
         self.rag_analyzer = rag_analyzer
         
+        # Initialize Phase 3A components: caching and performance monitoring
+        self.cache_manager = get_cache_manager()
+        self.performance_monitor = get_performance_monitor()
+        
+        # Initialize Phase 3B components: forecasting analyzer
+        self.forecasting_analyzer = ForecastingAnalyzer(confidence_level=0.95)
+        
         print(f"🔧 QuickActionHandler initialized with RAG: {self.rag_manager is not None}")
+        print(f"🔧 Phase 3A components initialized: Cache & Performance monitoring")
+        print(f"🔧 Phase 3B components initialized: Forecasting analyzer")
     
     def handle_action(self, action: str, history: List[Dict]) -> List[Dict]:
         """
@@ -102,19 +114,76 @@ class QuickActionHandler:
             return self._handle_trends_action()
         elif action_lower == "variance":
             return self._handle_variance_action()
+        elif action_lower == "forecast":
+            return self._handle_forecast_action()
         elif "top" in action_lower or "bottom" in action_lower:
             return self._handle_top_bottom_action(action)
         else:
             return f"🔍 **{action.title()} Analysis**\n\nThis feature is being implemented. You can ask questions about your data in the chat!"
     
+    def invalidate_cache_for_data_change(self):
+        """
+        Invalidate cache when data changes (e.g., new CSV uploaded).
+        
+        This method should be called whenever the underlying data changes
+        to ensure cache consistency and prevent stale results.
+        """
+        try:
+            current_data, _ = self.app_core.get_current_data()
+            if current_data is not None:
+                self.cache_manager.invalidate_data_cache(current_data)
+                print("🗑️ Cache invalidated due to data change")
+        except Exception as e:
+            print(f"⚠️ Error invalidating cache: {str(e)}")
+    
+    def get_cache_stats(self) -> Dict:
+        """
+        Get cache performance statistics.
+        
+        Returns:
+            Dict: Cache statistics including hit rate, size, etc.
+        """
+        return self.cache_manager.get_stats()
+    
+    def get_performance_stats(self) -> Dict:
+        """
+        Get performance monitoring statistics.
+        
+        Returns:
+            Dict: Performance statistics including response times, etc.
+        """
+        return self.performance_monitor.get_performance_summary()
+    
+    @performance_monitor('summary_analysis')
     def _handle_summary_action(self) -> str:
         """
-        Handle summary quick action with RAG enhancement.
+        Handle summary quick action with RAG enhancement and caching.
+        
+        This method now includes Phase 3A caching to improve performance
+        for repeated summary requests on the same data.
         
         Returns:
             str: Summary analysis response with RAG context if available
         """
-        current_data, data_summary = self.app_core.get_current_data()
+        # Get data first to check cache - but only once
+        try:
+            current_data, data_summary = self.app_core.get_current_data()
+        except Exception as e:
+            return f"❌ **Summary Analysis Error**: Unable to retrieve data - {str(e)}"
+        
+        # Check cache first for summary analysis
+        cache_key_params = {
+            'has_rag': self.rag_manager is not None and self.rag_manager.has_documents(),
+            'data_summary_type': type(data_summary).__name__
+        }
+        
+        cached_result = self.cache_manager.get(current_data, 'summary', cache_key_params)
+        if cached_result is not None:
+            return cached_result
+        
+        # Only calculate these if we didn't get a cache hit
+        row_count = len(current_data)
+        col_count = len(current_data.columns)
         
         # Generate a human-readable summary from the data
         if data_summary and isinstance(data_summary, dict):
@@ -125,8 +194,6 @@ class QuickActionHandler:
             base_summary = f"📊 **Data Summary**\n\n{data_summary}"
         else:
             # Generate basic summary if no cached summary
-            row_count = len(current_data)
-            col_count = len(current_data.columns)
             columns = ', '.join(current_data.columns[:5])
             if len(current_data.columns) > 5:
                 columns += "..."
@@ -171,23 +238,33 @@ Data Summary Analysis:
                         print(enhanced_result['prompt_used'])
                         print("=" * 50)
                     
-                    return f"""{base_summary}
+                    final_result = f"""{base_summary}
 
 {enhanced_result['enhanced_analysis']}
 
 ---
 🔍 **RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                    
+                    # Cache the RAG-enhanced result
+                    self.cache_manager.put(current_data, 'summary', final_result, cache_key_params)
+                    return final_result
                 else:
                     print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
                     
             except Exception as e:
                 print(f"❌ RAG enhancement error: {str(e)}")
         
+        # Cache the base summary result
+        self.cache_manager.put(current_data, 'summary', base_summary, cache_key_params)
         return base_summary
     
+    @performance_monitor('trends_analysis')
     def _handle_trends_action(self) -> str:
         """
-        Handle trends quick action with RAG enhancement.
+        Handle trends quick action with RAG enhancement and caching.
+        
+        This method now includes Phase 3A caching to improve performance
+        for repeated trends requests on the same data.
         
         Returns:
             str: Trends analysis response with RAG context if available
@@ -203,6 +280,23 @@ Data Summary Analysis:
             
             if not date_columns:
                 return "⚠️ **Trends Analysis**: No date columns detected in your data. Trends analysis requires time-based data."
+            
+            # Get numeric columns
+            numeric_columns = current_data.select_dtypes(include=['number']).columns.tolist()
+            
+            if not numeric_columns:
+                return "⚠️ **Trends Analysis**: No numeric columns found. Trends analysis requires numerical data to analyze."
+            
+            # Check cache first for trends analysis
+            cache_key_params = {
+                'has_rag': self.rag_manager is not None and self.rag_manager.has_documents(),
+                'date_columns': date_columns,
+                'numeric_columns': numeric_columns[:3]  # Only first 3 columns affect analysis
+            }
+            
+            cached_result = self.cache_manager.get(current_data, 'trends', cache_key_params)
+            if cached_result is not None:
+                return cached_result
             
             # Get numeric columns
             numeric_columns = current_data.select_dtypes(include=['number']).columns.tolist()
@@ -250,18 +344,24 @@ Trends Analysis Results:
                                 print(enhanced_result['prompt_used'])
                                 print("=" * 50)
                             
-                            return f"""{base_analysis}
+                            final_result = f"""{base_analysis}
 
 {enhanced_result['enhanced_analysis']}
 
 ---
 🔍 **RAG Enhancement**: Analysis enhanced with {enhanced_result.get('documents_used', 0)} document(s)"""
+                            
+                            # Cache the RAG-enhanced result
+                            self.cache_manager.put(current_data, 'trends', final_result, cache_key_params)
+                            return final_result
                         else:
                             print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
                             
                     except Exception as e:
                         print(f"❌ RAG enhancement error: {str(e)}")
                 
+                # Cache the base analysis result
+                self.cache_manager.put(current_data, 'trends', base_analysis, cache_key_params)
                 return base_analysis
             else:
                 return f"❌ **Trends Analysis Failed**: {self.app_core.timescale_analyzer.status}"
@@ -269,6 +369,7 @@ Trends Analysis Results:
         except Exception as e:
             return f"❌ **Trends Analysis Error**: {str(e)}"
     
+    @performance_monitor('variance_analysis')
     def _handle_variance_action(self) -> str:
         """
         Handle variance analysis quick action with RAG enhancement.
@@ -377,103 +478,185 @@ Variance Analysis Results:
         except Exception as e:
             return f"❌ **Variance Analysis Error**: {str(e)}"
     
+    @performance_monitor('top_bottom_analysis')
     def _handle_top_bottom_action(self, action: str) -> str:
         """
-        Handle top/bottom N analysis actions.
+        Handle top/bottom N quick actions robustly.
+        
+        This method provides comprehensive error handling and graceful degradation
+        for various edge cases including missing columns, invalid data, etc.
         
         Args:
-            action (str): The action (top5, bottom10, etc.)
-            
+            action (str): The action string (e.g., 'top 5', 'bottom 10', 'top 3 by revenue')
         Returns:
-            str: Analysis response
+            str: Top/Bottom N analysis response
         """
+        import re
         try:
             current_data, _ = self.app_core.get_current_data()
             
-            # Parse the action to get N and direction
+            # Validate that we have data
+            if current_data is None or current_data.empty:
+                return "⚠️ **Top/Bottom N Analysis**: No data available. Please upload a CSV file first."
+            
             action_lower = action.lower()
             
-            if "top" in action_lower:
-                direction = "top"
-                if "5" in action_lower:
-                    n = 5
-                elif "10" in action_lower:
-                    n = 10
-                else:
-                    n = 5  # default
-            elif "bottom" in action_lower:
-                direction = "bottom"
-                if "5" in action_lower:
-                    n = 5
-                elif "10" in action_lower:
-                    n = 10
-                else:
-                    n = 5  # default
+            # Extract direction and N (default N=5) with improved parsing
+            match = re.search(r'(top|bottom)\s*(\d+)?', action_lower)
+            if not match:
+                return f"❌ **Top/Bottom N Analysis Error**: Could not parse action '{action}'. Try 'top 5' or 'bottom 10'."
+            
+            direction = match.group(1)
+            n = int(match.group(2)) if match.group(2) else 5
+            
+            # Validate N is reasonable
+            if n <= 0:
+                return f"❌ **Top/Bottom N Analysis Error**: N must be positive, got {n}."
+            if n > len(current_data):
+                n = len(current_data)
+                print(f"[DEBUG] N reduced to dataset size: {n}")
+            
+            # Optionally extract column (e.g., 'by revenue')
+            col_match = re.search(r'by ([\w\s]+)', action_lower)
+            sort_col = None
+            
+            if col_match:
+                candidate = col_match.group(1).strip()
+                # Try to find matching column with fuzzy matching
+                for col in current_data.columns:
+                    if candidate.lower() in col.lower():
+                        sort_col = col
+                        break
+                
+                # If specified column not found, return helpful error
+                if not sort_col:
+                    available_cols = ', '.join(current_data.columns[:5])
+                    if len(current_data.columns) > 5:
+                        available_cols += "..."
+                    return f"❌ **Column '{candidate}' not found**. Available columns: {available_cols}"
+            
+            # Default to first numeric column if not specified
+            if not sort_col:
+                numeric_columns = current_data.select_dtypes(include=['number']).columns.tolist()
+                if not numeric_columns:
+                    return f"⚠️ **{direction.title()} {n} Analysis**: No numeric columns found in your data. This analysis requires numerical data to sort by."
+                sort_col = numeric_columns[0]
+                print(f"[DEBUG] Using default numeric column: {sort_col}")
+            
+            # Validate the selected column has valid data
+            if current_data[sort_col].isna().all():
+                return f"⚠️ **{direction.title()} {n} Analysis**: Column '{sort_col}' contains only missing values."
+            
+            # Show all columns for top/bottom N rows
+            if direction == "top":
+                result_df = current_data.nlargest(n, sort_col)
             else:
-                return f"❌ **Analysis Error**: Unrecognized action '{action}'"
+                result_df = current_data.nsmallest(n, sort_col)
             
-            # Get numeric columns for analysis
-            numeric_columns = current_data.select_dtypes(include=['number']).columns.tolist()
+            # Handle case where result is empty
+            if result_df.empty:
+                return f"⚠️ **{direction.title()} {n} Analysis**: No valid data found for column '{sort_col}'."
             
-            if not numeric_columns:
-                return f"⚠️ **{direction.title()} {n} Analysis**: No numeric columns found in your data."
+            # Format as markdown table with error handling
+            try:
+                result_str = result_df.head(n).to_markdown(index=False)
+            except Exception as e:
+                # Fallback to string representation if to_markdown fails
+                print(f"[DEBUG] to_markdown failed: {e}, using fallback")
+                result_str = result_df.head(n).to_string(index=False)
             
-            # Get categorical columns for grouping
-            categorical_columns = current_data.select_dtypes(include=['object']).columns.tolist()
+            return f"🔍 **{direction.title()} {n} Rows by {sort_col}**\n\n{result_str}\n\n*Tip: You can specify a column, e.g. 'Top 5 by Revenue'.*"
             
-            # Use the first numeric column for values
-            value_col = numeric_columns[0]
-            
-            # Use the first categorical column for categories (if available)
-            if categorical_columns:
-                category_col = categorical_columns[0]
-                
-                # Group by category and sum values
-                grouped_data = current_data.groupby(category_col)[value_col].sum().reset_index()
-                
-                # Sort and get top/bottom N
-                if direction == "top":
-                    result_data = grouped_data.nlargest(n, value_col)
-                else:
-                    result_data = grouped_data.nsmallest(n, value_col)
-                    
-                # Format results with more detail
-                result_text = ""
-                total_sum = grouped_data[value_col].sum()
-                
-                for idx, (_, row) in enumerate(result_data.iterrows(), 1):
-                    percentage = (row[value_col] / total_sum) * 100 if total_sum > 0 else 0
-                    result_text += f"• **#{idx} {row[category_col]}**: ${row[value_col]:,.2f} ({percentage:.1f}% of total)\n"
-                
-                # Generate comprehensive analysis with LLM commentary
-                analysis_result = self._generate_enhanced_top_bottom_analysis(
-                    result_data, direction, n, value_col, current_data, category_col, total_sum
-                )
-                
-                return f"""🔍 **{direction.title()} {n} Analysis by {category_col}**
-
-{result_text}
-
-{analysis_result}"""
-            
-            else:
-                # No categorical columns, just sort by the numeric column
-                if direction == "top":
-                    result_data = current_data.nlargest(n, value_col)
-                else:
-                    result_data = current_data.nsmallest(n, value_col)
-                
-                # Create enhanced analysis for non-categorical data
-                analysis_result = self._generate_enhanced_numeric_analysis(
-                    result_data, direction, n, value_col, current_data
-                )
-                
-                return f"""🔍 **{direction.title()} {n} Analysis**
-
-{analysis_result}"""
-                
+        except ImportError as e:
+            return f"❌ **Top/Bottom N Analysis Error**: Missing dependency - {str(e)}. Please install required packages."
+        except KeyError as e:
+            return f"❌ **Top/Bottom N Analysis Error**: Column not found - {str(e)}."
+        except ValueError as e:
+            return f"❌ **Top/Bottom N Analysis Error**: Invalid data - {str(e)}."
         except Exception as e:
-            return f"❌ **{action.title()} Analysis Error**: {str(e)}"
+            print(f"[DEBUG] Unexpected error in top/bottom analysis: {e}")
+            return f"❌ **Top/Bottom N Analysis Error**: {str(e)}. Please try again or contact support."
+    
+    @performance_monitor('forecast_analysis')
+    def _handle_forecast_action(self) -> str:
+        """
+        Handle forecast action with caching and performance monitoring.
+        
+        Returns:
+            str: Formatted forecast analysis
+        """
+        try:
+            # Get current data
+            current_data, data_summary = self.app_core.get_current_data()
+            
+            # Check cache first
+            cached_result = self.cache_manager.get(current_data, 'forecast_analysis')
+            if cached_result:
+                return cached_result
+            
+            # Find the best column for forecasting (prefer numeric columns)
+            numeric_columns = current_data.select_dtypes(include=[np.number]).columns
+            if len(numeric_columns) == 0:
+                return "⚠️ **Forecast Analysis**\n\nNo numeric columns found for forecasting. Please ensure your data contains numeric values."
+            
+            # Use the first numeric column or look for common patterns
+            forecast_column = None
+            for col in numeric_columns:
+                if any(keyword in col.lower() for keyword in ['revenue', 'sales', 'profit', 'value', 'amount']):
+                    forecast_column = col
+                    break
+            
+            if not forecast_column:
+                forecast_column = numeric_columns[0]
+            
+            # Try to find a date column
+            date_column = None
+            for col in current_data.columns:
+                try:
+                    pd.to_datetime(current_data[col])
+                    date_column = col
+                    break
+                except:
+                    continue
+            
+            if not date_column:
+                return "⚠️ **Forecast Analysis**\n\nNo date column found. Forecasting requires a date column to create time series predictions."
+            
+            # Generate forecast
+            forecast_result = self.forecasting_analyzer.analyze_time_series(
+                current_data, 
+                target_column=forecast_column, 
+                date_column=date_column,
+                periods=6  # Default to 6 periods
+            )
+            
+            # Format the result
+            formatted_result = self.forecasting_analyzer.format_forecast_for_display(forecast_result)
+            
+            # Add RAG enhancement if available
+            if self.rag_manager and self.rag_manager.has_documents():
+                try:
+                    rag_enhancement = self.rag_analyzer.enhance_general_analysis(
+                        f"Forecast Analysis for {forecast_column}",
+                        formatted_result
+                    )
+                    
+                    if rag_enhancement.get('success', False):
+                        formatted_result += f"\n\n🎯 **RAG Enhancement**\n{rag_enhancement.get('enhanced_analysis', '')}"
+                except Exception as e:
+                    print(f"[DEBUG] RAG enhancement failed: {e}")
+            
+            # Cache the result
+            self.cache_manager.put(current_data, 'forecast_analysis', formatted_result)
+            
+            return formatted_result
+            
+        except Exception as e:
+            print(f"[DEBUG] Forecast analysis error: {e}")
+            error_msg = f"⚠️ **Forecast Analysis Error**\n\nAn error occurred while generating the forecast: {str(e)}"
+            return error_msg
+
+    # ... existing methods ...
     
     def _detect_date_columns(self, df) -> List[str]:
         """
