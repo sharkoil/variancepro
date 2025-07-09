@@ -116,13 +116,16 @@ class ChatHandler:
         message_lower = message.lower()
         top_bottom_indicators = [
             'top 5', 'top 10', 'bottom 5', 'bottom 10',
-            'highest', 'lowest', 'best', 'worst', 'largest', 'smallest'
+            'top 3', 'top 20', 'bottom 3', 'bottom 20',
+            'highest', 'lowest', 'best', 'worst', 'largest', 'smallest',
+            'show me top', 'show me bottom', 'give me top', 'give me bottom',
+            'what are the top', 'what are the bottom', 'find top', 'find bottom'
         ]
         return any(indicator in message_lower for indicator in top_bottom_indicators)
     
     def _handle_top_bottom_query(self, message: str) -> str:
         """
-        Handle top/bottom queries using base analyzer.
+        Handle top/bottom queries by delegating to QuickActionHandler.
         
         Args:
             message (str): The user's input message
@@ -131,53 +134,32 @@ class ChatHandler:
             str: The analysis response
         """
         try:
-            from analyzers.base_analyzer import BaseAnalyzer
+            # Import QuickActionHandler to avoid circular imports
+            from handlers.quick_action_handler import QuickActionHandler
             
-            # Create a temporary base analyzer instance
-            base_analyzer = BaseAnalyzer()
+            # Create a temporary handler instance
+            quick_handler = QuickActionHandler(self.app_core)
             
-            # Parse the query to extract N and direction
+            # Parse the message to create appropriate action
             message_lower = message.lower()
             
-            # Determine direction and N
-            if any(word in message_lower for word in ['top', 'highest', 'best', 'largest']):
-                direction = 'top'
-            else:
-                direction = 'bottom'
-            
-            # Extract number
+            # Extract number if present
             numbers = re.findall(r'\d+', message)
             n = int(numbers[0]) if numbers else 5
             
-            # Get current data
-            current_data, _ = self.app_core.get_current_data()
-            
-            # Get numeric columns for analysis
-            numeric_columns = current_data.select_dtypes(include=['number']).columns.tolist()
-            
-            if not numeric_columns:
-                return "⚠️ **Top/Bottom Analysis**: No numeric columns found in your data."
-            
-            # Use the first numeric column
-            value_col = numeric_columns[0]
-            
-            # Perform analysis
-            if direction == 'top':
-                result = base_analyzer.perform_top_n_analysis(
-                    data=current_data,
-                    value_column=value_col,
-                    n=n
-                )
+            # Determine direction
+            if any(word in message_lower for word in ['top', 'highest', 'best', 'largest']):
+                action = f"top {n}"
             else:
-                result = base_analyzer.perform_bottom_n_analysis(
-                    data=current_data,
-                    value_column=value_col,
-                    n=n
-                )
+                action = f"bottom {n}"
             
-            return f"🔍 **{direction.title()} {n} Analysis**\n\n{result}"
+            # Use the quick action handler's top/bottom method
+            result = quick_handler._handle_top_bottom_action(action)
+            
+            return result
             
         except Exception as e:
+            print(f"[DEBUG] Error in top/bottom query handler: {e}")
             return f"❌ **Top/Bottom Analysis Error**: {str(e)}"
     
     def _generate_summary_response(self) -> str:

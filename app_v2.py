@@ -275,7 +275,18 @@ class VarianceProApp:
         Returns:
             gr.Blocks: The complete Gradio interface
         """
-        with gr.Blocks(title="VariancePro v2.0", theme=gr.themes.Soft()) as interface:
+        # Read custom CSS
+        custom_css = ""
+        css_path = os.path.join(os.path.dirname(__file__), "static", "styles.css")
+        if os.path.exists(css_path):
+            with open(css_path, 'r') as f:
+                custom_css = f.read()
+        
+        with gr.Blocks(
+            title="VariancePro v2.0", 
+            theme=gr.themes.Soft(),
+            css=custom_css
+        ) as interface:
             # Header
             gr.Markdown("# 📊 VariancePro v2.0")
             gr.Markdown("*AI-Powered Financial Data Analysis with Modular Architecture*")
@@ -451,11 +462,13 @@ def main():
     print(f"🌐 Access at: http://localhost:7873")
     
     interface.launch(
-        server_name="0.0.0.0",
+        server_name="localhost",  # Changed from 0.0.0.0 to avoid postMessage origin issues
         server_port=7873,
         share=False,
         debug=True,
-        show_error=True
+        show_error=True,
+        allowed_paths=["static"],  # Allow static files access
+        favicon_path="static/logo.png"  # Set favicon
     )
 
 
