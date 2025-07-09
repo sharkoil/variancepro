@@ -113,15 +113,40 @@ class ChatHandler:
         Returns:
             bool: True if this is a top/bottom query, False otherwise
         """
-        message_lower = message.lower()
-        top_bottom_indicators = [
-            'top 5', 'top 10', 'bottom 5', 'bottom 10',
-            'top 3', 'top 20', 'bottom 3', 'bottom 20',
-            'highest', 'lowest', 'best', 'worst', 'largest', 'smallest',
+        message_lower = message.lower().strip()
+        
+        # More robust pattern matching for top/bottom queries
+        import re
+        
+        # Pattern 1: "top N" or "bottom N" where N is a number
+        pattern1 = r'\b(top|bottom)\s+(\d+)\b'
+        if re.search(pattern1, message_lower):
+            return True
+            
+        # Pattern 2: "top N by column" or "bottom N by column"
+        pattern2 = r'\b(top|bottom)\s+(\d+)\s+by\s+\w+'
+        if re.search(pattern2, message_lower):
+            return True
+            
+        # Pattern 3: Common phrases that indicate top/bottom analysis
+        top_bottom_phrases = [
             'show me top', 'show me bottom', 'give me top', 'give me bottom',
-            'what are the top', 'what are the bottom', 'find top', 'find bottom'
+            'what are the top', 'what are the bottom', 'find top', 'find bottom',
+            'highest values', 'lowest values', 'best performing', 'worst performing',
+            'largest values', 'smallest values'
         ]
-        return any(indicator in message_lower for indicator in top_bottom_indicators)
+        
+        for phrase in top_bottom_phrases:
+            if phrase in message_lower:
+                return True
+                
+        # Pattern 4: Single words that might indicate top/bottom (be more careful)
+        single_indicators = ['highest', 'lowest', 'best', 'worst', 'largest', 'smallest']
+        for indicator in single_indicators:
+            if f' {indicator} ' in f' {message_lower} ':  # Whole word match
+                return True
+                
+        return False
     
     def _handle_top_bottom_query(self, message: str) -> str:
         """
@@ -141,17 +166,40 @@ class ChatHandler:
             quick_handler = QuickActionHandler(self.app_core)
             
             # Parse the message to create appropriate action
-            message_lower = message.lower()
+            message_lower = message.lower().strip()
             
-            # Extract number if present
-            numbers = re.findall(r'\d+', message)
-            n = int(numbers[0]) if numbers else 5
+            # Use regex to extract number, direction, and column if specified
+            import re
             
-            # Determine direction
-            if any(word in message_lower for word in ['top', 'highest', 'best', 'largest']):
-                action = f"top {n}"
+            # Pattern for "top N by column" or "bottom N by column"
+            pattern_with_column = r'\b(top|bottom)\s+(\d+)\s+by\s+(\w+)'
+            match_with_column = re.search(pattern_with_column, message_lower)
+            
+            if match_with_column:
+                direction = match_with_column.group(1)
+                n = int(match_with_column.group(2))
+                column = match_with_column.group(3)
+                action = f"{direction} {n} by {column}"
             else:
-                action = f"bottom {n}"
+                # Pattern for "top N" or "bottom N" without column
+                pattern_simple = r'\b(top|bottom)\s+(\d+)'
+                match_simple = re.search(pattern_simple, message_lower)
+                
+                if match_simple:
+                    direction = match_simple.group(1)
+                    n = int(match_simple.group(2))
+                    action = f"{direction} {n}"
+                else:
+                    # Fallback: determine direction from keywords
+                    numbers = re.findall(r'\d+', message)
+                    n = int(numbers[0]) if numbers else 5
+                    
+                    if any(word in message_lower for word in ['top', 'highest', 'best', 'largest']):
+                        action = f"top {n}"
+                    else:
+                        action = f"bottom {n}"
+            
+            print(f"[DEBUG] Parsed action: '{action}' from message: '{message}'")
             
             # Use the quick action handler's top/bottom method
             result = quick_handler._handle_top_bottom_action(action)

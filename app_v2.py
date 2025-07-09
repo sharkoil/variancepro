@@ -467,8 +467,8 @@ def main():
         share=False,
         debug=True,
         show_error=True,
-        allowed_paths=["static"],  # Allow static files access
-        favicon_path="static/logo.png"  # Set favicon
+        allowed_paths=["./static"],  # Allow static files access with relative path
+        favicon_path="./static/logo.png"  # Set favicon with relative path
     )
 
 
