@@ -125,3 +125,28 @@ class Settings:
             'show_error': True,
             'show_tips': True,
         }
+
+
+# Global settings instance
+_settings_instance = None
+
+
+def get_settings() -> Settings:
+    """
+    Get the global settings instance.
+    
+    Returns:
+        Settings instance
+    """
+    global _settings_instance
+    if _settings_instance is None:
+        _settings_instance = Settings.from_env()
+    return _settings_instance
+
+
+def reset_settings():
+    """
+    Reset the global settings instance (useful for testing).
+    """
+    global _settings_instance
+    _settings_instance = None
