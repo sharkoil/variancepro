@@ -87,7 +87,7 @@ def create_mock_rag_components():
     
     mock_rag_analyzer.enhance_variance_analysis.return_value = {
         'success': True,
-        'enhanced_analysis': 'RAG-enhanced variance analysis',
+        'enhanced_analysis': 'RAG-enhanced quantitative analysis',
         'documents_used': 1,
         'prompt_used': 'Variance prompt'
     }

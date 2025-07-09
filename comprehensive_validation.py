@@ -1,7 +1,7 @@
 """
-Comprehensive validation script for VariancePro v2.0 RAG integration
+Comprehensive validation script for Quant Commander v2.0 RAG integration
 Tests all major components including:
-- Variance analysis (fixed signature)
+- Quantitative analysis (fixed signature)
 - RAG document management 
 - Summary analysis formatting
 - Quick action handlers
@@ -17,11 +17,11 @@ from pathlib import Path
 sys.path.insert(0, os.path.abspath('.'))
 
 def test_variance_analysis():
-    """Test variance analysis functionality"""
+    """Test quantitative analysis functionality"""
     print("🔧 Testing Variance Analysis...")
     
     try:
-        from analyzers.variance_analyzer import VarianceAnalyzer
+        from analyzers.quant_analyzer import QuantAnalyzer
         
         # Sample data
         data = pd.DataFrame({
@@ -31,7 +31,7 @@ def test_variance_analysis():
             'Date': pd.to_datetime(['2024-01-01', '2024-01-02', '2024-01-03'])
         })
         
-        analyzer = VarianceAnalyzer()
+        analyzer = QuantAnalyzer()
         
         # Test comprehensive analysis
         result = analyzer.comprehensive_variance_analysis(
@@ -44,13 +44,13 @@ def test_variance_analysis():
         # Test formatting (this was the broken part)
         formatted = analyzer.format_comprehensive_analysis(result)
         
-        print("✅ Variance analysis passed")
+        print("✅ Quantitative analysis passed")
         print(f"   - Result type: {type(result)}")
         print(f"   - Formatted length: {len(formatted)} chars")
         return True
         
     except Exception as e:
-        print(f"❌ Variance analysis failed: {e}")
+        print(f"❌ Quantitative analysis failed: {e}")
         return False
 
 def test_rag_components():
@@ -98,9 +98,9 @@ def test_quick_action_handlers():
         handler = QuickActionHandler(app_core=app_core)
         print("✅ QuickActionHandler created")
         
-        # Test variance analysis (the one that was broken)
+        # Test quantitative analysis (the one that was broken)
         variance_result = handler.handle_variance_analysis()
-        print(f"✅ Variance analysis handler: {len(variance_result)} chars")
+        print(f"✅ Quantitative analysis handler: {len(variance_result)} chars")
         
         # Test summary analysis
         summary_result = handler.handle_summary_analysis()
@@ -144,7 +144,7 @@ def test_app_core():
 
 def main():
     """Run all validation tests"""
-    print("🚀 VariancePro v2.0 - Comprehensive Validation")
+    print("🚀 Quant Commander v2.0 - Comprehensive Validation")
     print("=" * 60)
     
     tests = [
@@ -183,7 +183,7 @@ def main():
     print(f"\nOverall: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 All tests passed! VariancePro v2.0 is ready for use.")
+        print("🎉 All tests passed! Quant Commander v2.0 is ready for use.")
     else:
         print("⚠️ Some tests failed. Please review the errors above.")
 

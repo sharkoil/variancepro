@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VariancePro Cleanup Verification
+Quant Commander Cleanup Verification
 Verify that all components work after cleanup
 """
 
@@ -36,7 +36,7 @@ def test_import(module_name, description):
 
 def main():
     """Run cleanup verification tests"""
-    print("🔍 VariancePro Cleanup Verification")
+    print("🔍 Quant Commander Cleanup Verification")
     print("=" * 50)
     
     tests = [

@@ -153,7 +153,7 @@ class InterfaceBuilder:
                             <span style="font-size: 12px; color: #666;">App Server</span>
                         </div>
                         <div>
-                            <a href="https://github.com/sharkoil/variancepro" target="_blank" 
+                            <a href="https://github.com/sharkoil/quantcommander" target="_blank" 
                                style="color: #043B4A; text-decoration: none; font-size: 12px;">
                                 📚 Help & Docs
                             </a>
@@ -228,7 +228,7 @@ class InterfaceBuilder:
                         placeholder="Start by uploading a CSV file, then ask questions or request analysis...",
                         avatar_images=["👤", "🤖"],
                         type="messages",
-                        value=[{"role": "assistant", "content": """👋 **Welcome to VariancePro!** I'm Aria Sterling, your AI financial analyst.
+                        value=[{"role": "assistant", "content": """👋 **Welcome to Quant Commander!** I'm Aria Sterling, your AI financial analyst.
 
 📊 Upload your financial data and chat with me for comprehensive insights and analysis!
 
@@ -270,7 +270,7 @@ class InterfaceBuilder:
                     
                     with gr.Row():
                         chat_input = gr.Textbox(
-                            placeholder="Ask about your data: 'analyze contribution', 'show trends', 'variance analysis', or ask any question...",
+                            placeholder="Ask about your data: 'analyze contribution', 'show trends', 'quantitative analysis', or ask any question...",
                             label="Your Message",
                             lines=2,
                             scale=4

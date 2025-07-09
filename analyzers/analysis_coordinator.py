@@ -1,5 +1,5 @@
 """
-Analysis Coordinator for VariancePro
+Analysis Coordinator for Quant Commander
 Coordinates all analysis operations and query routing
 """
 
@@ -9,7 +9,7 @@ import pandas as pd
 
 
 class AnalysisCoordinator:
-    """Coordinates all analysis operations for the VariancePro application"""
+    """Coordinates all analysis operations for the Quant Commander application"""
     
     def __init__(self, app):
         """Initialize coordinator with reference to main app"""
@@ -100,17 +100,17 @@ class AnalysisCoordinator:
             return f"❌ **Contribution Analysis Error**: {str(e)}"
     
     def perform_variance_analysis(self, query: str) -> str:
-        """Perform variance analysis with RAG enhancement"""
+        """Perform quantitative analysis with RAG enhancement"""
         try:
             budget_vs_actual = self.app.column_suggestions.get('budget_vs_actual', {})
             
             if not budget_vs_actual:
-                return "⚠️ **Variance analysis requires budget and actual columns**"
+                return "⚠️ **Quantitative analysis requires budget and actual columns**"
             
             budget_col = list(budget_vs_actual.keys())[0]
             actual_col = budget_vs_actual[budget_col]
             
-            # Perform standard variance analysis
+            # Perform standard quantitative analysis
             results = self.app.financial_analyzer.analyze(
                 data=self.app.current_data,
                 budget_col=budget_col,
@@ -343,7 +343,7 @@ What would you like to explore?
             from datetime import datetime
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"variancepro_data_{timestamp}.csv"
+            filename = f"quantcommander_data_{timestamp}.csv"
             filepath = os.path.join(tempfile.gettempdir(), filename)
             
             self.app.current_data.to_csv(filepath, index=False)
@@ -365,8 +365,8 @@ What would you like to explore?
                     contrib_result = self.perform_contribution_analysis("contribution analysis")
                     results.append("## Contribution Analysis\n" + contrib_result)
                 
-                # Variance analysis
-                variance_result = self.perform_variance_analysis("variance analysis")
+                # Quantitative analysis
+                variance_result = self.perform_variance_analysis("quantitative analysis")
                 results.append("## Variance Analysis\n" + variance_result)
             
             if results:
@@ -383,7 +383,7 @@ What would you like to explore?
             from datetime import datetime
             
             report_parts = [
-                "# 📊 VariancePro Data Summary Report",
+                "# 📊 Quant Commander Data Summary Report",
                 f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
                 "",
                 "## 📈 Dataset Overview",

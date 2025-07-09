@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VariancePro Test Runner
+Quant Commander Test Runner
 Organized test execution for the cleaned up codebase
 """
 
@@ -43,7 +43,7 @@ def run_test_category(category_name: str, test_files: list) -> bool:
 
 def main():
     """Run organized test suite"""
-    print("🚀 VariancePro Test Suite")
+    print("🚀 Quant Commander Test Suite")
     print("=" * 50)
     
     # Test categories

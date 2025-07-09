@@ -1,6 +1,6 @@
 """
 Enhanced Natural Language to SQL Translator
-Final version with comprehensive improvements for VariancePro
+Final version with comprehensive improvements for Quant Commander
 
 Key Features:
 1. Improved column identification with synonyms and context awareness
@@ -30,7 +30,7 @@ class TranslationResult(NamedTuple):
 class EnhancedNLToSQLTranslator:
     """
     Enhanced translator for converting natural language queries to SQL
-    Specifically designed for financial and variance analysis queries
+    Specifically designed for financial and quantitative analysis queries
     """
     
     def __init__(self):

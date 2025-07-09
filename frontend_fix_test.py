@@ -61,12 +61,12 @@ def create_full_test_interface():
     
     # Create interface
     with gr.Blocks(
-        title="VariancePro - Frontend Fix Test",
+        title="Quant Commander - Frontend Fix Test",
         theme=gr.themes.Soft(),
         css=custom_css
     ) as interface:
         
-        gr.Markdown("# 🔧 VariancePro Frontend Fix Test")
+        gr.Markdown("# 🔧 Quant Commander Frontend Fix Test")
         gr.Markdown("Testing all frontend fixes: manual prompts, button actions, and resource loading")
         
         with gr.Row():
@@ -138,7 +138,7 @@ def create_full_test_interface():
     return interface
 
 if __name__ == "__main__":
-    print("🚀 Starting VariancePro Frontend Fix Test...")
+    print("🚀 Starting Quant Commander Frontend Fix Test...")
     interface = create_full_test_interface()
     print("✅ Test interface ready")
     print("🌐 Access at: http://localhost:7876")

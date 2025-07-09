@@ -1,5 +1,5 @@
 """
-Settings management for VariancePro application
+Settings management for Quant Commander application
 Provides centralized configuration for all components
 """
 
@@ -15,7 +15,7 @@ class Settings:
     """
     
     # Application Information
-    app_name: str = "VariancePro"
+    app_name: str = "Quant Commander"
     app_version: str = "1.0.0"
     
     # LLM Configuration
@@ -57,12 +57,12 @@ class Settings:
             Settings instance with values from environment
         """
         return cls(
-            llm_model=os.getenv('VARIANCEPRO_LLM_MODEL', 'gemma3:latest'),
+            llm_model=os.getenv('QUANTCOMMANDER_LLM_MODEL', 'gemma3:latest'),
             ollama_host=os.getenv('OLLAMA_HOST', 'http://localhost:11434'),
-            llm_timeout=int(os.getenv('VARIANCEPRO_LLM_TIMEOUT', '180')),
+            llm_timeout=int(os.getenv('QUANTCOMMANDER_LLM_TIMEOUT', '180')),
             gradio_port=int(os.getenv('GRADIO_SERVER_PORT', '7860')),
             gradio_share=os.getenv('GRADIO_SHARE', 'false').lower() == 'true',
-            contribution_threshold=float(os.getenv('VARIANCEPRO_CONTRIBUTION_THRESHOLD', '0.8')),
+            contribution_threshold=float(os.getenv('QUANTCOMMANDER_CONTRIBUTION_THRESHOLD', '0.8')),
         )
     
     def validate(self) -> bool:

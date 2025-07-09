@@ -58,7 +58,7 @@ import os  # Added for file path handling
 - ✅ Document search functionality
 
 #### **RAG-Enhanced Analysis:**
-- ✅ Automatic enhancement of variance analysis with document context
+- ✅ Automatic enhancement of quantitative analysis with document context
 - ✅ Automatic enhancement of trend analysis with document context  
 - ✅ General analysis enhancement for other queries
 - ✅ Graceful fallback when no documents or RAG fails
@@ -85,7 +85,7 @@ import os  # Added for file path handling
 
 3. **Test enhanced analysis:**
    - Upload CSV data as usual
-   - Ask for "variance analysis" or "trend analysis"  
+   - Ask for "quantitative analysis" or "trend analysis"  
    - Response should include document context and show "📚 *Enhanced with insights from uploaded documents*"
 
 ### **Technical Details:**

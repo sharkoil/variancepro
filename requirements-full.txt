@@ -1,4 +1,4 @@
-# VariancePro - Full Dependencies  
+# Quant Commander - Full Dependencies  
 # Complete installation including optional ML components
 
 # Web Framework

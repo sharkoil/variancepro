@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify quick action behavior in VariancePro v2.0
+Test script to verify quick action behavior in Quant Commander v2.0
 Tests that quick actions create proper user-assistant chat interactions
 """
 
@@ -8,18 +8,18 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app_v2 import VarianceProApp
+from app_v2 import QuantCommanderApp
 
 def test_quick_actions():
     """Test that quick actions create proper chat interactions"""
     
-    print("🧪 Testing VariancePro v2.0 Quick Actions...")
+    print("🧪 Testing Quant Commander v2.0 Quick Actions...")
     
     # Initialize app
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     
     # Test initial empty history
-    initial_history = [{"role": "assistant", "content": "Welcome to VariancePro v2.0!"}]
+    initial_history = [{"role": "assistant", "content": "Welcome to Quant Commander v2.0!"}]
     
     print(f"\n📋 Initial history length: {len(initial_history)}")
     
@@ -72,7 +72,7 @@ def test_chat_response():
     
     print("\n🧪 Testing regular chat response...")
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     initial_history = [{"role": "assistant", "content": "Welcome!"}]
     
     # Test regular chat
@@ -91,7 +91,7 @@ def test_chat_response():
         return False
 
 if __name__ == "__main__":
-    print("🚀 VariancePro v2.0 Quick Action Test Suite")
+    print("🚀 Quant Commander v2.0 Quick Action Test Suite")
     print("=" * 50)
     
     try:

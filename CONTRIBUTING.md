@@ -1,17 +1,17 @@
-# Contributing to VariancePro
+# Contributing to Quant Commander
 
-We welcome contributions to VariancePro! This document provides guidelines for contributing to the project.
+We welcome contributions to Quant Commander! This document provides guidelines for contributing to the project.
 
 ## 🎯 **Ways to Contribute**
 
 ### **Bug Reports**
-- Use the [GitHub Issues](https://github.com/yourusername/variancepro/issues) page
+- Use the [GitHub Issues](https://github.com/yourusername/quantcommander/issues) page
 - Include detailed reproduction steps
 - Provide system information (OS, Python version, dependencies)
 - Include error logs and screenshots if applicable
 
 ### **Feature Requests**
-- Open a [GitHub Discussion](https://github.com/yourusername/variancepro/discussions)
+- Open a [GitHub Discussion](https://github.com/yourusername/quantcommander/discussions)
 - Describe the use case and expected behavior
 - Explain how it benefits the financial analysis workflow
 - Consider implementation complexity and maintenance
@@ -35,8 +35,8 @@ We welcome contributions to VariancePro! This document provides guidelines for c
 ### **Setup Instructions**
 ```bash
 # 1. Fork and clone the repository
-git clone https://github.com/yourusername/variancepro.git
-cd variancepro
+git clone https://github.com/yourusername/quantcommander.git
+cd quantcommander
 
 # 2. Create virtual environment
 python -m venv venv
@@ -163,7 +163,7 @@ type(scope): description
 
 **Examples:**
 ```
-feat(analysis): add budget variance analysis feature
+feat(analysis): add budget quantitative analysis feature
 
 fix(chat): resolve issue with timescale analysis repetition
 
@@ -276,9 +276,9 @@ Contributors will be:
 ## 📞 **Contact**
 
 - **Project Maintainers**: Listed in [MAINTAINERS.md](MAINTAINERS.md)
-- **General Questions**: [GitHub Discussions](https://github.com/yourusername/variancepro/discussions)
-- **Security Issues**: Please email security@variancepro.com
+- **General Questions**: [GitHub Discussions](https://github.com/yourusername/quantcommander/discussions)
+- **Security Issues**: Please email security@quantcommander.com
 
 ---
 
-Thank you for contributing to VariancePro! Your efforts help make financial data analysis more accessible and powerful for everyone. 🚀
+Thank you for contributing to Quant Commander! Your efforts help make financial data analysis more accessible and powerful for everyone. 🚀

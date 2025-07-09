@@ -1,5 +1,5 @@
 """
-Data Utilities for VariancePro v2.0
+Data Utilities for Quant Commander v2.0
 
 This module provides utility functions for data analysis including:
 - Date column detection

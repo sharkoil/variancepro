@@ -1,5 +1,5 @@
 """
-Chat Interface Enhancer for VariancePro
+Chat Interface Enhancer for Quant Commander
 Integrates text overflow handling with existing chat functionality
 """
 

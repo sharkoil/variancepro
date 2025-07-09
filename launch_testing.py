@@ -16,7 +16,7 @@ def main():
     
     # Check if we're in the right directory
     if not os.path.exists("app_new.py"):
-        print("❌ Please run this from the VariancePro root directory")
+        print("❌ Please run this from the Quant Commander root directory")
         sys.exit(1)
     
     print("Choose how you want to test the NL-to-SQL strategies:")

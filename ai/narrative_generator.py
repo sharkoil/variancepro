@@ -1,5 +1,5 @@
 """
-Narrative Generator for VariancePro
+Narrative Generator for Quant Commander
 Creates AI-powered financial narratives and summaries with standardized formatting
 """
 
@@ -321,7 +321,7 @@ class NarrativeGenerator:
                 "Business implication: Focus resources on high-impact contributors for maximum ROI."
             ),
             'variance': (
-                "Variance analysis compares actual performance against budgets or targets. "
+                "Quantitative analysis compares actual performance against budgets or targets. "
                 "Key assumption: Budget represents expected performance baseline. "
                 "Business implication: Identifies areas needing attention and resource reallocation."
             ),

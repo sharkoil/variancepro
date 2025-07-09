@@ -200,7 +200,7 @@ class TestRealWorldScenarios(unittest.TestCase):
         """Test enhancement of typical financial analysis response"""
         financial_response = LLMResponse(
             content=(
-                "Based on the variance analysis of your Q3 sales data, here are the key findings:\n\n"
+                "Based on the quantitative analysis of your Q3 sales data, here are the key findings:\n\n"
                 "• Revenue exceeded budget by 12.5% ($125,000 over target)\n"
                 "• Top performing regions: North (18% over), West (15% over), South (8% over)\n"
                 "• Product line analysis shows Software licenses driving 60% of the variance\n"
@@ -243,7 +243,7 @@ class TestRealWorldScenarios(unittest.TestCase):
         # Second response (detailed analysis)
         response2 = LLMResponse(
             content=(
-                "Detailed variance analysis shows significant regional differences in performance. "
+                "Detailed quantitative analysis shows significant regional differences in performance. "
                 "The North region is outperforming all others with 18% variance above budget. "
                 "This is primarily driven by enterprise software sales which increased 45% over the quarter. "
                 "In contrast, the East region is underperforming by 8% due to supply chain delays affecting product delivery. "

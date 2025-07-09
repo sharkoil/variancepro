@@ -2,16 +2,16 @@
 Simple test to validate core functionality works
 """
 print("=" * 60)
-print("🔍 VARIANCEPRO v2.0 - FUNCTIONALITY VALIDATION")
+print("🔍 QUANTCOMMANDER v2.0 - FUNCTIONALITY VALIDATION")
 print("=" * 60)
 
 # Test 1: Core imports and basic functionality
 print("\n1️⃣ Testing Core Application Components...")
 try:
-    from app_v2 import VarianceProApp
+    from app_v2 import QuantCommanderApp
     print("✅ Main app imports successfully")
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print("✅ App initializes successfully")
     
     print("✅ Core functionality: WORKING")

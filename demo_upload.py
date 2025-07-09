@@ -2,20 +2,20 @@
 Quick test to demonstrate the new CSV upload with chat integration
 """
 
-from app_v2 import VarianceProApp
+from app_v2 import QuantCommanderApp
 import os
 
 def demo_upload():
     print("🎯 Demo: CSV Upload with Chat Integration")
     print("=" * 50)
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print(f"📝 Session: {app.session_id}")
     print(f"🤖 Ollama: {app.ollama_status}")
     
     # Initial chat state
     initial_history = [
-        {"role": "assistant", "content": "👋 Welcome to VariancePro v2.0! Upload your CSV file and I'll analyze it for you."}
+        {"role": "assistant", "content": "👋 Welcome to Quant Commander v2.0! Upload your CSV file and I'll analyze it for you."}
     ]
     
     print(f"\n📋 Initial chat history: {len(initial_history)} messages")

@@ -1,5 +1,5 @@
 """
-AI-Powered Financial Data Analysis
+AI-Powered Quantitative Trading Analysis
 Modern chat interface with comprehensive financial analytics
 """
 

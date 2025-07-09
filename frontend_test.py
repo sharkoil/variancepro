@@ -18,7 +18,7 @@ def test_frontend():
     
     # Create a simple interface
     with gr.Blocks(
-        title="VariancePro Frontend Test",
+        title="Quant Commander Frontend Test",
         theme=gr.themes.Soft(
             primary_hue="blue",
             secondary_hue="slate",
@@ -26,7 +26,7 @@ def test_frontend():
         )
     ) as interface:
         
-        gr.Markdown("# VariancePro Frontend Test")
+        gr.Markdown("# Quant Commander Frontend Test")
         
         with gr.Row():
             with gr.Column():
@@ -70,7 +70,7 @@ def test_frontend():
     return interface
 
 if __name__ == "__main__":
-    print("🚀 Starting VariancePro Frontend Test...")
+    print("🚀 Starting Quant Commander Frontend Test...")
     interface = test_frontend()
     print("✅ Test interface ready")
     print("🌐 Access at: http://localhost:7874")

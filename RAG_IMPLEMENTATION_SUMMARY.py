@@ -2,7 +2,7 @@
 RAG Integration Implementation Summary
 =====================================
 
-This document summarizes the complete RAG integration into VariancePro v2.0 button actions.
+This document summarizes the complete RAG integration into Quant Commander v2.0 button actions.
 
 🎯 OBJECTIVE COMPLETED:
 Integrate RAG (Retrieval-Augmented Generation) document enhancement into the modular app_v2.py 
@@ -23,7 +23,7 @@ leverages uploaded documents for improved AI analysis.
    - All action methods enhanced with RAG integration:
      * _handle_summary_action() - Enhanced with general analysis
      * _handle_trends_action() - Enhanced with trend analysis
-     * _handle_variance_action() - Enhanced with variance analysis
+     * _handle_variance_action() - Enhanced with quantitative analysis
      * _handle_top_bottom_action() - Enhanced with top N analysis
    - Comprehensive prompt logging for validation
    - Graceful fallback when RAG fails
@@ -78,8 +78,8 @@ RETRIEVED CONTEXT:
 Market volatility affecting consumer spending patterns..."
 
 ENHANCED PROMPT:
-"Enhance this variance analysis with insights from documents:
-ORIGINAL: [variance analysis results]
+"Enhance this quantitative analysis with insights from documents:
+ORIGINAL: [quantitative analysis results]
 CONTEXT: [relevant economic document chunks]
 Please explain potential causes for variances using document context..."
 
@@ -108,7 +108,7 @@ Each prompt is logged to console with:
 
 🧪 VALIDATION WITH TEST FILE:
 
-Test PDF: "F:/Projects/VARIANCEPRO/RAG documents/Macroeconomic Review 2023 and Outlook for 2024.pdf"
+Test PDF: "F:/Projects/QUANTCOMMANDER/RAG documents/Macroeconomic Review 2023 and Outlook for 2024.pdf"
 
 Expected enhancements:
 - Summary: Economic context for dataset patterns

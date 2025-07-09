@@ -148,7 +148,7 @@ def print_phase2_summary():
     print()
     
     print("🌟" + "="*70 + "🌟")
-    print("     VARIANCEPRO V2.0 IS NOW FULLY VALIDATED AND READY!     ")
+    print("     QUANTCOMMANDER V2.0 IS NOW FULLY VALIDATED AND READY!     ")
     print("🌟" + "="*70 + "🌟")
 
 if __name__ == "__main__":

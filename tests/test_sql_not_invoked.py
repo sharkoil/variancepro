@@ -56,7 +56,7 @@ def test_sql_not_invoked_for_analyzers():
             # Variance Analysis
             ("analyze variance", "variance"),
             ("budget vs actual", "variance"),
-            ("variance analysis", "variance"),
+            ("quantitative analysis", "variance"),
             ("over budget analysis", "variance"),
             
             # Trend Analysis

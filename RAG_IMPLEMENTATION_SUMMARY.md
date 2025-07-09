@@ -39,7 +39,7 @@ KEY FEATURES DELIVERED:
    - Session-based document management
 
 🤖 Enhanced Analysis
-   - Variance analysis with industry context
+   - Quantitative analysis with industry context
    - Trend analysis with market insights
    - Contribution analysis with strategic context
    - Maintains quality with or without documents

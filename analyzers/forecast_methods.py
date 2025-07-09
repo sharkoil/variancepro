@@ -1,5 +1,5 @@
 """
-Forecasting Methods for VariancePro v2.0 - Phase 3B Implementation
+Forecasting Methods for Quant Commander v2.0 - Phase 3B Implementation
 
 This module contains the specific forecasting method implementations.
 Each method is kept in a separate function to maintain modularity and clarity.

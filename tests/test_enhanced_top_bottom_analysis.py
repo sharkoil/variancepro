@@ -127,12 +127,12 @@ class TestEnhancedTopBottomAnalysis:
         print("✅ Multi-timeframe analysis methods test passed")
     
     def test_variance_analysis_for_numeric_data(self):
-        """Test variance analysis for numeric-only data"""
+        """Test quantitative analysis for numeric-only data"""
         test_data = pd.DataFrame({
             'Values': [100, 150, 200, 175, 225, 180, 250, 190, 275, 210]
         })
         
-        # Test numeric variance analysis
+        # Test numeric quantitative analysis
         result = self.handler._perform_numeric_variance_analysis(test_data, 'Values')
         
         # Verify variance metrics
@@ -140,7 +140,7 @@ class TestEnhancedTopBottomAnalysis:
         assert "Variance" in result
         assert "IQR" in result
         
-        print("✅ Numeric variance analysis test passed")
+        print("✅ Numeric quantitative analysis test passed")
     
     def test_llm_commentary_fallback(self):
         """Test that fallback commentary works when LLM is unavailable"""

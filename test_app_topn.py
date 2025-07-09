@@ -9,14 +9,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def test_app_with_sample_data():
     """Test with sample data that mirrors the application"""
-    print("🔍 Testing VariancePro with sample data...")
+    print("🔍 Testing Quant Commander with sample data...")
     
     try:
-        from app_v2 import VarianceProApp
+        from app_v2 import QuantCommanderApp
         import pandas as pd
         
         # Initialize the app
-        app = VarianceProApp()
+        app = QuantCommanderApp()
         
         # Create sample data similar to the screenshot
         sample_data = pd.DataFrame({
@@ -34,7 +34,7 @@ def test_app_with_sample_data():
         
         # Set the data in the app
         app.app_core.current_data = sample_data
-        app.app_core.data_summary = "Budget vs Actual variance analysis"
+        app.app_core.data_summary = "Budget vs Actual quantitative analysis"
         
         print("✅ App initialized with sample data")
         print(f"📊 Data shape: {sample_data.shape}")

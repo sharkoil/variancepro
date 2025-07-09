@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Final Test Suite - VariancePro v2.0 Validation
-Tests the fixed variance analysis and overall system health
+Final Test Suite - Quant Commander v2.0 Validation
+Tests the fixed quantitative analysis and overall system health
 """
 
 import pandas as pd
@@ -13,11 +13,11 @@ from pathlib import Path
 sys.path.insert(0, os.path.abspath('.'))
 
 def test_variance_fix():
-    """Test the specific variance analysis fix"""
+    """Test the specific quantitative analysis fix"""
     print("🔧 Testing Variance Analysis Fix...")
     
     try:
-        from analyzers.variance_analyzer import VarianceAnalyzer
+        from analyzers.quant_analyzer import QuantAnalyzer
         
         # Create test data
         data = pd.DataFrame({
@@ -27,7 +27,7 @@ def test_variance_fix():
             'Date': pd.to_datetime(['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04'])
         })
         
-        analyzer = VarianceAnalyzer()
+        analyzer = QuantAnalyzer()
         
         # Test the method that was broken
         result = analyzer.comprehensive_variance_analysis(
@@ -41,7 +41,7 @@ def test_variance_fix():
         # "format_comprehensive_analysis() takes 1 positional argument but 2 were given"
         formatted = analyzer.format_comprehensive_analysis(result)
         
-        print("✅ Variance analysis fix verified")
+        print("✅ Quantitative analysis fix verified")
         print(f"   Result type: {type(result)}")
         print(f"   Formatted output: {len(formatted)} characters")
         
@@ -133,9 +133,9 @@ def test_all_quick_actions():
 
 def main():
     """Run comprehensive validation"""
-    print("🚀 VariancePro v2.0 - Final Validation Suite")
+    print("🚀 Quant Commander v2.0 - Final Validation Suite")
     print("=" * 60)
-    print("Testing the variance analysis fix and overall system health")
+    print("Testing the quantitative analysis fix and overall system health")
     print("=" * 60)
     
     tests = [
@@ -169,8 +169,8 @@ def main():
     print(f"\nOverall: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 SUCCESS! VariancePro v2.0 is fully operational")
-        print("   - Variance analysis error has been fixed")
+        print("\n🎉 SUCCESS! Quant Commander v2.0 is fully operational")
+        print("   - Quantitative analysis error has been fixed")
         print("   - All quick actions are working")
         print("   - RAG integration is stable")
         print("   - Ready for production use")

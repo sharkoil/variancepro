@@ -64,8 +64,8 @@ Focus on connecting data trends with external economic intelligence.
     # Variance Action Prompt
     print("📊 VARIANCE ACTION - RAG Enhancement Prompt:")
     print("-" * 40)
-    variance_prompt = """
-Enhance this variance analysis with insights from uploaded documents.
+    quant_commandermpt = """
+Enhance this quantitative analysis with insights from uploaded documents.
 
 ORIGINAL ANALYSIS:
 - Actual column: Actual
@@ -84,7 +84,7 @@ Please provide enhanced insights that:
 
 Connect variance patterns with external economic intelligence.
 """
-    print(variance_prompt)
+    print(quant_commandermpt)
     print()
     
     # Top/Bottom N Action Prompt

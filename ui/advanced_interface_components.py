@@ -1,5 +1,5 @@
 """
-Advanced Field Picker for VariancePro
+Advanced Field Picker for Quant Commander
 Provides dynamic field selection and query building capabilities
 """
 
@@ -333,22 +333,22 @@ class ExportManager:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
             if export_format == "CSV":
-                filename = f"variancepro_export_{timestamp}.csv"
+                filename = f"quantcommander_export_{timestamp}.csv"
                 filepath = os.path.join(tempfile.gettempdir(), filename)
                 self.app.current_data.to_csv(filepath, index=False)
                 
             elif export_format == "Excel":
-                filename = f"variancepro_export_{timestamp}.xlsx"
+                filename = f"quantcommander_export_{timestamp}.xlsx"
                 filepath = os.path.join(tempfile.gettempdir(), filename)
                 self.app.current_data.to_excel(filepath, index=False)
                 
             elif export_format == "JSON":
-                filename = f"variancepro_export_{timestamp}.json"
+                filename = f"quantcommander_export_{timestamp}.json"
                 filepath = os.path.join(tempfile.gettempdir(), filename)
                 self.app.current_data.to_json(filepath, orient='records', indent=2)
                 
             elif export_format == "Analysis Report":
-                filename = f"variancepro_report_{timestamp}.txt"
+                filename = f"quantcommander_report_{timestamp}.txt"
                 filepath = os.path.join(tempfile.gettempdir(), filename)
                 
                 # Generate analysis report
@@ -365,7 +365,7 @@ class ExportManager:
     def _generate_analysis_report(self) -> str:
         """Generate comprehensive analysis report"""
         report_parts = [
-            "# VariancePro Analysis Report",
+            "# Quant Commander Analysis Report",
             f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "",
             "## Data Summary",

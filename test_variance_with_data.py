@@ -1,5 +1,5 @@
 """
-Direct test of variance analysis using actual test data
+Direct test of quantitative analysis using actual test data
 """
 
 import pandas as pd
@@ -10,9 +10,9 @@ import os
 sys.path.insert(0, os.path.abspath('.'))
 
 def test_with_actual_data():
-    """Test variance analysis with real test data"""
+    """Test quantitative analysis with real test data"""
     
-    print("📊 Testing variance analysis with actual CSV data...")
+    print("📊 Testing quantitative analysis with actual CSV data...")
     
     try:
         # Load test data
@@ -21,10 +21,10 @@ def test_with_actual_data():
         print(f"Columns: {list(data.columns)}")
         
         # Import and test variance analyzer
-        from analyzers.variance_analyzer import VarianceAnalyzer
+        from analyzers.quant_analyzer import QuantAnalyzer
         
-        analyzer = VarianceAnalyzer()
-        print("✅ VarianceAnalyzer created")
+        analyzer = QuantAnalyzer()
+        print("✅ QuantAnalyzer created")
         
         # Detect variance columns
         variance_pairs = analyzer.detect_variance_columns(data)
@@ -52,7 +52,7 @@ def test_with_actual_data():
         
         # Show first part of result
         print("\n" + "="*50)
-        print("FORMATTED VARIANCE ANALYSIS")
+        print("FORMATTED QUANTITATIVE ANALYSIS")
         print("="*50)
         print(formatted[:500] + "..." if len(formatted) > 500 else formatted)
         print("="*50)
@@ -85,14 +85,14 @@ def test_quick_action_handler():
         handler = QuickActionHandler(app_core=app_core)
         print("✅ QuickActionHandler initialized")
         
-        # Test variance analysis via handler (this was the broken part)
+        # Test quantitative analysis via handler (this was the broken part)
         result = handler.handle_variance_analysis()
         
-        print(f"✅ Handler variance analysis completed: {len(result)} chars")
+        print(f"✅ Handler quantitative analysis completed: {len(result)} chars")
         
         # Show result preview
         print("\n" + "="*50)
-        print("HANDLER VARIANCE ANALYSIS RESULT")
+        print("HANDLER QUANTITATIVE ANALYSIS RESULT")
         print("="*50)
         print(result[:300] + "..." if len(result) > 300 else result)
         print("="*50)
@@ -106,7 +106,7 @@ def test_quick_action_handler():
         return False
 
 if __name__ == "__main__":
-    print("🚀 VariancePro Variance Analysis Validation")
+    print("🚀 Quant Commander Variance Analysis Validation")
     print("="*60)
     
     success1 = test_with_actual_data()
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     print("="*60)
     
     if success1 and success2:
-        print("🎉 ALL TESTS PASSED - Variance analysis is fixed!")
+        print("🎉 ALL TESTS PASSED - Quantitative analysis is fixed!")
     else:
         print("❌ Some tests failed - see errors above")
         

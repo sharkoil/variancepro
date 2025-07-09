@@ -74,7 +74,7 @@ All analysis types now automatically incorporate relevant document context when 
 ```
 1. Upload financial reports, industry benchmarks, or strategic documents
 2. Upload your CSV data with budget/actual figures
-3. Ask for "variance analysis" - get enhanced insights with:
+3. Ask for "quantitative analysis" - get enhanced insights with:
    - Standard variance calculations
    - Industry context from uploaded documents
    - Strategic recommendations from reports
@@ -86,7 +86,7 @@ All analysis types now automatically incorporate relevant document context when 
 ### Requirements
 - PyPDF2 >= 3.0.0 (for PDF processing)
 - PyMuPDF >= 1.23.0 (enhanced PDF extraction)
-- All existing VariancePro dependencies
+- All existing Quant Commander dependencies
 
 ### Performance
 - Document chunking optimized for retrieval performance

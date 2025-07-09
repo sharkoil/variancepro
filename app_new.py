@@ -1,5 +1,5 @@
 """
-AI-Powered Financial Data Analysis
+AI-Powered Quantitative Trading Analysis
 Modern chat interface with comprehensive financial analytics
 """
 
@@ -442,7 +442,7 @@ class QuantCommanderApp:
             return f"❌ **Contribution Analysis Error**: {str(e)}"
     
     def _perform_variance_analysis(self, query: str) -> str:
-        """Perform variance analysis"""
+        """Perform quantitative analysis"""
         try:
             # Find required columns
             suggestions = self.column_suggestions
@@ -451,7 +451,7 @@ class QuantCommanderApp:
             
             if not budget_vs_actual or not date_cols:
                 return (
-                    "⚠️ **Cannot perform variance analysis**\n\n"
+                    "⚠️ **Cannot perform quantitative analysis**\n\n"
                     "Required columns not found:\n"
                     f"• Budget/Actual pairs: {list(budget_vs_actual.keys())}\n"
                     f"• Date columns: {date_cols}\n\n"
@@ -486,7 +486,7 @@ class QuantCommanderApp:
                 }
                 
                 ai_response = self.llm_interpreter.query_llm(
-                    f"Provide insights on this budget vs actual variance analysis",
+                    f"Provide insights on this budget vs actual quantitative analysis",
                     context
                 )
                 
@@ -742,7 +742,7 @@ Provide a helpful, contextual response as Aria Sterling.
     def get_status(self) -> str:
         """Get comprehensive system status"""
         status_parts = [
-            "🔍 **VARIANCEPRO SYSTEM STATUS**",
+            "🔍 **QUANTCOMMANDER SYSTEM STATUS**",
             ""
         ]
         
@@ -979,7 +979,7 @@ Provide a helpful, contextual response as Aria Sterling.
                             <span style="font-size: 12px; color: #666;">App Server</span>
                         </div>
                         <div>
-                            <a href="https://github.com/sharkoil/variancepro" target="_blank" 
+                            <a href="https://github.com/sharkoil/quantcommander" target="_blank" 
                                style="color: #043B4A; text-decoration: none; font-size: 12px;">
                                 📚 Help & Docs
                             </a>
@@ -1039,7 +1039,7 @@ Provide a helpful, contextual response as Aria Sterling.
                         placeholder="Start by uploading a CSV file, then ask questions or request analysis...",
                         avatar_images=["👤", "🤖"],
                         type="messages",
-                        value=[{"role": "assistant", "content": f"""👋 **Welcome to VariancePro!** I'm Aria Sterling, your AI financial analyst.
+                        value=[{"role": "assistant", "content": f"""👋 **Welcome to Quant Commander!** I'm Aria Sterling, your AI financial analyst.
 
 📊 Upload your financial data and chat with me for comprehensive insights and analysis!
 
@@ -1270,7 +1270,7 @@ setTimeout(() => {{
                     
                     with gr.Row():
                         chat_input = gr.Textbox(
-                            placeholder="Ask about your data: 'analyze contribution', 'show trends', 'variance analysis', or ask any question...",
+                            placeholder="Ask about your data: 'analyze contribution', 'show trends', 'quantitative analysis', or ask any question...",
                             label="Your Message",
                             lines=2,
                             scale=4
@@ -1579,10 +1579,10 @@ RESPOND WITH ONLY ONE WORD - THE CLASSIFICATION TYPE (e.g., "sql_query" or "cont
             
             elif classification == "variance_analysis":
                 if "variance_analysis" in available_analyses:
-                    print("[DEBUG] Routing to variance analysis")
+                    print("[DEBUG] Routing to quantitative analysis")
                     return self._perform_variance_analysis(query)
                 else:
-                    return "⚠️ **Variance analysis not available** - Missing required budget/actual columns"
+                    return "⚠️ **Quantitative analysis not available** - Missing required budget/actual columns"
             
             elif classification == "trend_analysis":
                 if "trend_analysis" in available_analyses:

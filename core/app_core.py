@@ -1,5 +1,5 @@
 """
-VariancePro Core Application Logic
+Quant Commander Core Application Logic
 Handles main application initialization, state management, and component coordination
 """
 
@@ -90,7 +90,7 @@ class AppCore:
     
     def _log_startup(self) -> None:
         """Log application startup information"""
-        print(f"🚀 VariancePro v2.0 Core initialized")
+        print(f"🚀 Quant Commander v2.0 Core initialized")
         print(f"📝 Session ID: {self.session_id}")
         print(f"🤖 Ollama Status: {self.ollama_connector.get_status()}")
         print(f"⚙️ Gradio Status: {self.gradio_status}")

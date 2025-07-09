@@ -78,8 +78,8 @@ class TestSettings:
     def test_from_env_defaults(self):
         """Test creating settings from environment with defaults"""
         # Clear any existing environment variables
-        env_vars = ['VARIANCEPRO_LLM_MODEL', 'OLLAMA_HOST', 'VARIANCEPRO_LLM_TIMEOUT', 
-                   'GRADIO_SERVER_PORT', 'GRADIO_SHARE', 'VARIANCEPRO_CONTRIBUTION_THRESHOLD']
+        env_vars = ['QUANTCOMMANDER_LLM_MODEL', 'OLLAMA_HOST', 'QUANTCOMMANDER_LLM_TIMEOUT', 
+                   'GRADIO_SERVER_PORT', 'GRADIO_SHARE', 'QUANTCOMMANDER_CONTRIBUTION_THRESHOLD']
         
         original_values = {}
         for var in env_vars:
@@ -105,12 +105,12 @@ class TestSettings:
         """Test creating settings from environment with custom values"""
         # Set custom environment variables
         test_env = {
-            'VARIANCEPRO_LLM_MODEL': 'phi3:latest',
+            'QUANTCOMMANDER_LLM_MODEL': 'phi3:latest',
             'OLLAMA_HOST': 'http://custom-host:11434',
-            'VARIANCEPRO_LLM_TIMEOUT': '300',
+            'QUANTCOMMANDER_LLM_TIMEOUT': '300',
             'GRADIO_SERVER_PORT': '8080',
             'GRADIO_SHARE': 'true',
-            'VARIANCEPRO_CONTRIBUTION_THRESHOLD': '0.9'
+            'QUANTCOMMANDER_CONTRIBUTION_THRESHOLD': '0.9'
         }
         
         # Store original values

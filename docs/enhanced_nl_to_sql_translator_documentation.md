@@ -1,8 +1,8 @@
-# VariancePro: Enhanced NL-to-SQL Translator Documentation
+# Quant Commander: Enhanced NL-to-SQL Translator Documentation
 
 ## Overview
 
-The Enhanced Natural Language to SQL Translator is a core component of VariancePro that enables users to query financial data using natural language instead of SQL. This document outlines the final implementation, highlighting key improvements and features.
+The Enhanced Natural Language to SQL Translator is a core component of Quant Commander that enables users to query financial data using natural language instead of SQL. This document outlines the final implementation, highlighting key improvements and features.
 
 ## Key Features
 
@@ -184,4 +184,4 @@ Potential areas for future improvement:
 
 ## Conclusion
 
-The Enhanced NL-to-SQL Translator represents a significant improvement in VariancePro's natural language processing capabilities. It brings together domain-specific knowledge, pattern recognition, and context awareness to accurately translate financial queries into SQL, enabling users to interact with data more naturally and efficiently.
+The Enhanced NL-to-SQL Translator represents a significant improvement in Quant Commander's natural language processing capabilities. It brings together domain-specific knowledge, pattern recognition, and context awareness to accurately translate financial queries into SQL, enabling users to interact with data more naturally and efficiently.

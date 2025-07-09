@@ -1,5 +1,5 @@
 """
-Contributor Analyzer for VariancePro
+Contributor Analyzer for Quant Commander
 Implements 80/20 Pareto analysis for identifying key contributors
 """
 

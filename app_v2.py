@@ -1,5 +1,5 @@
 """
-VariancePro v2.0 - Refactored Modular Architecture
+Quant Commander v2.0 - Refactored Modular Architecture
 Main application orchestrator - focuses on interface coordination only
 """
 
@@ -12,16 +12,16 @@ from core.app_core import AppCore
 from handlers.file_handler import FileHandler
 from handlers.chat_handler import ChatHandler
 from handlers.quick_action_handler import QuickActionHandler
-from analyzers.variance_analyzer import VarianceAnalyzer
+from analyzers.quant_analyzer import QuantAnalyzer
 
 # Import RAG components for document enhancement
 from analyzers.rag_document_manager import RAGDocumentManager
 from analyzers.rag_enhanced_analyzer import RAGEnhancedAnalyzer
 
 
-class VarianceProApp:
+class QuantCommanderApp:
     """
-    Main application orchestrator for VariancePro v2.0
+    Main application orchestrator for Quant Commander v2.0
     
     This class has been refactored to follow modular design principles.
     It now focuses solely on coordinating components and creating the interface.
@@ -39,12 +39,12 @@ class VarianceProApp:
         
         # Initialize variance analyzer with error handling
         try:
-            self.variance_analyzer = VarianceAnalyzer()
+            self.quant_analyzer = QuantAnalyzer()
             print("✅ Variance analyzer initialized successfully")
         except Exception as e:
             print(f"⚠️ Variance analyzer initialization failed: {e}")
-            print(f"   → Variance analysis will be unavailable")
-            self.variance_analyzer = None
+            print(f"   → Quantitative analysis will be unavailable")
+            self.quant_analyzer = None
         
         # Initialize RAG components for document enhancement with comprehensive error handling
         self.rag_manager = None
@@ -82,7 +82,7 @@ class VarianceProApp:
             raise  # This is critical - app cannot function without quick actions
         
         # Final initialization status
-        print(f"🚀 VariancePro v2.0 modular architecture initialized (RAG {rag_status})")
+        print(f"🚀 Quant Commander v2.0 modular architecture initialized (RAG {rag_status})")
     
     def upload_csv(self, file, history: List[Dict]) -> tuple[str, List[Dict]]:
         """
@@ -283,13 +283,13 @@ class VarianceProApp:
                 custom_css = f.read()
         
         with gr.Blocks(
-            title="VariancePro v2.0", 
+            title="Quant Commander v2.0", 
             theme=gr.themes.Soft(),
             css=custom_css
         ) as interface:
             # Header
-            gr.Markdown("# 📊 VariancePro v2.0")
-            gr.Markdown("*AI-Powered Financial Data Analysis with Modular Architecture*")
+            gr.Markdown("# 📊 Quant Commander v2.0")
+            gr.Markdown("*AI-Powered Quantitative Trading Analysis & Command Center*")
             
             with gr.Row():
                 with gr.Column(scale=1):
@@ -339,7 +339,7 @@ class VarianceProApp:
                         type="messages",
                         value=[{
                             "role": "assistant", 
-                            "content": "👋 Welcome to VariancePro v2.0 with modular architecture! Upload your CSV file and I'll analyze it for you."
+                            "content": "👋 Welcome to Quant Commander v2.0 with modular architecture! Upload your CSV file and I'll analyze it for you."
                         }]
                     )
                     
@@ -452,10 +452,10 @@ class VarianceProApp:
 
 
 def main():
-    """Main entry point for VariancePro v2.0"""
-    print("🚀 Starting VariancePro v2.0 with Modular Architecture...")
+    """Main entry point for Quant Commander v2.0"""
+    print("🚀 Starting Quant Commander v2.0 with Modular Architecture...")
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     interface = app.create_interface()
     
     print("✅ Modular application ready")

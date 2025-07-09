@@ -1,5 +1,5 @@
 """
-Query Router for VariancePro
+Query Router for Quant Commander
 Intelligently routes queries to appropriate analyzers or SQL engine
 """
 
@@ -51,7 +51,7 @@ class QueryRouter:
             
         analyzer_type can be:
         - 'contribution' (contribution analysis)
-        - 'variance' (variance analysis) 
+        - 'variance' (quantitative analysis) 
         - 'trend' (trend analysis)
         - 'top_n' (top N analysis)
         - 'bottom_n' (bottom N analysis)
@@ -133,7 +133,7 @@ class QueryRouter:
         # Variance Analysis patterns
         variance_patterns = [
             r'\b(?:variance|budget vs actual|actual vs budget)\b',
-            r'\b(?:analyze variance|variance analysis)\b',
+            r'\b(?:analyze variance|quantitative analysis)\b',
             r'\b(?:over budget|under budget|vs budget)\b'
         ]
         
@@ -284,7 +284,7 @@ RESPOND WITH ONLY THE ANALYSIS TYPE (one word from the list above):
         
         explanations = {
             'contribution_analysis': "Detected request for 80/20 Pareto analysis or contribution analysis",
-            'variance_analysis': "Detected request for budget vs actual variance analysis",
+            'variance_analysis': "Detected request for budget vs actual quantitative analysis",
             'trend_analysis': "Detected request for time-series or trend analysis",
             'top_n_analysis': "Detected request for top N ranking analysis",
             'bottom_n_analysis': "Detected request for bottom N ranking analysis",

@@ -1,10 +1,10 @@
-# VariancePro v2.0 Refactoring Plan
+# Quant Commander v2.0 Refactoring Plan
 ## Modular Architecture Enhancement with Variance Analysis
 
 ### 📋 **Current State Analysis**
 - **File**: `app_v2.py` - 864+ lines (TOO LARGE - violates quality standards)
 - **Issues**: Single monolithic class, multiple responsibilities, hard to maintain
-- **Goal**: Break into smaller, focused modules while adding variance analysis
+- **Goal**: Break into smaller, focused modules while adding quantitative analysis
 
 ### 🎯 **Refactoring Objectives**
 1. **Follow Quality Standards**: "NEVER LET A SINGLE FILE GET TOO LARGE"
@@ -29,13 +29,13 @@ app_v2.py (MAIN - keep minimal, ~100 lines max)
 │   ├── quick_action_handler.py  # Quick action buttons
 │   └── timestamp_handler.py     # Timestamp functionality
 ├── analyzers/
-│   ├── variance_analyzer.py     # NEW: Variance analysis (actual vs planned, etc.)
+│   ├── quant_analyzer.py     # NEW: Quantitative analysis (actual vs planned, etc.)
 │   └── (existing analyzers remain)
 ├── ui/
 │   ├── interface_builder.py     # Gradio interface construction
 │   └── (existing UI components)
 └── tests/ (following quality standards)
-    ├── test_variance_analyzer.py
+    ├── test_quant_analyzer.py
     ├── test_chat_handler.py
     └── integration/
         └── test_full_workflow.py
@@ -79,7 +79,7 @@ app_v2.py (MAIN - keep minimal, ~100 lines max)
    - Message enhancement
 
 #### **Phase 4: Create New Variance Analyzer**
-1. ✅ **Create `analyzers/variance_analyzer.py`**
+1. ✅ **Create `analyzers/quant_analyzer.py`**
    - Actual vs Planned analysis
    - Budget vs Sales comparison
    - Multi-timespan analysis
@@ -106,7 +106,7 @@ app_v2.py (MAIN - keep minimal, ~100 lines max)
 ### Final Results:
 - ✅ **File size reduced by 74%**: 905 lines → 231 lines
 - ✅ **Modular architecture implemented**: 8 focused modules
-- ✅ **Variance analysis added**: Actual vs Planned, Budget vs Sales, etc.
+- ✅ **Quantitative analysis added**: Actual vs Planned, Budget vs Sales, etc.
 - ✅ **Multi-timespan support**: Monthly, quarterly, yearly analysis
 - ✅ **Test coverage**: 28 tests (16 unit + 12 integration), all passing
 - ✅ **Zero regression**: All existing functionality preserved
@@ -128,7 +128,7 @@ tests/
 │   ├── test_core_app_core.py
 │   ├── test_handlers_chat_handler.py
 │   ├── test_handlers_file_handler.py
-│   ├── test_analyzers_variance_analyzer.py
+│   ├── test_analyzers_quant_analyzer.py
 │   └── test_timestamp_functionality.py
 ├── integration/
 │   ├── test_full_chat_workflow.py
@@ -149,7 +149,7 @@ tests/
 
 #### **Time Span Analysis**
 - **Monthly**: Month-over-month variance
-- **Quarterly**: Quarter variance analysis
+- **Quarterly**: Quarter quantitative analysis
 - **Yearly**: Annual variance trends
 - **Custom Periods**: User-defined date ranges
 - **Rolling Windows**: 3-month, 6-month, 12-month rolling
@@ -158,7 +158,7 @@ tests/
 - **Absolute Variance**: Dollar/unit differences
 - **Percentage Variance**: Relative change percentages
 - **Favorable/Unfavorable**: Direction classification
-- **Significance Testing**: Statistical variance analysis
+- **Significance Testing**: Statistical quantitative analysis
 
 ### 🛡️ **Risk Mitigation**
 
@@ -186,7 +186,7 @@ If refactoring fails:
 - ✅ Timestamps continue working
 - ✅ Chat responses function correctly
 - ✅ Quick actions work as before
-- ✅ New variance analysis capability added
+- ✅ New quantitative analysis capability added
 
 #### **Quality Requirements**
 - ✅ No file >200 lines (target <150)
@@ -223,10 +223,10 @@ If refactoring fails:
 5. Validate each phase before proceeding
 
 ### 🚨 **Backup Reference**
-**Primary Backup Location**: `f:\Projects\VARIANCEPRO\archive\app_v2_pre_refactor.py`
+**Primary Backup Location**: `f:\Projects\QUANTCOMMANDER\archive\app_v2_pre_refactor.py`
 **Created**: [Will be created before starting]
 **Purpose**: Complete rollback capability if refactoring fails
 
 ---
 
-*This plan ensures we follow the quality mandate: "NEVER LET A SINGLE FILE GET TOO LARGE" while adding the requested variance analysis functionality in a maintainable, testable way.*
+*This plan ensures we follow the quality mandate: "NEVER LET A SINGLE FILE GET TOO LARGE" while adding the requested quantitative analysis functionality in a maintainable, testable way.*

@@ -1,6 +1,6 @@
 """
-Financial Analyzer for VariancePro
-Implements TTM and budget vs actual variance analysis
+Financial Analyzer for Quant Commander
+Implements TTM and budget vs actual quantitative analysis
 """
 
 import pandas as pd
@@ -13,7 +13,7 @@ from .base_analyzer import BaseAnalyzer, AnalysisError
 class FinancialAnalyzer(BaseAnalyzer):
     """
     Financial analyzer for time-based financial analysis
-    Provides TTM (Trailing Twelve Months) and variance analysis
+    Provides TTM (Trailing Twelve Months) and quantitative analysis
     """
     
     def __init__(self, settings):
@@ -45,7 +45,7 @@ class FinancialAnalyzer(BaseAnalyzer):
             date_col: Date column name
             value_col: Value column name (e.g., Sales, Revenue)
             category_col: Optional category column for segmentation
-            budget_col: Optional budget column for variance analysis
+            budget_col: Optional budget column for quantitative analysis
             analysis_type: Analysis type ('ttm', 'variance', 'trend')
             
         Returns:
@@ -76,7 +76,7 @@ class FinancialAnalyzer(BaseAnalyzer):
                 results = self._calculate_ttm(analysis_data, date_col, value_col, category_col)
             elif analysis_type == "variance":
                 if not budget_col:
-                    raise AnalysisError("Budget column required for variance analysis")
+                    raise AnalysisError("Budget column required for quantitative analysis")
                 results = self._calculate_variance(analysis_data, date_col, value_col, budget_col, category_col)
             elif analysis_type == "trend":
                 results = self._calculate_trend(analysis_data, date_col, value_col, category_col)
@@ -143,7 +143,7 @@ class FinancialAnalyzer(BaseAnalyzer):
         prepared_data = prepared_data.dropna(subset=[date_col, value_col])
         
         if budget_col:
-            # For variance analysis, keep only rows with budget values
+            # For quantitative analysis, keep only rows with budget values
             prepared_data = prepared_data.dropna(subset=[budget_col])
         
         if len(prepared_data) < initial_rows:
@@ -373,7 +373,7 @@ class FinancialAnalyzer(BaseAnalyzer):
     
     def _calculate_variance(self, data: pd.DataFrame, date_col: str, actual_col: str, budget_col: str, category_col: Optional[str] = None) -> Dict[str, Any]:
         """
-        Calculate budget vs actual variance analysis
+        Calculate budget vs actual quantitative analysis
         
         Args:
             data: Prepared DataFrame
@@ -383,7 +383,7 @@ class FinancialAnalyzer(BaseAnalyzer):
             category_col: Optional category column
             
         Returns:
-            Dictionary with variance analysis results
+            Dictionary with quantitative analysis results
         """
         # Ensure date column is datetime
         data[date_col] = pd.to_datetime(data[date_col])
@@ -1110,7 +1110,7 @@ class FinancialAnalyzer(BaseAnalyzer):
         return formatted_output
     
     def _format_variance_analysis(self, results: Dict, insights: Dict, metrics: Dict, params: Dict) -> str:
-        """Format variance analysis with standardized structure"""
+        """Format quantitative analysis with standardized structure"""
         
         # 1. Summary section
         explanation = "Compares actual performance against budgeted targets to identify areas of over or under-performance."

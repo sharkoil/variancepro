@@ -5,16 +5,16 @@ import sys
 import time
 
 try:
-    print("Starting VariancePro app test...")
+    print("Starting Quant Commander app test...")
     
     # Test imports
     print("Testing imports...")
-    from app_v2 import VarianceProApp
+    from app_v2 import QuantCommanderApp
     print("✅ Main app imported successfully")
     
     # Test initialization
     print("Testing initialization...")
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print("✅ App initialized successfully")
     
     # Test interface creation
@@ -23,7 +23,7 @@ try:
     print("✅ Interface created successfully")
     
     print("\n🎉 ALL TESTS PASSED!")
-    print("✅ VariancePro v2.0 is ready to run")
+    print("✅ Quant Commander v2.0 is ready to run")
     print("✅ Document upload errors are fixed")
     print("✅ Summary analysis now returns human-readable text")
     

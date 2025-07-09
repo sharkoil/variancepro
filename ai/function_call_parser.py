@@ -1,5 +1,5 @@
 """
-Function Call Parser for VariancePro Gemma 3 Function Calling
+Function Call Parser for Quant Commander Gemma 3 Function Calling
 Parses function calls from LLM responses based on specified formats.
 """
 

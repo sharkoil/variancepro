@@ -67,7 +67,7 @@ def demo_rag_functionality():
             
             # Test document retrieval
             print("\n🔍 Testing document search...")
-            search_results = rag_manager.retrieve_relevant_chunks("variance analysis", max_chunks=2)
+            search_results = rag_manager.retrieve_relevant_chunks("quantitative analysis", max_chunks=2)
             print(f"Found {len(search_results)} relevant chunks")
             
             if search_results:
@@ -77,7 +77,7 @@ def demo_rag_functionality():
             # Test enhanced analysis (without actual LLM call)
             print("\n🤖 Testing analysis enhancement...")
             
-            # Mock variance data
+            # Mock trading data
             mock_variance_data = {
                 'total_variance': 50000,
                 'budget_total': 1000000,
@@ -86,10 +86,10 @@ def demo_rag_functionality():
             }
             
             # Test variance enhancement
-            print("📊 Testing variance analysis enhancement...")
+            print("📊 Testing quantitative analysis enhancement...")
             variance_result = rag_analyzer.enhance_variance_analysis(
                 variance_data=mock_variance_data,
-                analysis_context="Standard variance analysis showing 5% positive variance"
+                analysis_context="Standard quantitative analysis showing 5% positive variance"
             )
             
             print(f"Enhancement result: {type(variance_result)} with {len(variance_result)} keys")

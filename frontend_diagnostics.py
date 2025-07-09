@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive frontend diagnostics for VariancePro
+Comprehensive frontend diagnostics for Quant Commander
 """
 
 import os
@@ -137,7 +137,7 @@ def check_module_imports():
         'handlers.file_handler',
         'handlers.chat_handler',
         'handlers.quick_action_handler',
-        'analyzers.variance_analyzer',
+        'analyzers.quant_analyzer',
         'analyzers.rag_document_manager',
         'analyzers.rag_enhanced_analyzer',
         'utils.cache_manager',
@@ -192,7 +192,7 @@ def check_ollama_connection():
 
 def generate_diagnostic_report():
     """Generate a comprehensive diagnostic report"""
-    print("🔍 VariancePro Frontend Diagnostics")
+    print("🔍 Quant Commander Frontend Diagnostics")
     print("=" * 50)
     
     checks = [

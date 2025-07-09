@@ -3,7 +3,7 @@
 Final Validation Suite for Phase 3B Forecasting Implementation
 
 This script validates the complete forecasting implementation and 
-demonstrates the integration with VariancePro's architecture.
+demonstrates the integration with Quant Commander's architecture.
 """
 
 import sys

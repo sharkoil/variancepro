@@ -1,5 +1,5 @@
 """
-Chat Handler for VariancePro v2.0
+Chat Handler for Quant Commander v2.0
 
 This module handles all chat message processing including:
 - User message validation and processing
@@ -244,7 +244,7 @@ class ChatHandler:
         Returns:
             str: Help response
         """
-        return """🆘 **VariancePro Help**
+        return """🆘 **Quant Commander Help**
 
 **What I can do:**
 • 📊 **Data Summary** - Get overview of your dataset

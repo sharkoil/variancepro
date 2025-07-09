@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for verifying timestamp functionality in VariancePro v2.0
+Test script for verifying timestamp functionality in Quant Commander v2.0
 Tests that each chat message and quick action includes browser-local-time timestamps
 """
 
@@ -14,10 +14,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import the app
 try:
-    from app_v2 import VarianceProApp
-    print("✅ Successfully imported VarianceProApp")
+    from app_v2 import QuantCommanderApp
+    print("✅ Successfully imported QuantCommanderApp")
 except ImportError as e:
-    print(f"❌ Failed to import VarianceProApp: {e}")
+    print(f"❌ Failed to import QuantCommanderApp: {e}")
     sys.exit(1)
 
 def test_timestamp_functionality():
@@ -26,7 +26,7 @@ def test_timestamp_functionality():
     print("=" * 50)
     
     # Initialize the app
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print(f"✅ App initialized with session ID: {app.session_id}")
     
     # Test 1: Chat message with timestamp

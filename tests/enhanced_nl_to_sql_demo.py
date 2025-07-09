@@ -1,5 +1,5 @@
 """
-VariancePro Enhanced NL-to-SQL Demo Script
+Quant Commander Enhanced NL-to-SQL Demo Script
 This script demonstrates the enhanced natural language to SQL translator
 with example queries on the comprehensive_sales_data.csv dataset.
 """

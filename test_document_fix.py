@@ -1,9 +1,9 @@
 """Test document upload fix"""
 try:
-    from app_v2 import VarianceProApp
+    from app_v2 import QuantCommanderApp
     
     # Initialize app (with RAG disabled)
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print("✅ App initialized")
     
     # Test document upload with RAG disabled

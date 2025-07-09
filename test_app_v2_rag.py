@@ -6,12 +6,12 @@ Simple validation that RAG components work with the modular app
 def test_app_v2_with_rag():
     """Test that app_v2 initializes with RAG components"""
     try:
-        from app_v2 import VarianceProApp
+        from app_v2 import QuantCommanderApp
         
         print("🧪 Testing app_v2.py with RAG integration...")
         
         # Initialize the app
-        app = VarianceProApp()
+        app = QuantCommanderApp()
         print("✅ App initialized successfully")
         
         # Check RAG components are available

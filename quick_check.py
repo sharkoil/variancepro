@@ -1,5 +1,5 @@
 """
-Quick verification that variance analysis is fixed
+Quick verification that quantitative analysis is fixed
 """
 
 print("🔍 Quick Variance Analysis Verification...")
@@ -7,7 +7,7 @@ print("🔍 Quick Variance Analysis Verification...")
 try:
     # Test basic imports
     import pandas as pd
-    from analyzers.variance_analyzer import VarianceAnalyzer
+    from analyzers.quant_analyzer import QuantAnalyzer
     
     # Create simple test data
     data = pd.DataFrame({
@@ -16,7 +16,7 @@ try:
     })
     
     # Test the exact workflow that was failing
-    analyzer = VarianceAnalyzer()
+    analyzer = QuantAnalyzer()
     result = analyzer.comprehensive_variance_analysis(
         data=data,
         actual_col='Actual',
@@ -26,7 +26,7 @@ try:
     # This line was causing: "takes 1 positional argument but 2 were given"
     formatted = analyzer.format_comprehensive_analysis(result)
     
-    print("✅ SUCCESS: Variance analysis is working!")
+    print("✅ SUCCESS: Quantitative analysis is working!")
     print(f"✅ Generated {len(formatted)} characters of analysis")
     print("✅ No signature mismatch errors")
     

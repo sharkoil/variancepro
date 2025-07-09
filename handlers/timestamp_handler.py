@@ -1,5 +1,5 @@
 """
-Timestamp Handler for VariancePro v2.0
+Timestamp Handler for Quant Commander v2.0
 
 This module provides timestamp functionality for chat messages.
 It formats timestamps consistently across all message types and

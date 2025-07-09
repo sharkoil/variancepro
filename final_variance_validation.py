@@ -1,5 +1,5 @@
 """
-Final validation test - simulate the exact variance analysis flow that was failing
+Final validation test - simulate the exact quantitative analysis flow that was failing
 """
 
 import pandas as pd
@@ -33,19 +33,19 @@ def simulate_app_flow():
         handler = QuickActionHandler(app_core=app_core)
         print("✅ Handler initialized")
         
-        # Step 4: Simulate clicking variance analysis button
-        print("Step 4: Simulating variance analysis button click...")
+        # Step 4: Simulate clicking quantitative analysis button
+        print("Step 4: Simulating quantitative analysis button click...")
         # This is the exact call that was failing with:
-        # "VarianceAnalyzer.format_comprehensive_analysis() takes 1 positional argument but 2 were given"
+        # "QuantAnalyzer.format_comprehensive_analysis() takes 1 positional argument but 2 were given"
         
         result = handler.handle_variance_analysis()
         
-        print("✅ Variance analysis completed successfully!")
+        print("✅ Quantitative analysis completed successfully!")
         print(f"Result length: {len(result)} characters")
         
         # Show preview of result
         print("\n" + "="*60)
-        print("VARIANCE ANALYSIS RESULT PREVIEW")
+        print("QUANTITATIVE ANALYSIS RESULT PREVIEW")
         print("="*60)
         preview = result[:400] + "..." if len(result) > 400 else result
         print(preview)
@@ -65,10 +65,10 @@ def validate_method_signature():
     print("\n🔍 Validating method signature...")
     
     try:
-        from analyzers.variance_analyzer import VarianceAnalyzer
+        from analyzers.quant_analyzer import QuantAnalyzer
         import inspect
         
-        analyzer = VarianceAnalyzer()
+        analyzer = QuantAnalyzer()
         method = analyzer.format_comprehensive_analysis
         
         sig = inspect.signature(method)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     print("🚀 Final Validation - Variance Analysis Error Fix")
     print("="*70)
     print("This test reproduces the exact error scenario that was failing:")
-    print('❌ "VarianceAnalyzer.format_comprehensive_analysis() takes 1 positional argument but 2 were given"')
+    print('❌ "QuantAnalyzer.format_comprehensive_analysis() takes 1 positional argument but 2 were given"')
     print("="*70)
     
     # Test 1: Validate method signature
@@ -112,8 +112,8 @@ if __name__ == "__main__":
     print(f"✅ App flow working: {flow_ok}")
     
     if sig_ok and flow_ok:
-        print("\n🎉 SUCCESS: Variance analysis error has been fixed!")
-        print("The app should now work correctly with variance analysis.")
+        print("\n🎉 SUCCESS: Quantitative analysis error has been fixed!")
+        print("The app should now work correctly with quantitative analysis.")
     else:
         print("\n❌ FAILURE: Issues still remain.")
         

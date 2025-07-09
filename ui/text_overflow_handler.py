@@ -1,5 +1,5 @@
 """
-Text Overflow Handler for VariancePro Chat Interface
+Text Overflow Handler for Quant Commander Chat Interface
 Implements show more/less functionality for long responses
 """
 

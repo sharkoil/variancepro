@@ -15,9 +15,9 @@ def create_missing_files():
     # Create root manifest.json if it doesn't exist
     if not os.path.exists('manifest.json'):
         manifest_content = {
-            "name": "VariancePro",
-            "short_name": "VariancePro",
-            "description": "Advanced variance analysis and forecasting tool",
+            "name": "Quant Commander",
+            "short_name": "Quant Commander",
+            "description": "Advanced quantitative analysis and trading command center",
             "start_url": "/",
             "display": "standalone",
             "background_color": "#ffffff",

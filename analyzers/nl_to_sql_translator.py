@@ -1,5 +1,5 @@
 """
-Natural Language to SQL Translator for VariancePro
+Natural Language to SQL Translator for Quant Commander
 Converts natural language queries to SQL using financial domain knowledge
 """
 

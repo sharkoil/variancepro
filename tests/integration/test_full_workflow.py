@@ -1,6 +1,6 @@
 """
-Integration tests for VariancePro v2.0 refactored application
-Tests full workflow functionality including file upload, chat processing, and variance analysis
+Integration tests for Quant Commander v2.0 refactored application
+Tests full workflow functionality including file upload, chat processing, and quantitative analysis
 """
 
 import unittest
@@ -9,11 +9,11 @@ import tempfile
 import os
 from unittest.mock import Mock, patch
 
-from app_v2 import VarianceProApp
+from app_v2 import QuantCommanderApp
 
 
-class TestVarianceProIntegration(unittest.TestCase):
-    """Integration tests for the complete VariancePro application"""
+class TestQuant CommanderIntegration(unittest.TestCase):
+    """Integration tests for the complete Quant Commander application"""
     
     def setUp(self):
         """Set up integration test fixtures"""
@@ -27,7 +27,7 @@ class TestVarianceProIntegration(unittest.TestCase):
             }
             mock_get.return_value = mock_response
             
-            self.app = VarianceProApp()
+            self.app = QuantCommanderApp()
         
         # Create sample CSV data for testing
         self.sample_data = pd.DataFrame({
@@ -55,7 +55,7 @@ class TestVarianceProIntegration(unittest.TestCase):
         self.assertIsNotNone(self.app.file_handler)
         self.assertIsNotNone(self.app.chat_handler)
         self.assertIsNotNone(self.app.quick_action_handler)
-        self.assertIsNotNone(self.app.variance_analyzer)
+        self.assertIsNotNone(self.app.quant_analyzer)
     
     def test_file_upload_workflow(self):
         """Test complete file upload and processing workflow"""
@@ -120,7 +120,7 @@ class TestVarianceProIntegration(unittest.TestCase):
         self.assertIn('Summary', last_message['content'])
     
     def test_variance_analysis_workflow(self):
-        """Test variance analysis through quick action"""
+        """Test quantitative analysis through quick action"""
         # Upload data first
         mock_file = Mock()
         mock_file.name = self.temp_file.name
@@ -133,10 +133,10 @@ class TestVarianceProIntegration(unittest.TestCase):
         
         self.assertIsInstance(updated_history, list)
         
-        # Should have variance analysis response
+        # Should have quantitative analysis response
         last_message = updated_history[-1]
         self.assertEqual(last_message['role'], 'assistant')
-        # Should contain variance analysis or pair detection info
+        # Should contain quantitative analysis or pair detection info
         content = last_message['content']
         self.assertTrue(
             'Variance' in content or 'comparison' in content or 'pairs' in content
@@ -216,10 +216,10 @@ class TestVarianceProIntegration(unittest.TestCase):
 
 
 class TestVarianceAnalysisIntegration(unittest.TestCase):
-    """Integration tests specifically for variance analysis features"""
+    """Integration tests specifically for quantitative analysis features"""
     
     def setUp(self):
-        """Set up variance analysis integration tests"""
+        """Set up quantitative analysis integration tests"""
         with patch('core.ollama_connector.requests.get') as mock_get:
             # Mock successful Ollama connection
             mock_response = Mock()
@@ -229,7 +229,7 @@ class TestVarianceAnalysisIntegration(unittest.TestCase):
             }
             mock_get.return_value = mock_response
             
-            self.app = VarianceProApp()
+            self.app = QuantCommanderApp()
         
         # Create variance-specific test data
         self.variance_data = pd.DataFrame({
@@ -253,7 +253,7 @@ class TestVarianceAnalysisIntegration(unittest.TestCase):
     
     def test_variance_pair_detection_integration(self):
         """Test that variance pairs are properly detected in uploaded data"""
-        # Upload variance data
+        # Upload trading data
         mock_file = Mock()
         mock_file.name = self.temp_file.name
         
@@ -262,7 +262,7 @@ class TestVarianceAnalysisIntegration(unittest.TestCase):
         
         # Get the data and test variance pair detection
         data, _ = self.app.app_core.get_current_data()
-        pairs = self.app.variance_analyzer.detect_variance_pairs(data.columns.tolist())
+        pairs = self.app.quant_analyzer.detect_variance_pairs(data.columns.tolist())
         
         # Should detect multiple variance pairs
         self.assertGreater(len(pairs), 0)
@@ -272,7 +272,7 @@ class TestVarianceAnalysisIntegration(unittest.TestCase):
         self.assertGreater(len(revenue_pairs), 0)
     
     def test_variance_analysis_through_chat(self):
-        """Test variance analysis triggered through chat interface"""
+        """Test quantitative analysis triggered through chat interface"""
         # Upload data
         mock_file = Mock()
         mock_file.name = self.temp_file.name
@@ -280,7 +280,7 @@ class TestVarianceAnalysisIntegration(unittest.TestCase):
         history = []
         self.app.upload_csv(mock_file, history)
         
-        # Request variance analysis through chat
+        # Request quantitative analysis through chat
         updated_history, _ = self.app.chat_response("compare actual vs planned revenue", history)
         
         # Should process the variance request

@@ -1,5 +1,5 @@
 """
-Function Registry for VariancePro Gemma 3 Function Calling
+Function Registry for Quant Commander Gemma 3 Function Calling
 Defines available functions for the LLM to call.
 """
 

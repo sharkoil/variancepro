@@ -1,4 +1,4 @@
-# VariancePro - Core Dependencies
+# Quant Commander - Core Dependencies
 # Minimal installation for core functionality
 
 # Web Framework

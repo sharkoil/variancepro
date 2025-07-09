@@ -78,7 +78,7 @@ class TestRAGDocumentManager:
             self.rag_manager.upload_document(temp_file_path)
             
             # Test retrieval
-            results = self.rag_manager.retrieve_relevant_chunks("variance analysis", max_chunks=3)
+            results = self.rag_manager.retrieve_relevant_chunks("quantitative analysis", max_chunks=3)
             
             # Verify results
             assert isinstance(results, list)
@@ -133,9 +133,9 @@ class TestRAGEnhancedAnalyzer:
         assert hasattr(self.rag_analyzer, 'model_name')
     
     def test_enhance_variance_analysis_no_documents(self):
-        """Test variance analysis enhancement when no documents are uploaded"""
+        """Test quantitative analysis enhancement when no documents are uploaded"""
         variance_data = {'test': 'data'}
-        analysis_context = "Test variance analysis"
+        analysis_context = "Test quantitative analysis"
         
         # Should handle gracefully when no documents
         result = self.rag_analyzer.enhance_variance_analysis(variance_data, analysis_context)
@@ -178,7 +178,7 @@ class TestRAGIntegration:
         test_content = """
         Financial Performance Analysis Report
         
-        Our variance analysis shows significant budget deviations in Q3.
+        Our quantitative analysis shows significant budget deviations in Q3.
         The sales performance exceeded expectations by 15% in the North region.
         Cost management initiatives reduced operational expenses.
         Trend analysis indicates steady growth in digital channels.
@@ -197,14 +197,14 @@ class TestRAGIntegration:
             assert self.rag_manager.has_documents() == True
             
             # Test retrieval works
-            chunks = self.rag_manager.retrieve_relevant_chunks("variance analysis")
+            chunks = self.rag_manager.retrieve_relevant_chunks("quantitative analysis")
             assert len(chunks) > 0
             
             # Test enhanced analysis (basic structure check)
             variance_data = {'budget_variance': 1000, 'actual_sales': 15000}
             result = self.rag_analyzer.enhance_variance_analysis(
                 variance_data, 
-                "Variance analysis with supplementary context"
+                "Quantitative analysis with supplementary context"
             )
             assert isinstance(result, dict)
             

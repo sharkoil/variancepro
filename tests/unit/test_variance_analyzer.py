@@ -1,21 +1,21 @@
 """
-Unit tests for the VarianceAnalyzer module
-Tests variance analysis functionality including pair detection and calculations
+Unit tests for the QuantAnalyzer module
+Tests quantitative analysis functionality including pair detection and calculations
 """
 
 import unittest
 import pandas as pd
 import numpy as np
 
-from analyzers.variance_analyzer import VarianceAnalyzer
+from analyzers.quant_analyzer import QuantAnalyzer
 
 
-class TestVarianceAnalyzer(unittest.TestCase):
-    """Test cases for the VarianceAnalyzer class"""
+class TestQuantAnalyzer(unittest.TestCase):
+    """Test cases for the QuantAnalyzer class"""
     
     def setUp(self):
         """Set up test fixtures before each test method"""
-        self.analyzer = VarianceAnalyzer()
+        self.analyzer = QuantAnalyzer()
         
         # Create sample data for testing
         self.sample_data = pd.DataFrame({
@@ -28,7 +28,7 @@ class TestVarianceAnalyzer(unittest.TestCase):
         })
     
     def test_initialization(self):
-        """Test that VarianceAnalyzer initializes correctly"""
+        """Test that QuantAnalyzer initializes correctly"""
         self.assertIsNone(self.analyzer.analysis_results)
         self.assertIsInstance(self.analyzer.variance_types, dict)
         self.assertIn('actual_vs_planned', self.analyzer.variance_types)
@@ -105,7 +105,7 @@ class TestVarianceAnalyzer(unittest.TestCase):
         self.assertIn('Actual', result)
     
     def test_suggest_variance_analysis(self):
-        """Test variance analysis suggestions"""
+        """Test quantitative analysis suggestions"""
         suggestions = self.analyzer.suggest_variance_analysis(self.sample_data)
         
         self.assertIsInstance(suggestions, list)
@@ -120,15 +120,15 @@ class TestVarianceAnalyzer(unittest.TestCase):
         report = self.analyzer.format_variance_report()
         
         self.assertIsInstance(report, str)
-        self.assertIn('No variance analysis results', report)
+        self.assertIn('No quantitative analysis results', report)
 
 
-class TestVarianceAnalyzerIntegration(unittest.TestCase):
-    """Integration tests for VarianceAnalyzer with realistic data"""
+class TestQuantAnalyzerIntegration(unittest.TestCase):
+    """Integration tests for QuantAnalyzer with realistic data"""
     
     def setUp(self):
         """Set up integration test fixtures"""
-        self.analyzer = VarianceAnalyzer()
+        self.analyzer = QuantAnalyzer()
         
         # Create realistic financial data
         self.financial_data = pd.DataFrame({
@@ -144,7 +144,7 @@ class TestVarianceAnalyzerIntegration(unittest.TestCase):
         })
     
     def test_realistic_variance_analysis(self):
-        """Test variance analysis with realistic financial data"""
+        """Test quantitative analysis with realistic financial data"""
         pairs = self.analyzer.detect_variance_pairs(self.financial_data.columns.tolist())
         
         # Should detect revenue comparisons

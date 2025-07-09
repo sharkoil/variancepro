@@ -113,7 +113,7 @@ def test_nl_query(translator: EnhancedNLToSQLTranslator, df: pd.DataFrame, query
 def main():
     """Main test function"""
     # Load sample data
-    filepath = "F:\\Projects\\VARIANCEPRO\\sample_data\\comprehensive_sales_data.csv"
+    filepath = "F:\\Projects\\QUANTCOMMANDER\\sample_data\\comprehensive_sales_data.csv"
     df = load_csv_to_dataframe(filepath)
     
     # Create schema info

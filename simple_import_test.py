@@ -10,12 +10,12 @@ try:
     print("✅ pandas imported")
     
     print("2. Testing variance analyzer...")
-    from analyzers.variance_analyzer import VarianceAnalyzer
-    print("✅ VarianceAnalyzer imported")
+    from analyzers.quant_analyzer import QuantAnalyzer
+    print("✅ QuantAnalyzer imported")
     
     print("3. Creating instance...")
-    analyzer = VarianceAnalyzer()
-    print("✅ VarianceAnalyzer instance created")
+    analyzer = QuantAnalyzer()
+    print("✅ QuantAnalyzer instance created")
     
     print("4. Testing method exists...")
     method = getattr(analyzer, 'format_comprehensive_analysis', None)

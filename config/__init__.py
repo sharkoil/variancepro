@@ -1,5 +1,5 @@
 """
-Configuration module for VariancePro
+Configuration module for Quant Commander
 Provides centralized settings management
 """
 

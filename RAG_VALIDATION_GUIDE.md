@@ -3,7 +3,7 @@ RAG Integration Validation Guide
 ================================
 
 This guide demonstrates how to validate the RAG (Retrieval-Augmented Generation) integration
-with all quick action buttons in VariancePro v2.0.
+with all quick action buttons in Quant Commander v2.0.
 
 🎯 INTEGRATION COMPLETED:
 - ✅ All button actions (Summary, Trends, Variance, Top/Bottom N) now support RAG enhancement
@@ -13,7 +13,7 @@ with all quick action buttons in VariancePro v2.0.
 - ✅ Enhanced responses include document count and RAG indicator
 
 📁 TEST FILE READY:
-- Test PDF: "F:/Projects/VARIANCEPRO/RAG documents/Macroeconomic Review 2023 and Outlook for 2024.pdf"
+- Test PDF: "F:/Projects/QUANTCOMMANDER/RAG documents/Macroeconomic Review 2023 and Outlook for 2024.pdf"
 - Status: ✅ File exists and ready for testing
 
 🔧 VALIDATION STEPS:
@@ -27,7 +27,7 @@ with all quick action buttons in VariancePro v2.0.
 
 3. UPLOAD RAG DOCUMENT:
    - Click "📤 Upload" in Documents (RAG) section
-   - Select: "F:/Projects/VARIANCEPRO/RAG documents/Macroeconomic Review 2023 and Outlook for 2024.pdf"
+   - Select: "F:/Projects/QUANTCOMMANDER/RAG documents/Macroeconomic Review 2023 and Outlook for 2024.pdf"
    - Verify upload success in Document Status
 
 4. TEST EACH BUTTON ACTION:
@@ -38,7 +38,7 @@ with all quick action buttons in VariancePro v2.0.
       - Should show enhanced trends analysis with RAG context
    
    c) Click "📊 Variance" button
-      - Should show variance analysis enhanced with economic insights
+      - Should show quantitative analysis enhanced with economic insights
    
    d) Click "🔝 Top 5" button
       - Should show top performers with external market context
@@ -80,7 +80,7 @@ If prompts aren't logged:
 🧪 TESTING WITH SAMPLE DATA:
 
 The integration works best with:
-- sample_variance_data.csv (has Budget vs Actual for variance analysis)
+- sample_variance_data.csv (has Budget vs Actual for quantitative analysis)
 - Any CSV with date columns (for trends analysis)
 - Categorical data (for top/bottom analysis)
 

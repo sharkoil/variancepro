@@ -1,5 +1,5 @@
 """
-NL2SQL Function Caller for VariancePro
+NL2SQL Function Caller for Quant Commander
 Uses Gemma3 function calling for robust SQL generation
 """
 

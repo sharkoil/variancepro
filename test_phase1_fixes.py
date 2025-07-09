@@ -30,10 +30,10 @@ def test_basic_imports():
         return False
     
     try:
-        from app_v2 import VarianceProApp
-        print("   ✅ VarianceProApp")
+        from app_v2 import QuantCommanderApp
+        print("   ✅ QuantCommanderApp")
     except Exception as e:
-        print(f"   ❌ VarianceProApp: {e}")
+        print(f"   ❌ QuantCommanderApp: {e}")
         return False
     
     return True
@@ -43,8 +43,8 @@ def test_app_initialization():
     print("\n🚀 Testing app initialization...")
     
     try:
-        from app_v2 import VarianceProApp
-        app = VarianceProApp()
+        from app_v2 import QuantCommanderApp
+        app = QuantCommanderApp()
         
         # Check critical components
         assert app.app_core is not None, "AppCore not initialized"

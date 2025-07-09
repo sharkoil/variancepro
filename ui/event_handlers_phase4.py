@@ -1,5 +1,5 @@
 """
-UI Event Handlers for VariancePro
+UI Event Handlers for Quant Commander
 Handles all user interface events and interactions
 """
 
@@ -8,7 +8,7 @@ import gradio as gr
 
 
 class UIEventHandlers:
-    """Handles all UI events for the VariancePro application"""
+    """Handles all UI events for the Quant Commander application"""
     
     def __init__(self, app):
         """Initialize handlers with reference to main app"""
@@ -27,7 +27,7 @@ class UIEventHandlers:
         return self.app.chat_response("analyze contribution", history)
     
     def handle_variance_button(self, history: List[Dict]) -> Tuple[List[Dict], str]:
-        """Handle variance analysis button click"""
+        """Handle quantitative analysis button click"""
         return self.app.chat_response("analyze variance", history)
     
     def handle_trend_button(self, history: List[Dict]) -> Tuple[List[Dict], str]:

@@ -38,11 +38,11 @@ class RAGEnhancedAnalyzer:
         analysis_context: str
     ) -> Dict[str, Any]:
         """
-        Enhance variance analysis with RAG context
+        Enhance quantitative analysis with RAG context
         
         Args:
-            variance_data: Original variance analysis results
-            analysis_context: Context about the variance analysis
+            variance_data: Original quantitative analysis results
+            analysis_context: Context about the quantitative analysis
             
         Returns:
             Enhanced analysis with supplementary insights
@@ -74,7 +74,7 @@ class RAGEnhancedAnalyzer:
                 "analysis_type": "variance_with_rag"
             }
             
-            print("📊 Variance analysis enhanced with RAG context")
+            print("📊 Quantitative analysis enhanced with RAG context")
             return result
             
         except Exception as e:
@@ -278,10 +278,10 @@ class RAGEnhancedAnalyzer:
         enhanced_context: str
     ) -> str:
         """
-        Create enhanced prompt for variance analysis
+        Create enhanced prompt for quantitative analysis
         
         Args:
-            variance_data: Variance analysis data
+            variance_data: Quantitative analysis data
             context: Analysis context
             enhanced_context: RAG-enhanced context
             
@@ -289,17 +289,17 @@ class RAGEnhancedAnalyzer:
             Formatted prompt for LLM
         """
         prompt = f"""
-You are a financial analyst providing variance analysis insights. 
+You are a financial analyst providing quantitative analysis insights. 
 
 DATA ANALYSIS CONTEXT:
 {context}
 
-VARIANCE ANALYSIS DATA:
+QUANTITATIVE ANALYSIS DATA:
 {json.dumps(variance_data, indent=2, default=str)}
 
 {enhanced_context}
 
-Please provide a comprehensive variance analysis that includes:
+Please provide a comprehensive quantitative analysis that includes:
 
 1. **EXECUTIVE SUMMARY**: Key variance findings and their significance
 

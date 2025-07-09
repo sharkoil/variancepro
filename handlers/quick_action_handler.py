@@ -1,5 +1,5 @@
 """
-Quick Action Handler for VariancePro v2.0
+Quick Action Handler for Quant Commander v2.0
 
 This module handles all quick action button functionality including:
 - Summary analysis
@@ -372,24 +372,24 @@ Trends Analysis Results:
     @performance_monitor('variance_analysis')
     def _handle_variance_action(self) -> str:
         """
-        Handle variance analysis quick action with RAG enhancement.
+        Handle quantitative analysis quick action with RAG enhancement.
         
         Returns:
-            str: Variance analysis response with RAG context if available
+            str: Quantitative analysis response with RAG context if available
         """
         try:
             current_data, _ = self.app_core.get_current_data()
             
             # Import the variance analyzer
-            from analyzers.variance_analyzer import VarianceAnalyzer
+            from analyzers.quant_analyzer import QuantAnalyzer
             
-            variance_analyzer = VarianceAnalyzer()
+            quant_analyzer = QuantAnalyzer()
             
             # Try to detect common variance comparison patterns
             columns = current_data.columns.tolist()
             
             # Look for common variance column patterns
-            variance_pairs = variance_analyzer.detect_variance_pairs(columns)
+            variance_pairs = quant_analyzer.detect_variance_pairs(columns)
             
             if not variance_pairs:
                 return """⚠️ **Variance Analysis**: No obvious variance comparison pairs detected.
@@ -401,17 +401,17 @@ Trends Analysis Results:
 
 **Available columns**: """ + ", ".join(columns[:10]) + ("..." if len(columns) > 10 else "") + """
 
-💡 **Tip**: Ask me specific questions like "compare actual vs planned" or manually specify columns for variance analysis."""
+💡 **Tip**: Ask me specific questions like "compare actual vs planned" or manually specify columns for quantitative analysis."""
             
-            # Perform variance analysis on the first detected pair
+            # Perform quantitative analysis on the first detected pair
             first_pair = variance_pairs[0]
             
             # Get date columns for time-based analysis
             date_columns = self._detect_date_columns(current_data)
             date_col = date_columns[0] if date_columns else None
             
-            # Use comprehensive variance analysis
-            result = variance_analyzer.comprehensive_variance_analysis(
+            # Use comprehensive quantitative analysis
+            result = quant_analyzer.comprehensive_variance_analysis(
                 data=current_data,
                 actual_col=first_pair['actual'],
                 planned_col=first_pair['planned'],
@@ -422,12 +422,12 @@ Trends Analysis Results:
                 return f"❌ **Variance Analysis Error**: {result['error']}"
             
             # Format the comprehensive analysis
-            base_analysis = variance_analyzer.format_comprehensive_analysis(result)
+            base_analysis = quant_analyzer.format_comprehensive_analysis(result)
             
             # Enhance with RAG if available
             if self.rag_manager and self.rag_analyzer and self.rag_manager.has_documents():
                 try:
-                    print("🔍 Enhancing variance analysis with RAG context...")
+                    print("🔍 Enhancing quantitative analysis with RAG context...")
                     
                     # Create analysis context for RAG enhancement
                     analysis_context = f"""
@@ -446,7 +446,7 @@ Variance Analysis Results:
                     )
                     
                     if enhanced_result.get('success'):
-                        print(f"✅ RAG-enhanced variance analysis generated with {enhanced_result.get('documents_used', 0)} document(s)")
+                        print(f"✅ RAG-enhanced quantitative analysis generated with {enhanced_result.get('documents_used', 0)} document(s)")
                         
                         # Log the prompt being used for validation
                         if 'prompt_used' in enhanced_result:
@@ -751,7 +751,7 @@ Variance Analysis Results:
             summary_parts.extend([
                 "**Suggested Actions**:",
                 "• Try trends analysis for time-based insights",
-                "• Use variance analysis for performance gaps",
+                "• Use quantitative analysis for performance gaps",
                 "• Ask questions like 'show me the top performers'"
             ])
             

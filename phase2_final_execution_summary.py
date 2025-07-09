@@ -62,7 +62,7 @@ def main():
         "Summary action with RAG enhancement",
         "Top/Bottom N analysis with flexible parsing",
         "Trends analysis with date column detection",
-        "Variance analysis with pattern recognition",
+        "Quantitative analysis with pattern recognition",
         "End-to-end workflow validation",
         "Error handling and recovery mechanisms",
         "Edge case boundary conditions",
@@ -159,7 +159,7 @@ def main():
     print("🛡️ ERROR HANDLING: ROBUST")
     print("📊 TEST COVERAGE: >90%")
     print()
-    print("The VariancePro application is now production-ready with:")
+    print("The Quant Commander application is now production-ready with:")
     print("• Comprehensive functionality validation")
     print("• Robust error handling and recovery")
     print("• Full RAG integration with document enhancement")

@@ -167,7 +167,7 @@ result = handler._handle_forecast_action()
 ## 🚀 Next Steps
 
 Phase 3B forecasting engine is now complete and ready for:
-1. **Production Use**: Full integration with VariancePro UI
+1. **Production Use**: Full integration with Quant Commander UI
 2. **Enhanced Features**: Additional forecasting methods
 3. **Advanced Analytics**: More Phase 3B components
 4. **User Training**: Documentation and examples

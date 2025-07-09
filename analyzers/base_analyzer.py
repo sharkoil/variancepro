@@ -1,5 +1,5 @@
 """
-Base Analyzer for VariancePro
+Base Analyzer for Quant Commander
 Provides common functionality for all financial analyzers
 """
 

@@ -1,5 +1,5 @@
 """
-Ollama API Connector for VariancePro v2.0
+Ollama API Connector for Quant Commander v2.0
 
 This module handles all Ollama API interactions including:
 - Connection status checking

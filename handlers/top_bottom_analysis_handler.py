@@ -1,5 +1,5 @@
 """
-Top/Bottom N Analysis Handler for VariancePro v2.0
+Top/Bottom N Analysis Handler for Quant Commander v2.0
 
 This module handles top/bottom N analysis functionality including:
 - Top N analysis (top 5, top 10)

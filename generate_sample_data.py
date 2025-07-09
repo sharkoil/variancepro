@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sample CSV Data Generator for VariancePro
+Sample CSV Data Generator for Quant Commander
 Generates realistic financial data with configurable parameters
 """
 
@@ -242,7 +242,7 @@ class SampleDataGenerator:
 def main():
     """Main command line interface"""
     parser = argparse.ArgumentParser(
-        description='Generate sample CSV data for VariancePro financial analysis',
+        description='Generate sample CSV data for Quant Commander financial analysis',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

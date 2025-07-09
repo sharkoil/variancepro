@@ -1,16 +1,16 @@
 """
-Test script for the refactored VariancePro v2.0 application
+Test script for the refactored Quant Commander v2.0 application
 """
 
 def test_imports():
     """Test that all modules can be imported"""
     try:
-        from app_v2 import VarianceProApp
+        from app_v2 import QuantCommanderApp
         from core.app_core import AppCore
         from handlers.file_handler import FileHandler
         from handlers.chat_handler import ChatHandler
         from handlers.quick_action_handler import QuickActionHandler
-        from analyzers.variance_analyzer import VarianceAnalyzer
+        from analyzers.quant_analyzer import QuantAnalyzer
         print("✅ All imports successful")
         return True
     except Exception as e:
@@ -20,8 +20,8 @@ def test_imports():
 def test_initialization():
     """Test that the app can be initialized"""
     try:
-        from app_v2 import VarianceProApp
-        app = VarianceProApp()
+        from app_v2 import QuantCommanderApp
+        app = QuantCommanderApp()
         print("✅ App initialization successful")
         print(f"   Session ID: {app.app_core.session_id}")
         print(f"   Ollama Status: {app.app_core.ollama_status}")
@@ -30,10 +30,10 @@ def test_initialization():
         print(f"❌ Initialization error: {e}")
         return False
 
-def test_variance_analyzer():
+def test_quant_analyzer():
     """Test variance analyzer functionality"""
     try:
-        from analyzers.variance_analyzer import VarianceAnalyzer
+        from analyzers.quant_analyzer import QuantAnalyzer
         import pandas as pd
         
         # Create sample data
@@ -44,7 +44,7 @@ def test_variance_analyzer():
             'Month': ['Jan', 'Feb', 'Mar', 'Apr']
         })
         
-        analyzer = VarianceAnalyzer()
+        analyzer = QuantAnalyzer()
         
         # Test variance pair detection
         pairs = analyzer.detect_variance_pairs(data.columns.tolist())
@@ -67,13 +67,13 @@ def test_variance_analyzer():
 
 def main():
     """Run all tests"""
-    print("🧪 Testing Refactored VariancePro v2.0")
+    print("🧪 Testing Refactored Quant Commander v2.0")
     print("=" * 50)
     
     results = []
     results.append(test_imports())
     results.append(test_initialization())
-    results.append(test_variance_analyzer())
+    results.append(test_quant_analyzer())
     
     print("=" * 50)
     if all(results):

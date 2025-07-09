@@ -1,5 +1,5 @@
 """
-Analysis Coordinator for VariancePro
+Analysis Coordinator for Quant Commander
 Coordinates all analysis operations and query routing
 """
 
@@ -9,7 +9,7 @@ import pandas as pd
 
 
 class AnalysisCoordinator:
-    """Coordinates all analysis operations for the VariancePro application"""
+    """Coordinates all analysis operations for the Quant Commander application"""
     
     def __init__(self, app):
         """Initialize coordinator with reference to main app"""
@@ -78,12 +78,12 @@ class AnalysisCoordinator:
             return f"❌ **Contribution Analysis Error**: {str(e)}"
     
     def perform_variance_analysis(self, query: str) -> str:
-        """Perform variance analysis"""
+        """Perform quantitative analysis"""
         try:
             budget_vs_actual = self.app.column_suggestions.get('budget_vs_actual', {})
             
             if not budget_vs_actual:
-                return "⚠️ **Variance analysis requires budget and actual columns**"
+                return "⚠️ **Quantitative analysis requires budget and actual columns**"
             
             budget_col = list(budget_vs_actual.keys())[0]
             actual_col = budget_vs_actual[budget_col]

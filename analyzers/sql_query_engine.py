@@ -1,5 +1,5 @@
 """
-SQL Query Engine for VariancePro
+SQL Query Engine for Quant Commander
 Executes SQL queries on CSV data using in-memory SQLite
 """
 

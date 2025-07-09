@@ -1,13 +1,13 @@
 """
-Variance Analyzer for VariancePro v2.0
+Variance Analyzer for Quant Commander v2.0
 
-This module provides comprehensive variance analysis functionality including:
+This module provides comprehensive quantitative analysis functionality including:
 - Actual vs Planned comparisons
 - Budget vs Sales analysis  
 - Multi-timespan variance tracking
 - Statistical variance calculations
 
-Created as part of modular refactoring to add variance analysis capabilities.
+Created as part of modular refactoring to add quantitative analysis capabilities.
 """
 
 import pandas as pd
@@ -17,9 +17,9 @@ from datetime import datetime, timedelta
 import re
 
 
-class VarianceAnalyzer:
+class QuantAnalyzer:
     """
-    Provides comprehensive variance analysis capabilities.
+    Provides comprehensive quantitative analysis capabilities.
     
     This analyzer can compare different data series (actual vs planned, budget vs sales, etc.)
     across various time periods and provide detailed variance metrics.
@@ -40,7 +40,7 @@ class VarianceAnalyzer:
         """
         Automatically detect potential variance comparison columns.
         
-        Scans column names for common variance analysis patterns like:
+        Scans column names for common quantitative analysis patterns like:
         - Actual, Budget, Planned, Forecast
         - Sales, Revenue, Expenses
         - Current period vs historical data
@@ -79,7 +79,7 @@ class VarianceAnalyzer:
         for col in columns:
             col_lower = col.lower()
             
-            # Only consider numeric columns for variance analysis
+            # Only consider numeric columns for quantitative analysis
             if df[col].dtype in ['int64', 'float64']:
                 for category, pattern_list in patterns.items():
                     if any(pattern in col_lower for pattern in pattern_list):
@@ -179,7 +179,7 @@ class VarianceAnalyzer:
             group_by_col (str, optional): Column to group analysis by
             
         Returns:
-            Dict[str, Any]: Comprehensive variance analysis results
+            Dict[str, Any]: Comprehensive quantitative analysis results
         """
         if actual_col not in df.columns or comparison_col not in df.columns:
             raise ValueError(f"Columns {actual_col} or {comparison_col} not found in data")
@@ -252,7 +252,7 @@ class VarianceAnalyzer:
                                    actual_col: str, 
                                    comparison_col: str) -> Dict[str, Any]:
         """
-        Perform time-based variance analysis.
+        Perform time-based quantitative analysis.
         
         Args:
             df (pd.DataFrame): DataFrame with date column
@@ -260,7 +260,7 @@ class VarianceAnalyzer:
             comparison_col (str): Comparison values column
             
         Returns:
-            Dict[str, Any]: Time-based variance analysis
+            Dict[str, Any]: Time-based quantitative analysis
         """
         # Sort by date
         df_sorted = df.sort_values('date')
@@ -306,8 +306,8 @@ class VarianceAnalyzer:
         if not self.analysis_results:
             return []
         
-        # This would work with the detailed variance data
-        # Implementation depends on storing row-level variance data
+        # This would work with the detailed trading data
+        # Implementation depends on storing row-level trading data
         significant_variances = []
         
         # Add logic to identify outliers and significant variances
@@ -317,19 +317,19 @@ class VarianceAnalyzer:
     
     def format_variance_report(self, results: Optional[Dict[str, Any]] = None) -> str:
         """
-        Format variance analysis results into a readable report.
+        Format quantitative analysis results into a readable report.
         
         Args:
             results (Dict[str, Any], optional): Analysis results. Uses stored results if None.
             
         Returns:
-            str: Formatted variance analysis report
+            str: Formatted quantitative analysis report
         """
         if results is None:
             results = self.analysis_results
             
         if not results:
-            return "No variance analysis results available."
+            return "No quantitative analysis results available."
         
         report_lines = [
             f"📊 **{results['analysis_type']} Analysis**",
@@ -376,7 +376,7 @@ class VarianceAnalyzer:
             df (pd.DataFrame): The DataFrame to analyze
             
         Returns:
-            List[str]: List of suggested variance analysis options
+            List[str]: List of suggested quantitative analysis options
         """
         detected_cols = self.detect_variance_columns(df)
         suggestions = []
@@ -397,7 +397,7 @@ class VarianceAnalyzer:
         if not suggestions:
             numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
             if len(numeric_cols) >= 2:
-                suggestions.append(f"Custom variance analysis between any two numeric columns")
+                suggestions.append(f"Custom quantitative analysis between any two numeric columns")
         
         return suggestions
     
@@ -412,7 +412,7 @@ class VarianceAnalyzer:
             analysis_type (str): Type of analysis ('absolute', 'percentage')
             
         Returns:
-            str: Formatted variance analysis result
+            str: Formatted quantitative analysis result
         """
         try:
             # Basic validation
@@ -451,7 +451,7 @@ class VarianceAnalyzer:
     def comprehensive_variance_analysis(self, data: pd.DataFrame, actual_col: str, planned_col: str, 
                                       date_col: Optional[str] = None) -> Dict[str, Any]:
         """
-        Perform comprehensive variance analysis across multiple time periods.
+        Perform comprehensive quantitative analysis across multiple time periods.
         
         Args:
             data (pd.DataFrame): The data to analyze
@@ -460,7 +460,7 @@ class VarianceAnalyzer:
             date_col (str, optional): Date column for time-based aggregation
             
         Returns:
-            Dict[str, Any]: Comprehensive variance analysis results
+            Dict[str, Any]: Comprehensive quantitative analysis results
         """
         try:
             results = {
@@ -516,7 +516,7 @@ class VarianceAnalyzer:
             return results
             
         except Exception as e:
-            return {'error': f"Comprehensive variance analysis failed: {str(e)}"}
+            return {'error': f"Comprehensive quantitative analysis failed: {str(e)}"}
     
     def _analyze_time_periods(self, data: pd.DataFrame, actual_col: str, planned_col: str, date_col: str) -> Dict[str, Any]:
         """
@@ -665,10 +665,10 @@ class VarianceAnalyzer:
     
     def _generate_variance_insights(self, results: Dict[str, Any]) -> List[str]:
         """
-        Generate business insights from variance analysis results.
+        Generate business insights from quantitative analysis results.
         
         Args:
-            results (Dict[str, Any]): Variance analysis results
+            results (Dict[str, Any]): Quantitative analysis results
             
         Returns:
             List[str]: List of business insights
@@ -717,10 +717,10 @@ class VarianceAnalyzer:
     
     def generate_llm_variance_insights(self, results: Dict[str, Any], ollama_connector=None) -> str:
         """
-        Generate LLM-powered insights for variance analysis results.
+        Generate LLM-powered insights for quantitative analysis results.
         
         Args:
-            results (Dict[str, Any]): Variance analysis results
+            results (Dict[str, Any]): Quantitative analysis results
             ollama_connector: Ollama connector instance for LLM calls
             
         Returns:
@@ -807,7 +807,7 @@ Format your response with clear sections and actionable bullet points. Focus on 
 {llm_response}
 
 ---
-*Analysis generated using advanced language model with comprehensive variance data context*"""
+*Analysis generated using advanced language model with comprehensive trading data context*"""
             
         except Exception as e:
             return self._generate_enhanced_fallback_insights(results)
@@ -817,7 +817,7 @@ Format your response with clear sections and actionable bullet points. Focus on 
         Generate enhanced fallback insights when LLM is not available.
         
         Args:
-            results (Dict[str, Any]): Variance analysis results
+            results (Dict[str, Any]): Quantitative analysis results
             
         Returns:
             str: Enhanced statistical and business insights
@@ -937,7 +937,7 @@ Format your response with clear sections and actionable bullet points. Focus on 
     
     def format_comprehensive_analysis(self, analysis_result: Dict[str, Any]) -> str:
         """
-        Format comprehensive variance analysis results for display.
+        Format comprehensive quantitative analysis results for display.
         
         Args:
             analysis_result (Dict[str, Any]): Results from comprehensive_variance_analysis

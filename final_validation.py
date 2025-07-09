@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app_v2 import VarianceProApp
+from app_v2 import QuantCommanderApp
 from handlers.chat_handler import ChatHandler
 from handlers.quick_action_handler import QuickActionHandler
 
@@ -18,9 +18,9 @@ def validate_all_fixes():
     print("=" * 50)
     
     # Initialize the full app
-    print("1. Initializing VariancePro App...")
+    print("1. Initializing Quant Commander App...")
     try:
-        app = VarianceProApp()
+        app = QuantCommanderApp()
         print("✅ App initialized successfully")
     except Exception as e:
         print(f"❌ App initialization failed: {e}")

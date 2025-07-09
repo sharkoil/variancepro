@@ -1,5 +1,5 @@
 """
-LLM Interpreter for VariancePro
+LLM Interpreter for Quant Commander
 Handles LLM communication and response processing
 """
 

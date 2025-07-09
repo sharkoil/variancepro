@@ -24,7 +24,7 @@
 ## **File Organization Completed:**
 
 ```
-f:\Projects\VARIANCEPRO\
+f:\Projects\QUANTCOMMANDER\
 ├── app_v2.py                    ← **USE THIS FILE**
 ├── archive/
 │   └── app_original.py          ← Reference only

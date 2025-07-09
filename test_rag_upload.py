@@ -5,11 +5,11 @@ try:
     print("Testing RAG document upload...")
     
     # Test imports
-    from app_v2 import VarianceProApp
+    from app_v2 import QuantCommanderApp
     print("✅ App imported")
     
     # Initialize app
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print("✅ App initialized")
     
     # Check RAG status

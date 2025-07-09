@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify that the contribution and variance analysis functions work correctly
+Test script to verify that the contribution and quantitative analysis functions work correctly
 after fixing the format_currency method calls.
 """
 
@@ -41,7 +41,7 @@ def test_contribution_analysis():
         return False
 
 def test_variance_analysis():
-    """Test the variance analysis functionality"""
+    """Test the quantitative analysis functionality"""
     print("\n🧪 Testing Variance Analysis...")
     
     try:

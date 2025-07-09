@@ -1,5 +1,5 @@
 """
-AI-Powered Financial Data Analysis
+AI-Powered Quantitative Trading Analysis
 Modern chat interface with comprehensive financial analytics
 """
 
@@ -178,12 +178,12 @@ class QuantCommanderApp:
             return f"❌ **Contribution Analysis Error**: {str(e)}"
     
     def _perform_variance_analysis(self, query: str) -> str:
-        """Perform variance analysis"""
+        """Perform quantitative analysis"""
         try:
             budget_vs_actual = self.column_suggestions.get('budget_vs_actual', {})
             
             if not budget_vs_actual:
-                return "⚠️ **Variance analysis requires budget and actual columns**"
+                return "⚠️ **Quantitative analysis requires budget and actual columns**"
             
             budget_col = list(budget_vs_actual.keys())[0]
             actual_col = budget_vs_actual[budget_col]

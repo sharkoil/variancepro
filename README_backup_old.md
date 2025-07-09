@@ -1,12 +1,12 @@
-# VariancePro v2.0 - AI-Powered Financial Analysis
+# Quant Commander v2.0 - AI-Powered Financial Analysis
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![AI-Powered](https://img.shields.io/badge/AI-Powered-green.svg)](https://github.com/sharkoil/variancepro)
+[![AI-Powered](https://img.shields.io/badge/AI-Powered-green.svg)](https://github.com/sharkoil/quantcommander)
 
-## 🚀 What is VariancePro?
+## 🚀 What is Quant Commander?
 
-AI-powered financial intelligence platform that transforms CSV data into comprehensive business insights. Features advanced variance analysis, RAG-enhanced insights, and natural language chat interface.
+AI-powered financial intelligence platform that transforms CSV data into comprehensive business insights. Features advanced quantitative analysis, RAG-enhanced insights, and natural language chat interface.
 
 ## ✨ Key Features
 
@@ -47,7 +47,7 @@ app_v2.py (Main Orchestrator)
    ollama pull gemma3:latest
    ```
 
-3. **Run VariancePro**
+3. **Run Quant Commander**
    ```bash
    python app_v2.py
    ```
@@ -74,7 +74,7 @@ app_v2.py (Main Orchestrator)
 ### Data Requirements
 - CSV files with numeric columns for analysis
 - Date columns for trend analysis (optional)
-- Budget/Actual/Planned columns for variance analysis
+- Budget/Actual/Planned columns for quantitative analysis
 
 ## 🧪 Testing
 
@@ -107,4 +107,4 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**VariancePro v2.0** - Built with ❤️ for financial intelligence
+**Quant Commander v2.0** - Built with ❤️ for financial intelligence

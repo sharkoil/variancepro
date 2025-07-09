@@ -381,12 +381,12 @@ class TestPhase2QuickActionHandler:
     
     def test_variance_action_basic(self):
         """
-        Test basic variance analysis functionality.
+        Test basic quantitative analysis functionality.
         
-        Verifies that variance analysis works with appropriate column pairs.
+        Verifies that quantitative analysis works with appropriate column pairs.
         """
         # Mock variance analyzer by patching the import
-        with patch('analyzers.variance_analyzer.VarianceAnalyzer') as mock_variance_class:
+        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -397,25 +397,25 @@ class TestPhase2QuickActionHandler:
             
             # Configure mock analysis result
             mock_analyzer.comprehensive_variance_analysis.return_value = {
-                'variance_summary': 'Sample variance analysis'
+                'variance_summary': 'Sample quantitative analysis'
             }
-            mock_analyzer.format_comprehensive_analysis.return_value = "Formatted variance analysis"
+            mock_analyzer.format_comprehensive_analysis.return_value = "Formatted quantitative analysis"
             
             result = self.handler._handle_variance_action()
             
-            # Verify variance analysis was called
+            # Verify quantitative analysis was called
             mock_analyzer.detect_variance_pairs.assert_called_once()
             mock_analyzer.comprehensive_variance_analysis.assert_called_once()
-            assert "Formatted variance analysis" in result
+            assert "Formatted quantitative analysis" in result
             assert "Additional Pairs Available" in result
     
     def test_variance_action_no_pairs(self):
         """
-        Test variance analysis when no variance pairs are detected.
+        Test quantitative analysis when no variance pairs are detected.
         
         Verifies appropriate guidance when no suitable column pairs are found.
         """
-        with patch('analyzers.variance_analyzer.VarianceAnalyzer') as mock_variance_class:
+        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -431,11 +431,11 @@ class TestPhase2QuickActionHandler:
     
     def test_variance_action_analysis_error(self):
         """
-        Test variance analysis error handling.
+        Test quantitative analysis error handling.
         
-        Verifies appropriate error handling when variance analysis fails.
+        Verifies appropriate error handling when quantitative analysis fails.
         """
-        with patch('analyzers.variance_analyzer.VarianceAnalyzer') as mock_variance_class:
+        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -646,12 +646,12 @@ class TestPhase2RAGIntegration:
     
     def test_rag_enhancement_variance_success(self):
         """
-        Test successful RAG enhancement for variance analysis.
+        Test successful RAG enhancement for quantitative analysis.
         
-        Verifies that variance analysis is properly enhanced with RAG context.
+        Verifies that quantitative analysis is properly enhanced with RAG context.
         """
         # Mock variance analyzer by patching the import
-        with patch('analyzers.variance_analyzer.VarianceAnalyzer') as mock_variance_class:
+        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -660,14 +660,14 @@ class TestPhase2RAGIntegration:
                 {'actual': 'Revenue', 'planned': 'Sales'}
             ]
             mock_analyzer.comprehensive_variance_analysis.return_value = {
-                'variance_summary': 'Base variance analysis'
+                'variance_summary': 'Base quantitative analysis'
             }
-            mock_analyzer.format_comprehensive_analysis.return_value = "Base variance analysis"
+            mock_analyzer.format_comprehensive_analysis.return_value = "Base quantitative analysis"
             
             # Configure successful RAG enhancement
             self.mock_rag_analyzer.enhance_variance_analysis.return_value = {
                 'success': True,
-                'enhanced_analysis': 'RAG-enhanced variance analysis',
+                'enhanced_analysis': 'RAG-enhanced quantitative analysis',
                 'documents_used': 1,
                 'prompt_used': 'Variance prompt for validation'
             }
@@ -678,7 +678,7 @@ class TestPhase2RAGIntegration:
             self.mock_rag_analyzer.enhance_variance_analysis.assert_called_once()
             
             # Verify enhanced content is included
-            assert "RAG-enhanced variance analysis" in result
+            assert "RAG-enhanced quantitative analysis" in result
             assert "RAG Enhancement**: Analysis enhanced with 1 document(s)" in result
     
     def test_rag_enhancement_exception_handling(self):

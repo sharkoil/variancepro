@@ -1,5 +1,5 @@
 """
-Cache Manager for VariancePro v2.0 - Phase 3A Implementation
+Cache Manager for Quant Commander v2.0 - Phase 3A Implementation
 
 This module provides caching functionality to improve performance for repeated
 analysis requests. It implements an LRU (Least Recently Used) cache with TTL

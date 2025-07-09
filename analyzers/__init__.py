@@ -1,5 +1,5 @@
 """
-Analyzers module for VariancePro
+Analyzers module for Quant Commander
 Provides financial analysis components including SQL query capabilities
 """
 

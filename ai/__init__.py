@@ -1,5 +1,5 @@
 """
-AI layer for VariancePro
+AI layer for Quant Commander
 Provides LLM integration and narrative generation
 """
 

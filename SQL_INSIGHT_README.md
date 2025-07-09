@@ -147,7 +147,7 @@ ollama pull gemma2:latest
 
 ### 🎯 Use Cases
 
-1. **Financial Data Analysis**
+1. **Quantitative Trading Analysis**
    - Sales performance analysis
    - Budget vs actual comparisons
    - Revenue trend analysis

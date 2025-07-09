@@ -20,11 +20,11 @@ try:
     print("✅ QuickActionHandler imported")
     
     # Test main app
-    from app_v2 import VarianceProApp
-    print("✅ VarianceProApp imported")
+    from app_v2 import QuantCommanderApp
+    print("✅ QuantCommanderApp imported")
     
     # Test initialization
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print("✅ App initialized successfully")
     
     print("\n🎉 All basic functionality validated!")

@@ -1,5 +1,5 @@
 """
-Phase 2: Integration Test Suite for VariancePro
+Phase 2: Integration Test Suite for Quant Commander
 
 This test suite focuses on integration testing to verify that all components
 work together correctly after the Phase 1 fixes and modular refactoring.
@@ -289,7 +289,7 @@ class TestPhase2Integration:
         
         self.mock_rag_analyzer.enhance_variance_analysis.return_value = {
             'success': True,
-            'enhanced_analysis': 'RAG-enhanced variance analysis with performance insights',
+            'enhanced_analysis': 'RAG-enhanced quantitative analysis with performance insights',
             'documents_used': 1,
             'prompt_used': 'Variance enhancement prompt'
         }
@@ -310,7 +310,7 @@ class TestPhase2Integration:
         assert "RAG Enhancement**: Analysis enhanced with 3 document(s)" in result
         
         # Test variance enhancement
-        with patch('analyzers.variance_analyzer.VarianceAnalyzer') as mock_variance_class:
+        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -318,12 +318,12 @@ class TestPhase2Integration:
                 {'actual': 'Actual_Sales', 'planned': 'Planned_Sales'}
             ]
             mock_analyzer.comprehensive_variance_analysis.return_value = {
-                'variance_summary': 'Base variance analysis'
+                'variance_summary': 'Base quantitative analysis'
             }
-            mock_analyzer.format_comprehensive_analysis.return_value = "Base variance analysis"
+            mock_analyzer.format_comprehensive_analysis.return_value = "Base quantitative analysis"
             
             result = self.handler._handle_variance_action()
-            assert "RAG-enhanced variance analysis with performance insights" in result
+            assert "RAG-enhanced quantitative analysis with performance insights" in result
             assert "RAG Enhancement**: Analysis enhanced with 1 document(s)" in result
     
     def test_integration_edge_case_combinations(self):
@@ -473,7 +473,7 @@ class TestPhase2RealWorldScenarios:
         history = self.handler.handle_action("variance", history)
         variance_content = history[5]["content"]
         
-        # Should detect Budget vs Actual variance
+        # Should detect Quantitative trading analysis
         assert "variance" in variance_content.lower() or "comparison" in variance_content.lower()
         
         # Verify complete workflow
@@ -545,7 +545,7 @@ class TestPhase2RealWorldScenarios:
         # Should either show results or indicate data quality issues
         assert "Top 5 Rows" in top_content or "missing values" in top_content
         
-        # Step 3: Try variance analysis
+        # Step 3: Try quantitative analysis
         history = self.handler.handle_action("variance", history)
         variance_content = history[5]["content"]
         

@@ -1,5 +1,5 @@
 """
-Summary Analysis Handler for VariancePro v2.0
+Summary Analysis Handler for Quant Commander v2.0
 
 This module handles summary analysis functionality including:
 - Data summary generation
@@ -206,7 +206,7 @@ Data Summary Analysis:
             summary_parts.extend([
                 "**Suggested Actions**:",
                 "• Try trends analysis for time-based insights",
-                "• Use variance analysis for performance gaps",
+                "• Use quantitative analysis for performance gaps",
                 "• Ask questions like 'show me the top performers'"
             ])
             

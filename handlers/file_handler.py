@@ -1,5 +1,5 @@
 """
-File Handler for VariancePro v2.0
+File Handler for Quant Commander v2.0
 
 This module handles CSV file upload, validation, and initial data processing.
 It provides clean separation between file handling logic and the main application.

@@ -1,4 +1,4 @@
-# VariancePro Code Cleanup & Optimization Plan
+# Quant Commander Code Cleanup & Optimization Plan
 
 ## 🎯 **Audit Summary**
 - **120+ Python files** analyzed
@@ -99,7 +99,7 @@
 
 ## 📁 **Proposed Final Structure**
 ```
-variancepro/
+quantcommander/
 ├── ai/                    # AI components (cleaned)
 │   ├── llm_interpreter.py
 │   └── narrative_generator.py

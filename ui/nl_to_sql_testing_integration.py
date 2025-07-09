@@ -1,5 +1,5 @@
 """
-NL-to-SQL Testing Integration for VariancePro
+NL-to-SQL Testing Integration for Quant Commander
 Adds testing framework as a new tab in the main application
 """
 

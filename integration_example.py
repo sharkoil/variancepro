@@ -1,5 +1,5 @@
 """
-Integration Example for Text Overflow in VariancePro
+Integration Example for Text Overflow in Quant Commander
 Shows how to integrate the text overflow functionality with existing chat interface
 """
 
@@ -66,7 +66,7 @@ def gradio_chat_interface_example():
     # Create Gradio interface
     demo = gr.ChatInterface(
         fn=chat_with_overflow,
-        title="VariancePro Chat with Text Overflow",
+        title="Quant Commander Chat with Text Overflow",
         description="Ask questions about your financial data. Long responses will have 'Show More/Less' controls.",
         examples=[
             "Analyze the variance in Q3 sales data",
@@ -126,7 +126,7 @@ def integrate_with_app_new():
 
 
 if __name__ == "__main__":
-    print("VariancePro Text Overflow Integration Examples")
+    print("Quant Commander Text Overflow Integration Examples")
     print("=" * 60)
     
     # Show integration examples

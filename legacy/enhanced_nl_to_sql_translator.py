@@ -1,5 +1,5 @@
 """
-Enhanced Natural Language to SQL Translator for VariancePro
+Enhanced Natural Language to SQL Translator for Quant Commander
 Features improved WHERE clause generation and comprehensive pattern matching
 """
 

@@ -121,7 +121,7 @@ Implemented automatic timescale analysis that triggers immediately after CSV upl
 ## 🎯 **Next Phase Recommendations**
 
 ### **Phase 11: Enhanced OOB Analysis**
-1. **Multi-Analyzer OOB**: Add contribution and variance analysis
+1. **Multi-Analyzer OOB**: Add contribution and quantitative analysis
 2. **Smarter Detection**: Improve column type detection algorithms
 3. **Configurable OOB**: Let users enable/disable automatic analysis
 4. **OOB Visualization**: Auto-generate charts for time-series data

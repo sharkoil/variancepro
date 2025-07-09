@@ -1,7 +1,7 @@
-# Product Requirements Document (PRD) - VariancePro v2.0
+# Product Requirements Document (PRD) - Quant Commander v2.0
 
 ## **Executive Summary**
-VariancePro v2.0 is a completely refactored, modular, AI-powered financial data analysis platform that provides intelligent CSV analysis, RAG-enhanced insights, and natural language querying through local Ollama integration. The v2.0 release features a complete architectural overhaul with 80%+ test coverage and comprehensive RAG enhancement for all analysis types.
+Quant Commander v2.0 is a completely refactored, modular, AI-powered financial data analysis platform that provides intelligent CSV analysis, RAG-enhanced insights, and natural language querying through local Ollama integration. The v2.0 release features a complete architectural overhaul with 80%+ test coverage and comprehensive RAG enhancement for all analysis types.
 
 ## **Product Vision**
 Create a powerful, modular financial intelligence platform that allows professionals to upload CSV data and documents to get immediate AI-powered insights enhanced with external context, all while maintaining complete data privacy through local processing.
@@ -40,7 +40,7 @@ Create a powerful, modular financial intelligence platform that allows professio
 **Requirements:**
 - ✅ Summary analysis enhanced with economic context
 - ✅ Trends analysis correlated with macroeconomic forecasts
-- ✅ Variance analysis explained with external factors
+- ✅ Quantitative analysis explained with external factors
 - ✅ Top/Bottom N analysis enhanced with market insights
 - ✅ Seamless integration with all quick action buttons
 
@@ -195,7 +195,7 @@ def generate_query(
 ## **Phase 3: Advanced Analytics (PLANNED)**
 
 ### **3.1 Financial Analysis Functions**
-- Variance analysis (actual vs budget)
+- Quantitative analysis (actual vs budget)
 - Trend analysis and forecasting
 - Contribution analysis (Pareto)
 - Financial ratios and KPIs
@@ -210,7 +210,7 @@ def generate_query(
 ## **Technical Architecture**
 
 ### **Core Components**
-1. **VarianceProApp**: Main application class
+1. **QuantCommanderApp**: Main application class
 2. **CSV Validator**: Robust file validation
 3. **Data Analyzer**: Statistical analysis engine
 4. **LLM Interface**: Ollama/Gemma3 integration

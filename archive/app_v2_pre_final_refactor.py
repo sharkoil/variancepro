@@ -1,5 +1,5 @@
 """
-VariancePro v2.0 - Focused Financial Data Analysis
+Quant Commander v2.0 - Focused Quantitative Trading Analysis
 Clean implementation with Ollama integration and intelligent CSV analysis
 """
 
@@ -19,8 +19,8 @@ from analyzers.nl2sql_function_caller import NL2SQLFunctionCaller
 from config.settings import Settings
 
 
-class VarianceProApp:
-    """Main application class for VariancePro v2.0"""
+class QuantCommanderApp:
+    """Main application class for Quant Commander v2.0"""
     
     def __init__(self):
         """Initialize the application"""
@@ -50,7 +50,7 @@ class VarianceProApp:
         self.ollama_status = self._check_ollama_connection()
         self.gradio_status = "Running"
         
-        print(f"🚀 VariancePro v2.0 initialized")
+        print(f"🚀 Quant Commander v2.0 initialized")
         print(f"📝 Session ID: {self.session_id}")
         print(f"🤖 Ollama Status: {self.ollama_status}")
     
@@ -577,7 +577,7 @@ Ready to answer questions about your data! Try asking about trends, calculations
     
     def _generate_help_response(self) -> str:
         """Generate help message"""
-        return """🤝 **How to Use VariancePro v2.0**
+        return """🤝 **How to Use Quant Commander v2.0**
 
 **Getting Started**:
 1. Upload your CSV file using the file upload area
@@ -596,7 +596,7 @@ Ready to answer questions about your data! Try asking about trends, calculations
 • "What are the trends in this data?"
 • "Summarize the data"
 
-*This is VariancePro v2.0 - focused and powerful!*"""
+*This is Quant Commander v2.0 - focused and powerful!*"""
     
     def _quick_action(self, action: str, history: List[Dict]) -> List[Dict]:
         """Handle quick action button clicks by creating a proper user-assistant interaction with timestamps"""
@@ -759,10 +759,10 @@ Ready to answer questions about your data! Try asking about trends, calculations
     
     def create_interface(self):
         """Create the Gradio interface"""
-        with gr.Blocks(title="VariancePro v2.0", theme=gr.themes.Soft()) as interface:
+        with gr.Blocks(title="Quant Commander v2.0", theme=gr.themes.Soft()) as interface:
             # Header
-            gr.Markdown("# 📊 VariancePro v2.0")
-            gr.Markdown("*AI-Powered Financial Data Analysis with Gemma3*")
+            gr.Markdown("# 📊 Quant Commander v2.0")
+            gr.Markdown("*AI-Powered Quantitative Trading Analysis with Gemma3*")
             
             with gr.Row():
                 with gr.Column(scale=1):
@@ -790,7 +790,7 @@ Ready to answer questions about your data! Try asking about trends, calculations
                         label="AI Assistant",
                         height=400,
                         type="messages",
-                        value=[{"role": "assistant", "content": "👋 Welcome to VariancePro v2.0! Upload your CSV file and I'll analyze it for you."}]
+                        value=[{"role": "assistant", "content": "👋 Welcome to Quant Commander v2.0! Upload your CSV file and I'll analyze it for you."}]
                     )
                     
                     with gr.Row():
@@ -883,9 +883,9 @@ Ready to answer questions about your data! Try asking about trends, calculations
 
 def main():
     """Main entry point"""
-    print("🚀 Starting VariancePro v2.0...")
+    print("🚀 Starting Quant Commander v2.0...")
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     interface = app.create_interface()
     
     print("✅ Application ready")

@@ -85,9 +85,9 @@ interface.launch(
 **File**: `static/manifest.json`
 ```json
 {
-  "name": "VariancePro",
-  "short_name": "VariancePro",
-  "description": "Advanced variance analysis and forecasting tool",
+  "name": "Quant Commander",
+  "short_name": "Quant Commander",
+  "description": "Advanced quantitative analysis and trading command center",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -133,7 +133,7 @@ if os.path.exists(css_path):
         custom_css = f.read()
 
 with gr.Blocks(
-    title="VariancePro v2.0", 
+    title="Quant Commander v2.0", 
     theme=gr.themes.Soft(),
     css=custom_css
 ) as interface:

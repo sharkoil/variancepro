@@ -18,7 +18,7 @@ def demo_text_overflow_functionality():
     Shows how the feature works for short responses, long responses, and errors
     """
     print("=" * 80)
-    print("VariancePro Text Overflow Handler Demo")
+    print("Quant Commander Text Overflow Handler Demo")
     print("=" * 80)
     
     # Initialize the enhancer
@@ -48,7 +48,7 @@ def demo_text_overflow_functionality():
     
     long_response = LLMResponse(
         content=(
-            "Based on the comprehensive variance analysis of your Q3 sales data, here are the detailed findings and strategic recommendations:\n\n"
+            "Based on the comprehensive quantitative analysis of your Q3 sales data, here are the detailed findings and strategic recommendations:\n\n"
             "KEY PERFORMANCE INSIGHTS:\n"
             "• Revenue exceeded budget by 12.5% ($125,000 over target)\n"
             "• Top performing regions: North (18% over), West (15% over), South (8% over)\n"
@@ -165,7 +165,7 @@ def show_html_output_example():
     
     sample_response = (
         "This is a sample financial analysis response that contains detailed insights about "
-        "variance analysis, performance metrics, and strategic recommendations for the business. "
+        "quantitative analysis, performance metrics, and strategic recommendations for the business. "
         "It includes bullet points and structured content that should be properly formatted "
         "with show more/less functionality."
     )

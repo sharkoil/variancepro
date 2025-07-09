@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Demo script for timestamp functionality in VariancePro v2.0
+Demo script for timestamp functionality in Quant Commander v2.0
 Shows how timestamps appear in chat messages
 """
 
@@ -11,14 +11,14 @@ from datetime import datetime
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app_v2 import VarianceProApp
+from app_v2 import QuantCommanderApp
 
 def demo_timestamp_display():
     """Demonstrate timestamp display in chat messages"""
     print("🎭 Timestamp Display Demo")
     print("=" * 50)
     
-    app = VarianceProApp()
+    app = QuantCommanderApp()
     print(f"✅ App initialized with session ID: {app.session_id}")
     
     # Simulate a chat conversation

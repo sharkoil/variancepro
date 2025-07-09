@@ -1,5 +1,5 @@
 """
-Top/Bottom N Analysis Handler for VariancePro v2.0
+Top/Bottom N Analysis Handler for Quant Commander v2.0
 
 This module handles top/bottom N analysis functionality.
 Extracted from quick_action_handler.py to follow modular design principles.

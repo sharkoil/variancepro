@@ -1,5 +1,5 @@
 """
-Performance Monitor for VariancePro v2.0 - Phase 3A Implementation
+Performance Monitor for Quant Commander v2.0 - Phase 3A Implementation
 
 This module provides performance monitoring capabilities to track response times,
 memory usage, and system performance metrics. It helps identify bottlenecks and
@@ -29,7 +29,7 @@ import functools
 
 class PerformanceMonitor:
     """
-    Monitors and tracks performance metrics for VariancePro analysis operations.
+    Monitors and tracks performance metrics for Quant Commander analysis operations.
     
     This class provides comprehensive performance monitoring including response
     times, memory usage, and system resource utilization.

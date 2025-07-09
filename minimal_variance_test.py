@@ -1,14 +1,14 @@
 """
-Minimal test to verify variance analysis signature fix
+Minimal test to verify quantitative analysis signature fix
 """
 
 try:
-    from analyzers.variance_analyzer import VarianceAnalyzer
-    print("✅ VarianceAnalyzer imported successfully")
+    from analyzers.quant_analyzer import QuantAnalyzer
+    print("✅ QuantAnalyzer imported successfully")
     
     # Create instance
-    analyzer = VarianceAnalyzer()
-    print("✅ VarianceAnalyzer instance created")
+    analyzer = QuantAnalyzer()
+    print("✅ QuantAnalyzer instance created")
     
     # Test sample data
     import pandas as pd

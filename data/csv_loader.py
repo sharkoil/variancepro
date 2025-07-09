@@ -1,5 +1,5 @@
 """
-CSV Loader for VariancePro
+CSV Loader for Quant Commander
 Handles CSV file loading, validation, and column detection
 """
 

@@ -1,5 +1,5 @@
 """
-Forecasting Analyzer for VariancePro v2.0 - Phase 3B Implementation
+Forecasting Analyzer for Quant Commander v2.0 - Phase 3B Implementation
 
 This module provides time series forecasting capabilities for financial data analysis.
 It implements multiple forecasting methods including linear regression, exponential smoothing,

@@ -353,7 +353,7 @@ class RAGDocumentManager:
         
         # Create analysis-specific search query
         search_queries = {
-            "variance": f"variance analysis budget actual performance {data_context}",
+            "variance": f"quantitative analysis budget actual performance {data_context}",
             "trends": f"trends patterns forecast growth decline {data_context}",
             "top_n": f"ranking performance top bottom comparison {data_context}",
             "general": f"analysis insights recommendations {data_context}"
