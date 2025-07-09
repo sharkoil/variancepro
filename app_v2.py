@@ -1,5 +1,5 @@
 """
-VariancePro v2.0 - Refactored Modular Archit        print("🚀 VariancePro v2.0 modular architecture initialized (RAG temporarily disabled)")cture
+VariancePro v2.0 - Refactored Modular Architecture
 Main application orchestrator - focuses on interface coordination only
 """
 
@@ -37,26 +37,52 @@ class VarianceProApp:
         self.file_handler = FileHandler(self.app_core)
         self.chat_handler = ChatHandler(self.app_core)
         
-        # Initialize variance analyzer
-        self.variance_analyzer = VarianceAnalyzer()
-        
-        # Initialize RAG components for document enhancement
+        # Initialize variance analyzer with error handling
         try:
-            self.rag_manager = RAGDocumentManager()
-            self.rag_analyzer = RAGEnhancedAnalyzer(self.rag_manager)
-            print("✅ RAG components initialized successfully")
+            self.variance_analyzer = VarianceAnalyzer()
+            print("✅ Variance analyzer initialized successfully")
         except Exception as e:
-            print(f"⚠️ RAG initialization failed: {e}")
-            self.rag_manager = None
-            self.rag_analyzer = None
+            print(f"⚠️ Variance analyzer initialization failed: {e}")
+            print(f"   → Variance analysis will be unavailable")
+            self.variance_analyzer = None
         
-        # Initialize quick action handler with RAG components
-        self.quick_action_handler = QuickActionHandler(self.app_core, self.rag_manager, self.rag_analyzer)
+        # Initialize RAG components for document enhancement with comprehensive error handling
+        self.rag_manager = None
+        self.rag_analyzer = None
         
-        if self.rag_manager is not None:
-            print("🚀 VariancePro v2.0 modular architecture initialized with RAG")
-        else:
-            print("🚀 VariancePro v2.0 modular architecture initialized (RAG disabled due to errors)")
+        try:
+            print("[DEBUG] Attempting to initialize RAG components...")
+            self.rag_manager = RAGDocumentManager()
+            print("[DEBUG] RAG Document Manager initialized")
+            
+            self.rag_analyzer = RAGEnhancedAnalyzer(self.rag_manager)
+            print("[DEBUG] RAG Enhanced Analyzer initialized")
+            
+            print("✅ RAG components initialized successfully")
+            rag_status = "enabled"
+            
+        except ImportError as e:
+            print(f"⚠️ RAG initialization failed - missing dependencies: {e}")
+            print(f"   → Document enhancement features will be unavailable")
+            print(f"   → Install missing packages to enable RAG functionality")
+            rag_status = "disabled (missing dependencies)"
+            
+        except Exception as e:
+            print(f"⚠️ RAG initialization failed - unexpected error: {e}")
+            print(f"   → Document enhancement features will be unavailable")
+            print(f"   → Check system configuration and dependencies")
+            rag_status = "disabled (configuration error)"
+        
+        # Initialize quick action handler with RAG components (handles None gracefully)
+        try:
+            self.quick_action_handler = QuickActionHandler(self.app_core, self.rag_manager, self.rag_analyzer)
+            print("✅ Quick action handler initialized successfully")
+        except Exception as e:
+            print(f"❌ Critical error: Quick action handler initialization failed: {e}")
+            raise  # This is critical - app cannot function without quick actions
+        
+        # Final initialization status
+        print(f"🚀 VariancePro v2.0 modular architecture initialized (RAG {rag_status})")
     
     def upload_csv(self, file, history: List[Dict]) -> tuple[str, List[Dict]]:
         """
@@ -85,44 +111,61 @@ class VarianceProApp:
         # Get the standard response from the chat handler
         updated_history, clear_input = self.chat_handler.process_message(message, history)
         
-        # If we have documents and this looks like an analysis request, enhance with RAG
+        # Enhanced RAG integration - check if we have documents and can enhance ANY query
         if (self.rag_manager is not None and 
             self.rag_analyzer is not None and
-            self.rag_manager.has_documents() and 
-            any(keyword in message.lower() for keyword in ['variance', 'trend', 'analysis', 'summary', 'contribution'])):
+            self.rag_manager.has_documents()):
             
             try:
                 # Get the last assistant response
                 if updated_history and updated_history[-1]['role'] == 'assistant':
                     last_response = updated_history[-1]['content']
                     
-                    # Try to enhance with RAG
-                    if 'variance' in message.lower():
-                        enhanced_result = self.rag_analyzer.enhance_variance_analysis(
-                            variance_data={'analysis': last_response},
-                            analysis_context=f"User query: {message}"
-                        )
-                    elif 'trend' in message.lower():
-                        enhanced_result = self.rag_analyzer.enhance_trend_analysis(
-                            trend_data={'analysis': last_response},
-                            analysis_context=f"User query: {message}"
-                        )
-                    else:
-                        enhanced_result = self.rag_analyzer.enhance_general_analysis(
-                            analysis_data={'analysis': last_response},
-                            analysis_context=f"User query: {message}"
-                        )
+                    # Enhanced RAG logic - try to enhance any meaningful query
+                    analysis_keywords = ['variance', 'trend', 'analysis', 'summary', 'contribution']
+                    question_keywords = ['what', 'why', 'how', 'when', 'where', 'explain', 'tell me', 'show me', 'compare', 'calculate']
                     
-                    # If enhancement was successful, replace the response
-                    if enhanced_result.get('success'):
-                        enhanced_response = enhanced_result.get('enhanced_response', last_response)
-                        # Add a note that documents were used
-                        enhanced_response += "\n\n📚 *Enhanced with insights from uploaded documents*"
-                        updated_history[-1]['content'] = enhanced_response
+                    # Check if this is an analysis request or a question that could benefit from documents
+                    has_analysis_keyword = any(keyword in message.lower() for keyword in analysis_keywords)
+                    has_question_keyword = any(keyword in message.lower() for keyword in question_keywords)
+                    is_meaningful_query = len(message.strip()) > 10  # Avoid enhancing very short messages
+                    
+                    if has_analysis_keyword or (has_question_keyword and is_meaningful_query):
+                        print(f"🔍 Attempting RAG enhancement for: {message[:50]}...")
+                        
+                        # Try to enhance with RAG based on query type
+                        if 'variance' in message.lower():
+                            enhanced_result = self.rag_analyzer.enhance_variance_analysis(
+                                variance_data={'analysis': last_response},
+                                analysis_context=f"User query: {message}"
+                            )
+                        elif 'trend' in message.lower():
+                            enhanced_result = self.rag_analyzer.enhance_trend_analysis(
+                                trend_data={'analysis': last_response},
+                                analysis_context=f"User query: {message}"
+                            )
+                        else:
+                            # Use general enhancement for all other questions
+                            enhanced_result = self.rag_analyzer.enhance_general_analysis(
+                                analysis_data={'analysis': last_response, 'user_query': message},
+                                analysis_context=f"User query: {message}"
+                            )
+                        
+                        # If enhancement was successful, replace the response
+                        if enhanced_result.get('success'):
+                            enhanced_response = enhanced_result.get('enhanced_response', last_response)
+                            # Add a note that documents were used
+                            enhanced_response += "\n\n📚 *Enhanced with insights from uploaded documents*"
+                            updated_history[-1]['content'] = enhanced_response
+                            print(f"✅ RAG enhancement successful, used {enhanced_result.get('documents_used', 0)} document(s)")
+                        else:
+                            print(f"⚠️ RAG enhancement failed: {enhanced_result.get('error', 'Unknown error')}")
+                    else:
+                        print(f"ℹ️ RAG enhancement skipped - query doesn't match enhancement criteria")
                         
             except Exception as e:
                 # If RAG enhancement fails, just continue with standard response
-                print(f"RAG enhancement failed: {e}")
+                print(f"❌ RAG enhancement error: {e}")
         
         return updated_history, clear_input
     

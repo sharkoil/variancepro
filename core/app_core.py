@@ -40,19 +40,53 @@ class AppCore:
         self._log_startup()
     
     def _initialize_analyzers(self) -> None:
-        """Initialize analysis components with error handling"""
+        """
+        Initialize analysis components with comprehensive error handling.
+        
+        This method safely initializes all analyzers with graceful degradation.
+        If any analyzer fails to initialize, the system continues with reduced functionality.
+        """
         try:
+            # Initialize settings first
             self.settings = Settings()
-            self.timescale_analyzer = TimescaleAnalyzer(self.settings)
-            self.nl2sql_engine = NL2SQLFunctionCaller(
-                self.ollama_connector.ollama_url, 
-                self.ollama_connector.model_name
-            )
-            print(f"[DEBUG] Analyzers initialized successfully")
+            print(f"[DEBUG] Settings initialized successfully")
         except Exception as e:
-            print(f"[DEBUG] Warning: Could not initialize analyzers: {e}")
+            print(f"❌ Settings initialization failed: {e}")
+            self.settings = None
+        
+        # Initialize timescale analyzer with dependency check
+        try:
+            if self.settings is not None:
+                self.timescale_analyzer = TimescaleAnalyzer(self.settings)
+                print(f"[DEBUG] TimescaleAnalyzer initialized successfully")
+            else:
+                raise Exception("Settings not available")
+        except Exception as e:
+            print(f"⚠️ TimescaleAnalyzer initialization failed: {e}")
+            print(f"   → Trends analysis will be unavailable")
             self.timescale_analyzer = None
+        
+        # Initialize NL2SQL engine with Ollama connection check
+        try:
+            if self.ollama_connector.is_available():
+                self.nl2sql_engine = NL2SQLFunctionCaller(
+                    self.ollama_connector.ollama_url, 
+                    self.ollama_connector.model_name
+                )
+                print(f"[DEBUG] NL2SQL engine initialized successfully")
+            else:
+                raise Exception("Ollama not available")
+        except Exception as e:
+            print(f"⚠️ NL2SQL engine initialization failed: {e}")
+            print(f"   → Advanced query processing will be unavailable")
             self.nl2sql_engine = None
+        
+        # Summary of analyzer status
+        analyzer_count = sum([
+            self.timescale_analyzer is not None,
+            self.nl2sql_engine is not None
+        ])
+        print(f"[DEBUG] Analyzers initialized: {analyzer_count}/2 successful")
     
     def _log_startup(self) -> None:
         """Log application startup information"""

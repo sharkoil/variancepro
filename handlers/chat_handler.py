@@ -95,11 +95,13 @@ class ChatHandler:
             return self._generate_summary_response()
         elif "help" in message_lower:
             return self._generate_help_response()
+        elif "search document" in message_lower or "find in document" in message_lower:
+            return self._handle_document_search(message)
         elif self.app_core.nl2sql_engine and self.app_core.is_ollama_available():
             # Use NL2SQL for complex queries
             return self._handle_nl2sql_query(message)
         else:
-            return f"I understand you asked: '{message}'. I can help analyze your data! Try asking for a 'summary' or use the quick action buttons."
+            return f"I understand you asked: '{message}'. I can help analyze your data! Try asking for a 'summary', use the quick action buttons, or if you have documents uploaded, your question will be enhanced with document insights automatically."
     
     def _is_top_bottom_query(self, message: str) -> bool:
         """
@@ -253,3 +255,50 @@ class ChatHandler:
             
         except Exception as e:
             return f"❌ **Query Processing Error**: {str(e)}"
+    
+    def _handle_document_search(self, message: str) -> str:
+        """
+        Handle document search queries within chat.
+        
+        Args:
+            message (str): The user's search query
+            
+        Returns:
+            str: Search results or error message
+        """
+        try:
+            # Extract search terms from the message
+            # Remove common search prefixes to get actual search terms
+            search_prefixes = ["search document for", "find in document", "search for", "find"]
+            search_query = message.lower()
+            
+            for prefix in search_prefixes:
+                if prefix in search_query:
+                    search_query = search_query.replace(prefix, "").strip()
+                    break
+            
+            if not search_query:
+                return "Please specify what you'd like to search for in the documents."
+            
+            # Access RAG manager through app_core if available
+            if hasattr(self.app_core, 'rag_manager') and self.app_core.rag_manager:
+                results = self.app_core.rag_manager.retrieve_relevant_chunks(search_query, max_chunks=3)
+                
+                if not results:
+                    return f"No relevant content found for '{search_query}' in uploaded documents."
+                
+                formatted_results = [f"🔍 **Document Search Results for '{search_query}':**\n"]
+                
+                for i, chunk in enumerate(results, 1):
+                    formatted_results.append(
+                        f"**Result {i}:**\n"
+                        f"📄 Document: {chunk.get('document_name', 'Unknown')}\n"
+                        f"📝 Content: {chunk.get('content', '')[:300]}...\n"
+                    )
+                
+                return "\n".join(formatted_results)
+            else:
+                return "📚 Document search is not available. Please make sure documents are uploaded and RAG is enabled."
+                
+        except Exception as e:
+            return f"❌ Error searching documents: {str(e)}"
