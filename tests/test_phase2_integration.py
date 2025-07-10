@@ -310,7 +310,7 @@ class TestPhase2Integration:
         assert "RAG Enhancement**: Analysis enhanced with 3 document(s)" in result
         
         # Test variance enhancement
-        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
+        with patch('analyzers.variance_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             

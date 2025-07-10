@@ -386,7 +386,7 @@ class TestPhase2QuickActionHandler:
         Verifies that quantitative analysis works with appropriate column pairs.
         """
         # Mock variance analyzer by patching the import
-        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
+        with patch('analyzers.variance_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -415,7 +415,7 @@ class TestPhase2QuickActionHandler:
         
         Verifies appropriate guidance when no suitable column pairs are found.
         """
-        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
+        with patch('analyzers.variance_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -435,7 +435,7 @@ class TestPhase2QuickActionHandler:
         
         Verifies appropriate error handling when quantitative analysis fails.
         """
-        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
+        with patch('analyzers.variance_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             
@@ -651,7 +651,7 @@ class TestPhase2RAGIntegration:
         Verifies that quantitative analysis is properly enhanced with RAG context.
         """
         # Mock variance analyzer by patching the import
-        with patch('analyzers.quant_analyzer.QuantAnalyzer') as mock_variance_class:
+        with patch('analyzers.variance_analyzer.QuantAnalyzer') as mock_variance_class:
             mock_analyzer = Mock()
             mock_variance_class.return_value = mock_analyzer
             

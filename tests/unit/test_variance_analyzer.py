@@ -7,7 +7,7 @@ import unittest
 import pandas as pd
 import numpy as np
 
-from analyzers.quant_analyzer import QuantAnalyzer
+from analyzers.variance_analyzer import QuantAnalyzer
 
 
 class TestQuantAnalyzer(unittest.TestCase):
